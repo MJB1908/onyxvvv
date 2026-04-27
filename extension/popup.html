@@ -2,108 +2,84 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>3CX Partner PRM</title>
+<title>ONYX Bridge</title>
 <style>
 :root {
-  --bg:#1a1d23; --s:#22262d; --b:#2e333b; --t:#e6e8eb; --m:#9ba3ae;
-  --a:#0096c7; --green:#4caf82; --red:#e05c5c; --amber:#f0a500;
+  --bg:#0b0f14; --s:#141c28; --b:#2d3a4d; --t:#e6e8eb; --m:#9ba3ae;
+  --a:#3d8bfd; --a2:#5c9dff; --green:#4caf82; --red:#e05c5c; --amber:#f0a500;
   --r:6px;
 }
 * { box-sizing:border-box; margin:0; padding:0; }
 body {
-  width:340px; background:var(--bg); color:var(--t);
+  width:320px; background:var(--bg); color:var(--t);
   font:13px 'Segoe UI', system-ui, sans-serif;
 }
 header {
-  display:flex; align-items:center; gap:8px;
-  padding:10px 14px; background:var(--s); border-bottom:1px solid var(--b);
+  display:flex; align-items:center; gap:10px;
+  padding:12px 14px; background:var(--s); border-bottom:1px solid var(--b);
 }
 .logo {
-  width:24px; height:24px; border-radius:5px;
-  background:linear-gradient(135deg,var(--a),#0077b6);
+  width:28px; height:28px; border-radius:6px;
+  background:linear-gradient(135deg,var(--a2),var(--a));
   display:flex; align-items:center; justify-content:center;
-  font-weight:700; font-size:11px; color:#fff;
+  font-weight:700; font-size:11px; color:#fff; letter-spacing:.04em;
 }
 header h1 { font-size:13px; font-weight:600; flex:1; }
-#dot {
-  width:10px; height:10px; border-radius:50%;
-  background:var(--m); cursor:help;
-}
-#bar { display:none; }
-.section { padding:10px 14px; border-bottom:1px solid var(--b); }
+header .sub { font-size:10px; color:var(--m); display:block; margin-top:2px; font-weight:400; letter-spacing:0; }
+.section { padding:12px 14px; border-bottom:1px solid var(--b); }
 .section:last-of-type { border-bottom:none; }
-label {
-  display:block; font-size:11px; color:var(--m);
-  margin-bottom:4px; text-transform:uppercase; letter-spacing:.04em;
+.section h2 {
+  font-size:10px; color:var(--m); text-transform:uppercase;
+  letter-spacing:.06em; font-weight:600; margin-bottom:8px;
 }
-input[type=text], textarea, select {
-  width:100%; background:var(--bg); border:1px solid var(--b);
-  border-radius:var(--r); color:var(--t); padding:6px 8px;
-  font:13px 'Segoe UI', system-ui, sans-serif; outline:none;
-}
-input[type=text]:focus, textarea:focus, select:focus { border-color:var(--a); }
-textarea { resize:vertical; min-height:64px; }
-.row { display:flex; gap:8px; margin-bottom:8px; }
-.row > * { flex:1; }
 button {
-  background:var(--a); color:#fff; border:none; border-radius:var(--r);
-  padding:6px 12px; font:13px 'Segoe UI', system-ui, sans-serif;
-  cursor:pointer; transition:opacity .15s;
+  width:100%; background:var(--a); color:#fff; border:none; border-radius:var(--r);
+  padding:8px 12px; font:13px 'Segoe UI', system-ui, sans-serif;
+  cursor:pointer; transition:opacity .15s; margin-bottom:6px;
+  display:flex; align-items:center; justify-content:center; gap:6px;
 }
-button:hover { opacity:.85; }
-button:disabled { opacity:.5; cursor:not-allowed; }
+button:hover:not(:disabled) { opacity:.85; }
+button:disabled { opacity:.45; cursor:not-allowed; }
 button.secondary { background:var(--b); }
-.btn-row { display:flex; gap:8px; }
+button .hint { color:rgba(255,255,255,.55); font-size:11px; font-weight:400; }
+.config {
+  display:flex; gap:6px; align-items:center;
+}
+.config input {
+  flex:1; background:var(--bg); border:1px solid var(--b); color:var(--t);
+  padding:6px 8px; border-radius:var(--r); font:12px 'Segoe UI', system-ui, sans-serif; outline:none;
+}
+.config input:focus { border-color:var(--a); }
+.config button { width:auto; padding:6px 10px; margin:0; }
 #status {
   padding:8px 14px; font-size:12px; min-height:32px;
   display:flex; align-items:center; gap:6px;
-  border-top:1px solid var(--b);
 }
 #status.idle { color:var(--m); }
 #status.ok { color:var(--green); }
 #status.err { color:var(--red); }
-#status.busy { color:var(--amber); }
-.spinner {
-  width:12px; height:12px; border:2px solid var(--m);
-  border-top-color:var(--a); border-radius:50%;
-  animation:spin .8s linear infinite;
-}
-@keyframes spin { to { transform:rotate(360deg); } }
 </style>
 </head>
 <body>
   <header>
-    <div class="logo">3CX</div>
-    <h1>Partner PRM</h1>
-    <div id="dot" title="Session status"></div>
+    <div class="logo">ONYX</div>
+    <div>
+      <h1>ONYX Bridge</h1>
+      <span class="sub">AI Sales Force Assistant</span>
+    </div>
   </header>
-  <div id="bar"></div>
 
   <div class="section">
-    <button id="btnDash">Open dashboard</button>
+    <h2>Open</h2>
+    <button id="btnDash">Open ONYX dashboard</button>
+    <button id="btnEmail" disabled>Ask ONYX about this email <span class="hint" id="emailHint">(open Gmail first)</span></button>
   </div>
 
   <div class="section">
-    <label for="pid">Partner ID</label>
-    <input type="text" id="pid" placeholder="e.g. 12345" autocomplete="off">
-
-    <label for="ntype" style="margin-top:8px">Note type</label>
-    <select id="ntype">
-      <option value="1">General</option>
-      <option value="2">Call</option>
-      <option value="3">Email</option>
-      <option value="4">Meeting</option>
-    </select>
-
-    <label for="subj" style="margin-top:8px">Subject</label>
-    <input type="text" id="subj" placeholder="Subject" autocomplete="off">
-
-    <label for="nbody" style="margin-top:8px">Body</label>
-    <textarea id="nbody" placeholder="Note body…"></textarea>
-
-    <div class="btn-row" style="margin-top:8px">
-      <button id="btnPost">Post note</button>
-      <button id="btnClr" class="secondary">Clear</button>
+    <h2>ONYX server</h2>
+    <div class="config">
+      <input type="text" id="onyxUrl" placeholder="https://your-onyx.onrender.com">
+      <button id="btnSave" class="secondary">Save</button>
     </div>
   </div>
 
