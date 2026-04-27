@@ -26,6 +26,9 @@ body{background:var(--bg);color:var(--t);font:13px var(--font);height:100vh;disp
 .topbar .pill{font-size:11px;padding:3px 9px;border-radius:4px;background:var(--s2);color:var(--m);border:1px solid var(--b);text-decoration:none;}
 .topbar a.pill:hover{color:var(--a);border-color:var(--a);}
 .topbar #lastSync{font-size:11px;color:var(--dim);}
+.topbar-badge{font-size:11px;padding:3px 8px;border-radius:4px;background:#fff3e0;color:var(--amber);border:1px solid #ffd08a;}
+.topbar #btnRefreshAll{cursor:pointer;background:transparent;}
+.topbar #btnRefreshAll:disabled{opacity:.5;cursor:not-allowed;}
 
 .layout{display:flex;flex:1;overflow:hidden;}
 .sidebar{width:300px;flex-shrink:0;background:var(--s);border-right:1px solid var(--b);display:flex;flex-direction:column;overflow:hidden;}
@@ -97,7 +100,12 @@ body{background:var(--bg);color:var(--t);font:13px var(--font);height:100vh;disp
 .notes-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
 .note{background:var(--s);border:1px solid var(--b);border-radius:var(--r);padding:10px 12px;}
 .note-head{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim);margin-bottom:5px;}
-.note-head .source{padding:1px 6px;border-radius:3px;background:var(--s2);font-weight:600;color:var(--m);}
+.note-head .source{padding:1px 6px;border-radius:3px;background:var(--s2);font-weight:600;color:var(--m);font-size:10px;letter-spacing:.04em;}
+.note-head .source-erp{background:#fff8e1;color:#996500;border:1px solid #ffd54f;}
+.note-head .source-onyx,.note-head .source-onyx-web,.note-head .source-extension{background:#e3f2fd;color:#0077b6;border:1px solid #90caf9;}
+
+.detail-toolbar{display:flex;align-items:center;gap:10px;justify-content:flex-end;margin-bottom:10px;font-size:11px;color:var(--dim);}
+.detail-toolbar .btn{padding:5px 10px;font-size:11px;}
 .note-subj{font-size:13px;font-weight:600;color:var(--t);margin-bottom:3px;}
 .note-body{font-size:12px;color:var(--m);white-space:pre-wrap;}
 
@@ -135,7 +143,9 @@ body{background:var(--bg);color:var(--t);font:13px var(--font);height:100vh;disp
   <div class="divider"></div>
   <div class="who" id="who">…</div>
   <div class="sp"></div>
+  <span id="staleBadge" class="topbar-badge" hidden></span>
   <span id="lastSync"></span>
+  <button id="btnRefreshAll" class="pill" title="Re-fetch ERP detail for every reseller (slow — 5–15s each)">Refresh all</button>
   <a href="/" class="pill" title="Switch to ONYX (mock data + AI chat)">ONYX home →</a>
 </div>
 
@@ -166,6 +176,38 @@ body{background:var(--bg);color:var(--t);font:13px var(--font);height:100vh;disp
   </div>
 
 </div>
+
+<div class="insight-bar" id="insightBar" hidden>
+  <div class="insight-head">
+    <span class="insight-label">✦ Insight</span>
+    <span class="insight-meta" id="insightMeta"></span>
+    <div class="insight-actions">
+      <button id="btnInsight" class="btn">Generate</button>
+      <button id="btnInsightClear" class="btn-secondary btn" hidden>Clear</button>
+    </div>
+  </div>
+  <div class="insight-body" id="insightBody"></div>
+</div>
+
+<style>
+.insight-bar{
+  background:linear-gradient(0deg,#eaf2fa,#fff);
+  border-top:1px solid var(--b);
+  padding:10px 20px 12px;
+  flex-shrink:0;
+  max-height:240px;
+  overflow-y:auto;
+}
+.insight-head{display:flex;align-items:center;gap:10px;}
+.insight-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--a);}
+.insight-meta{font-size:11px;color:var(--dim);flex:1;}
+.insight-actions{display:flex;gap:6px;}
+.insight-actions .btn{padding:5px 12px;font-size:11px;}
+.insight-actions .btn-secondary{padding:5px 12px;font-size:11px;}
+.insight-body{font-size:12px;color:var(--t);line-height:1.6;margin-top:8px;white-space:pre-wrap;}
+.insight-body:empty{display:none;}
+.insight-body .placeholder{padding:8px;background:transparent;border:0;color:var(--dim);font-style:italic;text-align:left;}
+</style>
 
 <script src="/erp.js"></script>
 </body>

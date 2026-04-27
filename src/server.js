@@ -3,7 +3,7 @@
 const path = require("path");
 const express = require("express");
 const rateLimit = require("express-rate-limit");
-const { chatCompletion } = require("./openaiClient");
+const { chatCompletion, partnerInsight } = require("./openaiClient");
 const mockApi = require("./mockApi");
 const snapshotStore = require("./snapshotStore");
 
@@ -166,6 +166,25 @@ app.post("/api/ingest/erp", (req, res) => {
   }
 });
 
+app.post("/api/calls/log", (req, res) => {
+  try {
+    const { repEmail, partnerId, callerPhone, partnerName, matchedDigits, source } = req.body || {};
+    if (!repEmail || !callerPhone) {
+      return res.status(400).json({ error: "repEmail and callerPhone are required" });
+    }
+    const entry = snapshotStore.appendCallLog(repEmail, {
+      partnerId: partnerId ? String(partnerId) : null,
+      partnerName: partnerName || null,
+      callerPhone: String(callerPhone),
+      matchedDigits: typeof matchedDigits === "number" ? matchedDigits : null,
+      source: typeof source === "string" ? source : "webclient",
+    });
+    res.status(201).json({ ok: true, entry });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
 app.post("/api/ingest/erp/partner-detail", (req, res) => {
   try {
     const { repEmail, partnerId, detail } = req.body || {};
@@ -240,6 +259,23 @@ app.post("/api/notes", (req, res) => {
     res.status(201).json({ ok: true, note });
   } catch (err) {
     res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+app.post("/api/insight", chatLimiter, async (req, res) => {
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(503).json({ error: "AI is not configured (missing OPENAI_API_KEY)." });
+  }
+  try {
+    const partner = req.body?.partner;
+    if (!partner || typeof partner !== "object") {
+      return res.status(400).json({ error: "body.partner is required" });
+    }
+    const insight = await partnerInsight(partner);
+    res.json({ insight });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err?.message || "Insight failed" });
   }
 });
 

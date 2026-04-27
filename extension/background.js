@@ -789,9 +789,31 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
+async function runFullScrapeWithRetry() {
+  // Network blips, transient ERP 5xx, Cloudflare warm-up — retry a couple
+  // of times with exponential backoff before giving up. Auth failures
+  // (CF_EXPIRED / APP_EXPIRED) bail immediately since the user has to act.
+  const delays = [0, 30_000, 120_000, 480_000];
+  let lastErr;
+  for (let i = 0; i < delays.length; i++) {
+    if (delays[i]) await new Promise((r) => setTimeout(r, delays[i]));
+    try {
+      return await runFullScrape();
+    } catch (e) {
+      lastErr = e;
+      if (e?.code === "CF_EXPIRED" || e?.code === "APP_EXPIRED" || e?.code === "CF_CHALLENGE") {
+        console.warn("[ONYX] scheduled refresh: auth issue, not retrying:", e.message);
+        throw e;
+      }
+      console.warn(`[ONYX] scheduled refresh attempt ${i + 1} failed:`, e?.message || e);
+    }
+  }
+  throw lastErr;
+}
+
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name !== REFRESH_ALARM) return;
-  runFullScrape().catch((e) => {
-    console.warn("[ONYX] scheduled refresh failed:", e?.message || e);
+  runFullScrapeWithRetry().catch((e) => {
+    console.warn("[ONYX] scheduled refresh gave up:", e?.message || e);
   });
 });

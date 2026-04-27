@@ -76,6 +76,31 @@
     const onyxBase = (url?.url || "http://localhost:3000").replace(/\/+$/, "");
 
     renderOverlay({ caller: rawPhone, ...result.result, onyxBase });
+
+    // Log this match into the rep's snapshot so the /erp Calls tab has a
+    // real history. Best-effort — no UI feedback if it fails (the overlay
+    // is the user-visible piece).
+    try {
+      const last = await chrome.runtime.sendMessage({ type: "GET_LAST_REFRESH" });
+      const repEmail = last?.lastRefreshRepEmail;
+      if (repEmail) {
+        const top = result.result.candidates?.[0];
+        await fetch(`${onyxBase}/api/calls/log`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            repEmail,
+            callerPhone: rawPhone,
+            partnerId: top?.partner?.id || null,
+            partnerName: top?.partner?.companyName || null,
+            matchedDigits: top?.matchedDigits || 0,
+            source: "team-3cx-webclient",
+          }),
+        });
+      }
+    } catch (e) {
+      console.warn("[ONYX] call log failed:", e?.message || e);
+    }
   }
 
   // ── Overlay ───────────────────────────────────────────────────────────────

@@ -3,7 +3,9 @@
 const fs = require("fs");
 const path = require("path");
 
-const SNAPSHOT_DIR = path.join(__dirname, "..", "data", "snapshots");
+const SNAPSHOT_DIR = process.env.ONYX_SNAPSHOT_DIR
+  ? path.resolve(process.env.ONYX_SNAPSHOT_DIR)
+  : path.join(__dirname, "..", "data", "snapshots");
 
 function ensureDir() {
   fs.mkdirSync(SNAPSHOT_DIR, { recursive: true });
@@ -72,6 +74,28 @@ function loadSnapshotBySlug(slug) {
   }
 }
 
+function appendCallLog(repEmail, entry) {
+  ensureDir();
+  const { file } = snapshotPath(repEmail);
+  if (!fs.existsSync(file)) {
+    throw new Error("No snapshot exists for this rep — run a full refresh first");
+  }
+  const snapshot = JSON.parse(fs.readFileSync(file, "utf8"));
+  snapshot.callLog = snapshot.callLog || [];
+  const stored = {
+    id: `cl-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    receivedAt: new Date().toISOString(),
+    ...entry,
+  };
+  snapshot.callLog.push(stored);
+  // Cap to keep file size sane.
+  if (snapshot.callLog.length > 5000) {
+    snapshot.callLog = snapshot.callLog.slice(-5000);
+  }
+  fs.writeFileSync(file, JSON.stringify(snapshot, null, 2));
+  return stored;
+}
+
 function listSnapshots() {
   ensureDir();
   return fs
@@ -98,6 +122,7 @@ module.exports = {
   slugifyEmail,
   saveSnapshot,
   savePartnerDetail,
+  appendCallLog,
   loadSnapshot,
   loadSnapshotBySlug,
   listSnapshots,

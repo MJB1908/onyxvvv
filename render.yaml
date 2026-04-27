@@ -6,7 +6,13 @@ services:
     buildCommand: npm install
     startCommand: node src/server.js
     healthCheckPath: /health
+    disk:
+      name: onyx-data
+      mountPath: /var/onyx
+      sizeGB: 1
     envVars:
+      - key: ONYX_SNAPSHOT_DIR
+        value: /var/onyx/snapshots
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_MODEL

@@ -44,4 +44,38 @@ async function chatCompletion(userFacingMessages, seller) {
   return text;
 }
 
-module.exports = { chatCompletion, buildSystemPrompt, MODEL };
+/**
+ * Generate a focused brief for a single reseller — used by the /erp page's
+ * Insight bar. Avoids the full-corpus context from chatCompletion since
+ * we only care about THIS partner's data.
+ *
+ * @param {object} partner - { row, detail?, callLog?, onyxNotes? }
+ * @returns {Promise<string>}
+ */
+async function partnerInsight(partner) {
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const sys =
+    "You are ONYX Insight: a concise sales-coaching brief generator for reps " +
+    "selling PBX phone system licenses through a distributor. Given one " +
+    "partner's data, produce a brief in three short paragraphs:\n" +
+    "1) Current state — level, region, recent activity (1–2 lines).\n" +
+    "2) Signals — anything worth knowing from keys/orders/notes/calls " +
+    "(renewals due, large SC orders, missed calls, sentiment, etc.).\n" +
+    "3) Suggested next action — one specific thing to do this week.\n" +
+    "Be specific, no fluff, no hedging. If data is missing, say so briefly.";
+  const user = `Partner data:\n\n\`\`\`json\n${JSON.stringify(partner, null, 2).slice(0, 8000)}\n\`\`\``;
+  const completion = await client.chat.completions.create({
+    model: MODEL,
+    messages: [
+      { role: "system", content: sys },
+      { role: "user", content: user },
+    ],
+    temperature: 0.5,
+    max_tokens: 500,
+  });
+  const text = completion.choices[0]?.message?.content?.trim();
+  if (!text) throw new Error("Empty response from model.");
+  return text;
+}
+
+module.exports = { chatCompletion, buildSystemPrompt, partnerInsight, MODEL };

@@ -246,6 +246,51 @@
     }
   }
 
+  // Merge ONYX notes (POSTs to /api/notes) with ERP-side notes (parsed from
+  // staff.3cx.com Notes tab during partner-detail fetch). Both render in
+  // the Notes tab with a source badge.
+  function combinedNotesForActivePartner() {
+    const onyx = state.notes.map((n) => ({
+      source: n.source || "onyx",
+      subject: n.subject,
+      body: n.body,
+      whenIso: n.createdAt,
+      who: n.seller || null,
+    }));
+    const detail = partnerDetail(state.activePartnerId);
+    const erp = (detail?.erpNotes || []).map((n) => ({
+      source: "erp",
+      subject: n.subject,
+      body: n.body,
+      whenIso: null,
+      whenLabel: n.modified || null,
+      who: n.poster || null,
+      type: n.type || null,
+    }));
+    return [...onyx, ...erp].sort((a, b) => {
+      const ta = a.whenIso ? Date.parse(a.whenIso) : 0;
+      const tb = b.whenIso ? Date.parse(b.whenIso) : 0;
+      return tb - ta;
+    });
+  }
+
+  function callLogForActivePartner() {
+    const log = state.snapshot?.callLog || [];
+    return log
+      .filter((c) => !state.activePartnerId || c.partnerId === state.activePartnerId)
+      .slice()
+      .reverse();
+  }
+
+  function isStale(detail) {
+    if (!detail?.fetchedAt) return true;
+    return Date.now() - Date.parse(detail.fetchedAt) > 24 * 3600 * 1000;
+  }
+
+  function staleCount() {
+    return state.partners.filter((p) => isStale(partnerDetail(p.id))).length;
+  }
+
   function renderMain() {
     const partner = state.partners.find((p) => p.id === state.activePartnerId);
     if (!partner) {
@@ -303,6 +348,170 @@
     if (tab === "notes") wireNoteForm(partner);
     const fetchBtn = $("btnFetchDetail");
     if (fetchBtn) fetchBtn.addEventListener("click", () => ensurePartnerDetail(partner.id));
+    for (const btn of document.querySelectorAll(".detail-refresh")) {
+      btn.addEventListener("click", () => forcePartnerDetail(btn.dataset.id));
+    }
+    renderInsightBar(partner);
+    refreshTopBarStatus();
+  }
+
+  async function forcePartnerDetail(partnerId) {
+    if (state.detailFetching.has(partnerId)) return;
+    if (!state.bridgeReady) return;
+    state.detailFetching.add(partnerId);
+    renderMain();
+    try {
+      await bridgeFetchDetail(partnerId);
+      await reloadSnapshot();
+    } catch (e) {
+      console.warn("[ONYX] detail refresh failed:", e.message);
+    } finally {
+      state.detailFetching.delete(partnerId);
+      if (partnerId === state.activePartnerId) renderMain();
+    }
+  }
+
+  // ── Top-bar status ─────────────────────────────────────────────────────────
+
+  function refreshTopBarStatus() {
+    const n = staleCount();
+    const badge = $("staleBadge");
+    if (n > 0) {
+      badge.hidden = false;
+      badge.textContent = `${n} stale`;
+      badge.title = `${n} reseller${n === 1 ? "" : "s"} have not been deep-fetched in the last 24h or never`;
+    } else {
+      badge.hidden = true;
+    }
+    $("lastSync").textContent = state.snapshot
+      ? `Last sync ${relativeTime(state.snapshot.updatedAt)}`
+      : "";
+  }
+
+  // ── Refresh-all (sequential, throttled) ───────────────────────────────────
+
+  let refreshAllRunning = false;
+
+  async function refreshAllDetails() {
+    if (refreshAllRunning) return;
+    if (!state.bridgeReady) {
+      alert("ONYX extension bridge not detected — open this page from the extension popup.");
+      return;
+    }
+    refreshAllRunning = true;
+    const btn = $("btnRefreshAll");
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    let done = 0;
+    const total = state.partners.length;
+    try {
+      for (const p of state.partners) {
+        if (!refreshAllRunning) break;
+        btn.textContent = `Refreshing ${++done}/${total}…`;
+        try {
+          await bridgeFetchDetail(p.id);
+        } catch (e) {
+          console.warn(`[ONYX] refresh-all: ${p.id} failed:`, e.message);
+        }
+        // Throttle so staff.3cx.com doesn't get hammered.
+        await new Promise((r) => setTimeout(r, 2500));
+      }
+      await reloadSnapshot();
+    } finally {
+      refreshAllRunning = false;
+      btn.disabled = false;
+      btn.textContent = originalText;
+      if (state.activePartnerId) renderMain();
+      else refreshTopBarStatus();
+    }
+  }
+
+  // ── Insight bar ───────────────────────────────────────────────────────────
+
+  const INSIGHT_KEY_PREFIX = "onyx-insight:";
+
+  function insightCacheKey(partnerId) {
+    return `${INSIGHT_KEY_PREFIX}${state.snapshot?.rep?.slug || "unknown"}:${partnerId}`;
+  }
+
+  function loadInsightFromCache(partnerId) {
+    try {
+      const raw = localStorage.getItem(insightCacheKey(partnerId));
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveInsightToCache(partnerId, insight) {
+    try {
+      localStorage.setItem(
+        insightCacheKey(partnerId),
+        JSON.stringify({ insight, generatedAt: new Date().toISOString() }),
+      );
+    } catch {
+      /* localStorage full — ignore */
+    }
+  }
+
+  function renderInsightBar(partner) {
+    const bar = $("insightBar");
+    if (!partner) {
+      bar.hidden = true;
+      return;
+    }
+    bar.hidden = false;
+    const cached = loadInsightFromCache(partner.id);
+    if (cached) {
+      $("insightMeta").textContent = `${partner.company} · generated ${relativeTime(cached.generatedAt)}`;
+      $("insightBody").textContent = cached.insight;
+      $("btnInsight").textContent = "Regenerate";
+      $("btnInsightClear").hidden = false;
+    } else {
+      $("insightMeta").textContent = partner.company;
+      $("insightBody").innerHTML = `<div class="placeholder">No insight cached. Click <strong>Generate</strong> to ask ONYX for a brief based on this reseller's data.</div>`;
+      $("btnInsight").textContent = "Generate";
+      $("btnInsightClear").hidden = true;
+    }
+  }
+
+  async function generateInsight() {
+    const partner = state.partners.find((p) => p.id === state.activePartnerId);
+    if (!partner) return;
+    const detail = partnerDetail(partner.id);
+    const onyxNotes = state.notes;
+    const callLog = (state.snapshot?.callLog || [])
+      .filter((c) => c.partnerId === partner.id)
+      .slice(-20);
+    const payload = { partner: { row: partner, detail, onyxNotes, callLog } };
+
+    $("btnInsight").disabled = true;
+    $("insightBody").innerHTML = `<div class="placeholder"><span class="spinner"></span>Asking ONYX…</div>`;
+    try {
+      const r = await fetch("/api/insight", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+      saveInsightToCache(partner.id, data.insight);
+      renderInsightBar(partner);
+    } catch (e) {
+      $("insightBody").textContent = `Insight failed: ${e.message}`;
+    } finally {
+      $("btnInsight").disabled = false;
+    }
+  }
+
+  function clearInsight(partnerId) {
+    try {
+      localStorage.removeItem(insightCacheKey(partnerId));
+    } catch {
+      /* ignore */
+    }
+    const partner = state.partners.find((p) => p.id === partnerId);
+    if (partner) renderInsightBar(partner);
   }
 
   function renderTab(tab, partner) {
@@ -402,12 +611,46 @@
       return errMsg + renderOrdersTable(detail.orders);
     }
     if (tab === "calls") {
-      return `<div class="placeholder"><strong>Calls aren't available from staff.3cx.com</strong>For real call history, look at team.3cx.com (the webclient overlay shows inbound caller-id matches in real time).</div>`;
+      const log = callLogForActivePartner();
+      if (!log.length) {
+        return `<div class="placeholder">
+          <strong>No inbound calls logged yet</strong>
+          When the team.3cx.com webclient overlay matches an inbound caller to this partner, it will appear here.
+        </div>`;
+      }
+      return `
+        <div class="card">
+          <h2>Inbound calls (${log.length})</h2>
+          <table class="data-table">
+            <thead><tr>
+              <th>When</th><th>Caller</th><th>Match strength</th><th>Source</th>
+            </tr></thead>
+            <tbody>${log.map((c) => `
+              <tr>
+                <td>${escapeHtml(relativeTime(c.receivedAt))}</td>
+                <td><code>${escapeHtml(c.callerPhone)}</code></td>
+                <td>${c.matchedDigits ? `${c.matchedDigits} digits` : "—"}</td>
+                <td>${escapeHtml(c.source || "—")}</td>
+              </tr>`).join("")}
+            </tbody>
+          </table>
+        </div>`;
     }
   }
 
-  function renderKeysTable(keys) {
+  function detailHeader(partner, detail) {
+    const fetched = detail?.fetchedAt ? `Fetched ${relativeTime(detail.fetchedAt)}` : "";
     return `
+      <div class="detail-toolbar">
+        <span>${fetched}</span>
+        <button class="btn-secondary btn detail-refresh" data-id="${escapeHtml(partner.id)}">Refresh</button>
+      </div>`;
+  }
+
+  function renderKeysTable(keys) {
+    const partner = state.partners.find((p) => p.id === state.activePartnerId);
+    return `
+      ${detailHeader(partner, partnerDetail(partner.id))}
       <div class="card">
         <h2>License keys (${keys.length})</h2>
         <table class="data-table">
@@ -431,7 +674,9 @@
   }
 
   function renderOrdersTable(orders) {
+    const partner = state.partners.find((p) => p.id === state.activePartnerId);
     return `
+      ${detailHeader(partner, partnerDetail(partner.id))}
       <div class="card">
         <h2>Orders (${orders.length})</h2>
         <table class="data-table">
@@ -454,17 +699,19 @@
   }
 
   function renderNotes() {
-    if (!state.notes.length) {
+    const all = combinedNotesForActivePartner();
+    if (!all.length) {
       return `<div class="placeholder">No notes yet for this reseller.</div>`;
     }
-    return state.notes
+    return all
       .map(
         (n) => `
         <div class="note">
           <div class="note-head">
-            <span class="source">${escapeHtml(n.source || "onyx")}</span>
-            <span>${relativeTime(n.createdAt)}</span>
-            ${n.seller ? `<span>· ${escapeHtml(n.seller)}</span>` : ""}
+            <span class="source source-${escapeHtml(n.source)}">${escapeHtml(n.source.toUpperCase())}</span>
+            <span>${escapeHtml(n.whenIso ? relativeTime(n.whenIso) : n.whenLabel || "—")}</span>
+            ${n.who ? `<span>· ${escapeHtml(n.who)}</span>` : ""}
+            ${n.type ? `<span>· ${escapeHtml(n.type)}</span>` : ""}
           </div>
           <div class="note-subj">${escapeHtml(n.subject)}</div>
           <div class="note-body">${escapeHtml(n.body)}</div>
@@ -538,10 +785,19 @@
     });
   }
 
+  function wireTopBar() {
+    $("btnRefreshAll").addEventListener("click", refreshAllDetails);
+    $("btnInsight").addEventListener("click", generateInsight);
+    $("btnInsightClear").addEventListener("click", () => {
+      if (state.activePartnerId) clearInsight(state.activePartnerId);
+    });
+  }
+
   // ── Init ───────────────────────────────────────────────────────────────────
 
   (async function init() {
     wireSearch();
+    wireTopBar();
     const snapshot = await pickSnapshot();
     if (!snapshot) {
       $("partnerList").innerHTML = `
@@ -559,5 +815,6 @@
     $("lastSync").textContent = `Last sync ${relativeTime(snapshot.updatedAt)}`;
     renderLevelChips();
     applyFilters();
+    refreshTopBarStatus();
   })();
 })();
