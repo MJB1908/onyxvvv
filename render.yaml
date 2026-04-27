@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: onyx-sales-assistant
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: node src/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4.1-mini
+      - key: NODE_VERSION
+        value: "20"

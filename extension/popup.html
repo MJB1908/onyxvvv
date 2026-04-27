@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3CX Partner PRM</title>
+<style>
+:root {
+  --bg:#1a1d23; --s:#22262d; --b:#2e333b; --t:#e6e8eb; --m:#9ba3ae;
+  --a:#0096c7; --green:#4caf82; --red:#e05c5c; --amber:#f0a500;
+  --r:6px;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  width:340px; background:var(--bg); color:var(--t);
+  font:13px 'Segoe UI', system-ui, sans-serif;
+}
+header {
+  display:flex; align-items:center; gap:8px;
+  padding:10px 14px; background:var(--s); border-bottom:1px solid var(--b);
+}
+.logo {
+  width:24px; height:24px; border-radius:5px;
+  background:linear-gradient(135deg,var(--a),#0077b6);
+  display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:11px; color:#fff;
+}
+header h1 { font-size:13px; font-weight:600; flex:1; }
+#dot {
+  width:10px; height:10px; border-radius:50%;
+  background:var(--m); cursor:help;
+}
+#bar { display:none; }
+.section { padding:10px 14px; border-bottom:1px solid var(--b); }
+.section:last-of-type { border-bottom:none; }
+label {
+  display:block; font-size:11px; color:var(--m);
+  margin-bottom:4px; text-transform:uppercase; letter-spacing:.04em;
+}
+input[type=text], textarea, select {
+  width:100%; background:var(--bg); border:1px solid var(--b);
+  border-radius:var(--r); color:var(--t); padding:6px 8px;
+  font:13px 'Segoe UI', system-ui, sans-serif; outline:none;
+}
+input[type=text]:focus, textarea:focus, select:focus { border-color:var(--a); }
+textarea { resize:vertical; min-height:64px; }
+.row { display:flex; gap:8px; margin-bottom:8px; }
+.row > * { flex:1; }
+button {
+  background:var(--a); color:#fff; border:none; border-radius:var(--r);
+  padding:6px 12px; font:13px 'Segoe UI', system-ui, sans-serif;
+  cursor:pointer; transition:opacity .15s;
+}
+button:hover { opacity:.85; }
+button:disabled { opacity:.5; cursor:not-allowed; }
+button.secondary { background:var(--b); }
+.btn-row { display:flex; gap:8px; }
+#status {
+  padding:8px 14px; font-size:12px; min-height:32px;
+  display:flex; align-items:center; gap:6px;
+  border-top:1px solid var(--b);
+}
+#status.idle { color:var(--m); }
+#status.ok { color:var(--green); }
+#status.err { color:var(--red); }
+#status.busy { color:var(--amber); }
+.spinner {
+  width:12px; height:12px; border:2px solid var(--m);
+  border-top-color:var(--a); border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+  <header>
+    <div class="logo">3CX</div>
+    <h1>Partner PRM</h1>
+    <div id="dot" title="Session status"></div>
+  </header>
+  <div id="bar"></div>
+
+  <div class="section">
+    <button id="btnDash">Open dashboard</button>
+  </div>
+
+  <div class="section">
+    <label for="pid">Partner ID</label>
+    <input type="text" id="pid" placeholder="e.g. 12345" autocomplete="off">
+
+    <label for="ntype" style="margin-top:8px">Note type</label>
+    <select id="ntype">
+      <option value="1">General</option>
+      <option value="2">Call</option>
+      <option value="3">Email</option>
+      <option value="4">Meeting</option>
+    </select>
+
+    <label for="subj" style="margin-top:8px">Subject</label>
+    <input type="text" id="subj" placeholder="Subject" autocomplete="off">
+
+    <label for="nbody" style="margin-top:8px">Body</label>
+    <textarea id="nbody" placeholder="Note body…"></textarea>
+
+    <div class="btn-row" style="margin-top:8px">
+      <button id="btnPost">Post note</button>
+      <button id="btnClr" class="secondary">Clear</button>
+    </div>
+  </div>
+
+  <div id="status" class="idle">Ready</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
