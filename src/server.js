@@ -166,6 +166,19 @@ app.post("/api/ingest/erp", (req, res) => {
   }
 });
 
+app.post("/api/ingest/erp/partner-detail", (req, res) => {
+  try {
+    const { repEmail, partnerId, detail } = req.body || {};
+    if (!repEmail || !partnerId || !detail) {
+      return res.status(400).json({ error: "repEmail, partnerId, detail are required" });
+    }
+    const stored = snapshotStore.savePartnerDetail(repEmail, String(partnerId), detail);
+    res.status(201).json({ ok: true, partnerId: String(partnerId), fetchedAt: stored.fetchedAt });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
 app.get("/api/sellers/me", (req, res) => {
   const email = req.query.email;
   if (!email || typeof email !== "string") {

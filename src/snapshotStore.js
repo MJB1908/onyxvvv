@@ -35,6 +35,23 @@ function saveSnapshot(repEmail, snapshot) {
   return enriched;
 }
 
+function savePartnerDetail(repEmail, partnerId, detail) {
+  ensureDir();
+  const { file } = snapshotPath(repEmail);
+  if (!fs.existsSync(file)) {
+    throw new Error("No snapshot exists for this rep — run a full refresh first");
+  }
+  const snapshot = JSON.parse(fs.readFileSync(file, "utf8"));
+  snapshot.details = snapshot.details || {};
+  snapshot.details[partnerId] = {
+    ...detail,
+    fetchedAt: new Date().toISOString(),
+  };
+  snapshot.updatedAt = new Date().toISOString();
+  fs.writeFileSync(file, JSON.stringify(snapshot, null, 2));
+  return snapshot.details[partnerId];
+}
+
 function loadSnapshot(repEmail) {
   try {
     const { file } = snapshotPath(repEmail);
@@ -80,6 +97,7 @@ function listSnapshots() {
 module.exports = {
   slugifyEmail,
   saveSnapshot,
+  savePartnerDetail,
   loadSnapshot,
   loadSnapshotBySlug,
   listSnapshots,

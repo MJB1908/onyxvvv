@@ -62,7 +62,80 @@
     activePartnerId: null,
     activeTab: "overview",
     notes: [],
+    bridgeReady: false,
+    detailFetching: new Set(),
   };
+
+  // ── Extension bridge (only available when the page is opened in a browser
+  // that has the ONYX extension installed and the page URL matches the
+  // bridge's content_script pattern). One-way request/response by reqId.
+  // ──────────────────────────────────────────────────────────────────────────
+
+  const detailWaiters = new Map(); // reqId → resolve
+
+  window.addEventListener("onyx-bridge:ready", () => {
+    state.bridgeReady = true;
+    // If a tab is already open and waiting, re-render so its CTA updates.
+    if (state.activePartnerId) renderMain();
+  });
+
+  window.addEventListener("onyx-bridge:detail-fetched", (e) => {
+    const d = e.detail || {};
+    const resolver = detailWaiters.get(d.reqId);
+    if (!resolver) return;
+    detailWaiters.delete(d.reqId);
+    resolver(d);
+  });
+
+  function bridgeFetchDetail(partnerId) {
+    if (!state.bridgeReady) {
+      return Promise.reject(new Error("Extension bridge not detected"));
+    }
+    const reqId = `req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    return new Promise((resolve, reject) => {
+      detailWaiters.set(reqId, (d) => (d.ok ? resolve(d.result) : reject(new Error(d.error || "Fetch failed"))));
+      window.dispatchEvent(
+        new CustomEvent("onyx-bridge:fetch-detail", {
+          detail: { reqId, partnerId },
+        }),
+      );
+      setTimeout(() => {
+        if (detailWaiters.has(reqId)) {
+          detailWaiters.delete(reqId);
+          reject(new Error("Detail fetch timed out (60s)"));
+        }
+      }, 60_000);
+    });
+  }
+
+  async function reloadSnapshot() {
+    const slug = state.snapshot?.rep?.slug;
+    if (!slug) return;
+    const r = await fetch(`/api/snapshots/${encodeURIComponent(slug)}`);
+    if (!r.ok) return;
+    state.snapshot = await r.json();
+    state.partners = state.snapshot.partners || [];
+  }
+
+  function partnerDetail(partnerId) {
+    return state.snapshot?.details?.[partnerId] || null;
+  }
+
+  async function ensurePartnerDetail(partnerId) {
+    if (partnerDetail(partnerId) || state.detailFetching.has(partnerId)) return;
+    if (!state.bridgeReady) return;
+    state.detailFetching.add(partnerId);
+    renderMain();
+    try {
+      await bridgeFetchDetail(partnerId);
+      await reloadSnapshot();
+    } catch (e) {
+      console.warn("[ONYX] detail fetch failed:", e.message);
+    } finally {
+      state.detailFetching.delete(partnerId);
+      if (partnerId === state.activePartnerId) renderMain();
+    }
+  }
 
   // ── Snapshot load ──────────────────────────────────────────────────────────
 
@@ -228,6 +301,8 @@
       });
     }
     if (tab === "notes") wireNoteForm(partner);
+    const fetchBtn = $("btnFetchDetail");
+    if (fetchBtn) fetchBtn.addEventListener("click", () => ensurePartnerDetail(partner.id));
   }
 
   function renderTab(tab, partner) {
@@ -252,11 +327,7 @@
         </div>`;
     }
     if (tab === "keys" || tab === "orders" || tab === "calls") {
-      const which = { keys: "License keys", orders: "Orders", calls: "Calls" }[tab];
-      return `<div class="placeholder">
-        <strong>${which} not synced yet</strong>
-        Per-partner ERP fetch lands in the next milestone — for now only the partner list is pulled per refresh.
-      </div>`;
+      return renderDetailTab(tab, partner);
     }
     if (tab === "notes") {
       return `
@@ -289,6 +360,97 @@
         </div>`;
     }
     return "";
+  }
+
+  function renderDetailTab(tab, partner) {
+    const detail = partnerDetail(partner.id);
+    const fetching = state.detailFetching.has(partner.id);
+
+    if (fetching) {
+      return `<div class="placeholder"><span class="spinner"></span><strong>Fetching from staff.3cx.com…</strong>This usually takes 5–15 seconds per partner.</div>`;
+    }
+
+    if (!detail) {
+      if (!state.bridgeReady) {
+        return `<div class="placeholder">
+          <strong>Per-partner detail not synced yet</strong>
+          Open this page from the ONYX extension to enable on-demand fetch from staff.3cx.com — or run a deep refresh from the popup.
+        </div>`;
+      }
+      return `<div class="placeholder">
+        <strong>Not yet fetched for this reseller</strong>
+        <button class="btn" id="btnFetchDetail" style="margin-top:10px">Fetch from staff.3cx.com →</button>
+      </div>`;
+    }
+
+    if (tab === "keys") {
+      const errMsg = detail.errors?.keys
+        ? `<div class="placeholder" style="color:var(--red);text-align:left;margin-bottom:10px"><strong>Keys fetch failed</strong>${escapeHtml(detail.errors.keys)}</div>`
+        : "";
+      if (!detail.keys?.length) {
+        return errMsg + `<div class="placeholder">No license keys for this reseller.</div>`;
+      }
+      return errMsg + renderKeysTable(detail.keys);
+    }
+    if (tab === "orders") {
+      const errMsg = detail.errors?.orders
+        ? `<div class="placeholder" style="color:var(--red);text-align:left;margin-bottom:10px"><strong>Orders fetch failed</strong>${escapeHtml(detail.errors.orders)}</div>`
+        : "";
+      if (!detail.orders?.length) {
+        return errMsg + `<div class="placeholder">No orders for this reseller.</div>`;
+      }
+      return errMsg + renderOrdersTable(detail.orders);
+    }
+    if (tab === "calls") {
+      return `<div class="placeholder"><strong>Calls aren't available from staff.3cx.com</strong>For real call history, look at team.3cx.com (the webclient overlay shows inbound caller-id matches in real time).</div>`;
+    }
+  }
+
+  function renderKeysTable(keys) {
+    return `
+      <div class="card">
+        <h2>License keys (${keys.length})</h2>
+        <table class="data-table">
+          <thead><tr>
+            <th>Key</th><th>Product</th><th>SC</th><th>Expiry</th>
+            <th>Version</th><th>Issued to</th><th>Activations</th>
+          </tr></thead>
+          <tbody>${keys.map((k) => `
+            <tr${k.disabled ? ' style="opacity:.5"' : ""}>
+              <td><code>${escapeHtml(k.key)}</code></td>
+              <td>${escapeHtml(k.product)}</td>
+              <td>${escapeHtml(k.sc)}</td>
+              <td>${escapeHtml(k.expiry)}</td>
+              <td>${escapeHtml(k.version)}</td>
+              <td>${escapeHtml(k.issuedTo)}</td>
+              <td>${escapeHtml(k.activations)}</td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  function renderOrdersTable(orders) {
+    return `
+      <div class="card">
+        <h2>Orders (${orders.length})</h2>
+        <table class="data-table">
+          <thead><tr>
+            <th>Order #</th><th>Status</th><th>Created</th>
+            <th>Country</th><th>Payment</th><th>Amount</th>
+          </tr></thead>
+          <tbody>${orders.map((o) => `
+            <tr>
+              <td>${o.orderUrl ? `<a href="${escapeHtml(o.orderUrl)}" target="_blank" rel="noopener">${escapeHtml(o.orderNo)}</a>` : escapeHtml(o.orderNo)}</td>
+              <td>${escapeHtml(o.status)}</td>
+              <td>${escapeHtml(o.created)}</td>
+              <td>${escapeHtml(o.country)}</td>
+              <td>${escapeHtml(o.payment)}</td>
+              <td>${escapeHtml(o.currency)} ${escapeHtml(o.amount)}</td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>`;
   }
 
   function renderNotes() {

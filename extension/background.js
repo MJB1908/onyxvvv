@@ -331,6 +331,231 @@ async function fetchPartnerList() {
   return all;
 }
 
+// ── Deep-fetch helpers (per-partner keys/orders/notes) ──────────────────────
+
+function extractMainDgHtml(html) {
+  const tableIdx = html.indexOf('id="Main_dg"');
+  if (tableIdx === -1) return null;
+  const tableStart = html.lastIndexOf("<table", tableIdx);
+  if (tableStart === -1) return null;
+  let depth = 0,
+    pos = tableStart,
+    tableEnd = -1;
+  while (pos < html.length) {
+    const no = html.indexOf("<table", pos);
+    const nc = html.indexOf("</table>", pos);
+    if (nc === -1) break;
+    if (no !== -1 && no < nc) {
+      depth++;
+      pos = no + 6;
+    } else {
+      depth--;
+      if (depth === 0) {
+        tableEnd = nc + 8;
+        break;
+      }
+      pos = nc + 8;
+    }
+  }
+  return tableEnd > 0
+    ? html.substring(tableStart, tableEnd)
+    : html.substring(tableStart);
+}
+
+function parseMainDg(html) {
+  const tableHtml = extractMainDgHtml(html);
+  if (!tableHtml) return { headers: [], rows: [], rowAttrs: [] };
+  const rowMatches = [...tableHtml.matchAll(/<tr\b([^>]*)>([\s\S]*?)<\/tr>/gi)];
+  if (!rowMatches.length) return { headers: [], rows: [], rowAttrs: [] };
+  const headers = [
+    ...rowMatches[0][2].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi),
+  ].map((m) => htmlDecode(m[1].replace(/<[^>]+>/g, "")).trim());
+  const rows = [];
+  const rowAttrs = [];
+  for (let i = 1; i < rowMatches.length; i++) {
+    const cells = [
+      ...rowMatches[i][2].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi),
+    ].map((m) => m[1]);
+    if (!cells.length) continue;
+    rows.push(cells);
+    rowAttrs.push(rowMatches[i][1] || "");
+  }
+  return { headers, rows, rowAttrs };
+}
+
+function cellText(raw) {
+  if (!raw) return "";
+  const t = raw.match(/title="([^"]+)"/);
+  if (t) return htmlDecode(t[1]);
+  return htmlDecode(raw.replace(/<[^>]+>/g, " "))
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseKeysHtml(html) {
+  const { rows, rowAttrs } = parseMainDg(html);
+  return rows
+    .map((cells, i) => {
+      if (cells.length < 9) return null;
+      const disabled = isDisabledRow(rowAttrs[i]);
+      const prodMain = htmlDecode(
+        (cells[2].match(/lblProductDescription[^>]*>([^<]+)/) || [])[1] || "",
+      );
+      const prodBill = htmlDecode(
+        (cells[2].match(/lblAdditionalDescription[^>]*>([^<]+)/) || [])[1] || "",
+      );
+      const product = prodBill ? `${prodMain} (${prodBill})` : prodMain || cellText(cells[2]);
+      const linkM = cells[1].match(/LicenseKeyLink_\d+"[^>]*href="([^"]*)"[^>]*>([^<]+)</);
+      const keyHref = linkM ? htmlDecode(linkM[1].replace(/&amp;/g, "&")) : "";
+      const keyIdM = keyHref.match(/[?&]i=(\d+)/);
+      const keyStr = linkM ? htmlDecode(linkM[2]).trim() : cellText(cells[1]);
+      return {
+        key: keyStr,
+        keyId: keyIdM ? keyIdM[1] : "",
+        disabled,
+        product,
+        purchased: cellText(cells[3]),
+        activatedOn: cellText(cells[4]),
+        sc: cellText(cells[5]),
+        maxExt: cellText(cells[7]),
+        expiry: cellText(cells[8]),
+        version: cellText(cells[9]),
+        issuedTo: cellText(cells[10]),
+        reseller: cellText(cells[11]).replace(/\s+/g, " ").trim(),
+        registration: cellText(cells[12]).replace(/\s+/g, " ").trim(),
+        assignedUser: cellText(cells[13]),
+        activations: cellText(cells[14]),
+      };
+    })
+    .filter(Boolean)
+    .filter((k) => k.key);
+}
+
+function parseOrdersHtml(html) {
+  const { rows, rowAttrs } = parseMainDg(html);
+  const orders = [];
+  rows.forEach((cells, i) => {
+    if (isDisabledRow(rowAttrs[i])) return;
+    const raw = cells.join("");
+    const lbl = (field) => {
+      const m = raw.match(
+        new RegExp(
+          `<span[^>]*\\bid="Main_dg_lbl${field}_\\d+"[^>]*>([\\s\\S]*?)<\\/span>`,
+          "i",
+        ),
+      );
+      return m
+        ? htmlDecode(m[1].replace(/<[^>]+>/g, "")).trim().replace(/\s+/g, " ")
+        : "";
+    };
+    const orderLinkM = raw.match(
+      /<a[^>]*\bid="Main_dg_HyperLink0_\d+"[^>]*href="([^"]*)"[^>]*>([^<]+)</,
+    );
+    const orderHref = orderLinkM ? htmlDecode(orderLinkM[1].replace(/&amp;/g, "&")) : "";
+    const orderIdM = orderHref.match(/[?&]i=(\d+)/);
+    const orderNo = orderLinkM ? htmlDecode(orderLinkM[2]).trim() : "";
+    if (!orderNo && !lbl("Amount")) return;
+    orders.push({
+      orderNo,
+      orderId: orderIdM ? orderIdM[1] : "",
+      orderUrl: orderHref
+        ? orderHref.startsWith("http")
+          ? orderHref
+          : `${ERP_BASE}/${orderHref.replace(/^\//, "")}`
+        : "",
+      status: lbl("Status"),
+      proformaNo: lbl("ProformaNo"),
+      created: lbl("Created"),
+      country: lbl("PostCountry"),
+      payment: lbl("Payment"),
+      currency: lbl("CurrencyID"),
+      amount: lbl("Amount"),
+      tax: lbl("Tax"),
+    });
+  });
+  return orders;
+}
+
+function parseNotesFromHtml(html) {
+  const count = (html.match(/Main_CustomerNotes_dg_EditBtn_\d+/g) ?? []).length;
+  const notes = [];
+  for (let i = 0; i < count; i++) {
+    const pos = html.indexOf(`Main_CustomerNotes_dg_EditBtn_${i}`);
+    const rowS = html.lastIndexOf("<tr>", pos);
+    const rowE = html.indexOf("</tr>", rowS);
+    if (rowS === -1 || rowE === -1) continue;
+    const row = html.substring(rowS, rowE + 5);
+    const tds = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((m) =>
+      htmlDecode(m[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")),
+    );
+    if (tds.length < 6) continue;
+    notes.push({
+      type: tds[2] ?? "",
+      modified: tds[3] ?? "",
+      reminder: tds[4] ?? "",
+      poster: tds[5] ?? "",
+      subject: tds[6] ?? "",
+      body: tds[7] ?? "",
+    });
+  }
+  return notes;
+}
+
+async function fetchPartnerDetail(partnerId) {
+  const detail = { keys: [], orders: [], erpNotes: [], errors: {} };
+
+  try {
+    const html = await fetchPage(`${ERP_BASE}/keys.aspx?c=${partnerId}`);
+    detail.keys = parseKeysHtml(html);
+  } catch (e) {
+    detail.errors.keys = e.message;
+  }
+
+  try {
+    const html = await fetchPage(`${ERP_BASE}/orders.aspx?c=${partnerId}`);
+    detail.orders = parseOrdersHtml(html);
+  } catch (e) {
+    detail.errors.orders = e.message;
+  }
+
+  try {
+    const html = await fetchPage(
+      `${ERP_BASE}${ERP_EDIT_PATH}?i=${encodeURIComponent(partnerId)}`,
+    );
+    const fields = extractFormFields(html);
+    const r = await postPanel(partnerId, {
+      ...fields,
+      __ASYNCPOST: "true",
+      __EVENTTARGET: "ctl00$Main$btnNotes",
+      __EVENTARGUMENT: "",
+      ctl00$ScriptManager1:
+        "ctl00$Main$CustomerEditUpdatePanel|ctl00$Main$btnNotes",
+    });
+    const sects = parseUpdatePanel(r);
+    const notesHtml = Object.values(sects).map((s) => s.content).join("\n");
+    detail.erpNotes = parseNotesFromHtml(notesHtml);
+  } catch (e) {
+    detail.errors.erpNotes = e.message;
+  }
+
+  return detail;
+}
+
+async function pushPartnerDetailToOnyx(partnerId, detail) {
+  const onyxBase = await getOnyxUrl();
+  const stored = await chrome.storage.local.get("lastRefreshRepEmail");
+  const repEmail = stored.lastRefreshRepEmail;
+  if (!repEmail) throw new Error("No rep email cached — refresh full data first");
+  const r = await fetch(`${onyxBase}/api/ingest/erp/partner-detail`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ repEmail, partnerId, detail }),
+  });
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(body.error || `Ingest detail failed (${r.status})`);
+  return body;
+}
+
 async function runFullScrape() {
   const health = await checkSessionHealth();
   if (!health.healthy) {
@@ -532,6 +757,14 @@ const handlers = {
     ]);
     return { ok: true, ...stored };
   },
+  FETCH_PARTNER_DETAIL: async (msg) => {
+    const partnerId = String(msg.partnerId || "");
+    if (!partnerId) throw new Error("partnerId required");
+    broadcast("refresh_progress", `ERP detail for ${partnerId}…`);
+    const detail = await fetchPartnerDetail(partnerId);
+    const ingest = await pushPartnerDetailToOnyx(partnerId, detail);
+    return { ok: true, result: { partnerId, detail, ingest } };
+  },
 };
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -542,4 +775,23 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     .then(sendResponse)
     .catch((e) => sendResponse({ ok: false, error: e?.message || String(e), code: e?.code }));
   return true; // async response
+});
+
+// ── Periodic ERP refresh (45min by default) ──────────────────────────────────
+
+const REFRESH_ALARM = "onyx-erp-refresh";
+const REFRESH_PERIOD_MIN = 45;
+
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.alarms.create(REFRESH_ALARM, {
+    delayInMinutes: 1,
+    periodInMinutes: REFRESH_PERIOD_MIN,
+  });
+});
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name !== REFRESH_ALARM) return;
+  runFullScrape().catch((e) => {
+    console.warn("[ONYX] scheduled refresh failed:", e?.message || e);
+  });
 });
