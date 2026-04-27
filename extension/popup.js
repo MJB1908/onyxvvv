@@ -192,9 +192,49 @@ $("btnPost").addEventListener("click", async () => {
   }
 });
 
-// Listen for progress updates from background while posting
+// Listen for progress updates from background while posting / refreshing
 chrome.runtime.onMessage.addListener((m) => {
-  if (m?.type === "note_progress") setStatus(String(m.payload || ""), "busy", true);
+  if (m?.type === "note_progress" || m?.type === "refresh_progress") {
+    setStatus(String(m.payload || ""), "busy", true);
+  }
+});
+
+// ── ERP refresh ──────────────────────────────────────────────────────────────
+
+function relativeTime(ms) {
+  if (!ms) return "never refreshed";
+  const diff = Date.now() - ms;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+async function refreshLastRefreshLabel() {
+  const r = await bgSend("GET_LAST_REFRESH");
+  $("lastRefresh").textContent = relativeTime(r?.lastRefreshAt);
+}
+
+$("btnRefresh").addEventListener("click", async () => {
+  $("btnRefresh").disabled = true;
+  setStatus("Refreshing from ERP…", "busy", true);
+  const r = await bgSend("REFRESH_DATA");
+  $("btnRefresh").disabled = false;
+  if (r?.ok) {
+    const c = r.result?.counts || {};
+    setStatus(
+      `Synced as ${r.result?.repEmail}: ${c.partners || 0} partners`,
+      "ok",
+    );
+    refreshLastRefreshLabel();
+  } else {
+    setStatus(r?.error || "Refresh failed", "err");
+    if (r?.code === "CF_EXPIRED" || r?.code === "APP_EXPIRED") {
+      $("erpLogin").hidden = false;
+    }
+  }
 });
 
 // ── Init ─────────────────────────────────────────────────────────────────────
@@ -213,4 +253,5 @@ chrome.runtime.onMessage.addListener((m) => {
   }
 
   refreshErpStatus();
+  refreshLastRefreshLabel();
 })();

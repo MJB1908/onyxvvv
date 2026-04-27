@@ -5,6 +5,7 @@ const express = require("express");
 const rateLimit = require("express-rate-limit");
 const { chatCompletion } = require("./openaiClient");
 const mockApi = require("./mockApi");
+const snapshotStore = require("./snapshotStore");
 
 const PORT = Number.parseInt(process.env.PORT || "3000", 10);
 const MAX_MESSAGES = 40;
@@ -128,6 +129,75 @@ app.get("/api/products", (_req, res) => {
 
 app.get("/api/license-types", (_req, res) => {
   res.json(mockApi.licenseTypes);
+});
+
+app.post("/api/ingest/erp", (req, res) => {
+  try {
+    const { repEmail, repName, repRegion, partners, orders, licenseKeys, calls, notes } =
+      req.body || {};
+    if (!repEmail || typeof repEmail !== "string") {
+      return res.status(400).json({ error: "repEmail is required" });
+    }
+    const snapshot = snapshotStore.saveSnapshot(repEmail, {
+      rep: {
+        email: repEmail,
+        name: typeof repName === "string" ? repName : null,
+        region: typeof repRegion === "string" ? repRegion : null,
+      },
+      partners: Array.isArray(partners) ? partners : [],
+      orders: Array.isArray(orders) ? orders : [],
+      licenseKeys: Array.isArray(licenseKeys) ? licenseKeys : [],
+      calls: Array.isArray(calls) ? calls : [],
+      notes: Array.isArray(notes) ? notes : [],
+    });
+    res.status(201).json({
+      ok: true,
+      slug: snapshot.rep.slug,
+      updatedAt: snapshot.updatedAt,
+      counts: {
+        partners: snapshot.partners.length,
+        orders: snapshot.orders.length,
+        licenseKeys: snapshot.licenseKeys.length,
+        calls: snapshot.calls.length,
+      },
+    });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+app.get("/api/sellers/me", (req, res) => {
+  const email = req.query.email;
+  if (!email || typeof email !== "string") {
+    return res.status(400).json({ error: "Query parameter email is required" });
+  }
+  const snapshot = snapshotStore.loadSnapshot(email);
+  if (!snapshot) {
+    return res
+      .status(404)
+      .json({ found: false, slug: snapshotStore.slugifyEmail(email) });
+  }
+  res.json({
+    found: true,
+    rep: snapshot.rep,
+    updatedAt: snapshot.updatedAt,
+    counts: {
+      partners: snapshot.partners?.length || 0,
+      orders: snapshot.orders?.length || 0,
+      licenseKeys: snapshot.licenseKeys?.length || 0,
+      calls: snapshot.calls?.length || 0,
+    },
+  });
+});
+
+app.get("/api/snapshots", (_req, res) => {
+  res.json({ snapshots: snapshotStore.listSnapshots() });
+});
+
+app.get("/api/snapshots/:slug", (req, res) => {
+  const snapshot = snapshotStore.loadSnapshotBySlug(req.params.slug);
+  if (!snapshot) return res.status(404).json({ error: "Snapshot not found" });
+  res.json(snapshot);
 });
 
 app.get("/api/match-caller", (req, res) => {

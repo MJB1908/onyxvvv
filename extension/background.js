@@ -174,6 +174,204 @@ function detectAuthFailure(html) {
   return { failed: false };
 }
 
+function htmlDecode(s) {
+  return String(s ?? "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#160;/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .trim();
+}
+
+function isDisabledRow(attrStr) {
+  const m = (attrStr || "").match(/\bclass="([^"]*)"/i);
+  return m ? /\bdisabled\b/.test(m[1]) : false;
+}
+
+/**
+ * Parse the staff.3cx.com customers.aspx Main_dg datagrid into rows.
+ * Restored from the original scraper (commit cb3c0a2). Depth-counts
+ * nested tables to find the correct closing tag, skips disabled-class
+ * rows, extracts the customer id from the partner edit href, and the
+ * full company name from the title attribute.
+ */
+function parsePartnersFromHtml(html) {
+  const tableIdx = html.indexOf('id="Main_dg"');
+  if (tableIdx < 0) return [];
+  const tableStart = html.lastIndexOf("<table", tableIdx);
+  if (tableStart < 0) return [];
+
+  let depth = 0,
+    pos = tableStart,
+    tableEnd = -1;
+  while (pos < html.length) {
+    const no = html.indexOf("<table", pos);
+    const nc = html.indexOf("</table>", pos);
+    if (nc < 0) break;
+    if (no >= 0 && no < nc) {
+      depth++;
+      pos = no + 6;
+    } else {
+      depth--;
+      if (depth === 0) {
+        tableEnd = nc + 8;
+        break;
+      }
+      pos = nc + 8;
+    }
+  }
+  const tableHtml = html.substring(
+    tableStart,
+    tableEnd > 0 ? tableEnd : html.length,
+  );
+
+  const rowMatches = [
+    ...tableHtml.matchAll(/<tr\b([^>]*)>([\s\S]*?)<\/tr>/gi),
+  ];
+  if (rowMatches.length < 2) return [];
+
+  const headerCells = [
+    ...rowMatches[0][2].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi),
+  ].map((m) => htmlDecode(m[1].replace(/<[^>]+>/g, " ")).trim());
+
+  const partners = [];
+  for (let i = 1; i < rowMatches.length; i++) {
+    if (isDisabledRow(rowMatches[i][1])) continue;
+    const cells = [
+      ...rowMatches[i][2].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi),
+    ].map((m) => m[1]);
+    if (cells.length < 3) continue;
+
+    const hrefM = cells[2].match(/\/partner\/edit\.aspx\?i=(\d+)/i);
+    if (!hrefM) continue;
+    const id = hrefM[1];
+
+    const titleM = cells[2].match(/title="([^"]+)"/);
+    const company = titleM
+      ? htmlDecode(titleM[1])
+      : htmlDecode(cells[2].replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+
+    const row = { id, company };
+    headerCells.forEach((h, idx) => {
+      if (!h || idx < 2 || idx >= cells.length) return;
+      const val = htmlDecode(cells[idx].replace(/<[^>]+>/g, " "))
+        .replace(/\s+/g, " ")
+        .trim();
+      if (val && val !== " ") row[h] = val;
+    });
+    if (!row.country && row["Country"]) row.country = row["Country"];
+    if (!row.region && row["Sales Region"]) row.region = row["Sales Region"];
+    if (!row.cert && row["Cert"]) row.cert = row["Cert"];
+    if (!row.category && row["Partner Category"]) row.category = row["Partner Category"];
+    if (!row.agent && row["Team Agent"]) row.agent = row["Team Agent"];
+    if (!row.revenue && row["Annual Revenue"]) row.revenue = row["Annual Revenue"];
+
+    partners.push(row);
+  }
+  return partners;
+}
+
+async function fetchPartnerList() {
+  const html1 = await fetchPage(`${ERP_BASE}/customers.aspx?m=1`);
+  const page1 = parsePartnersFromHtml(html1);
+  if (!page1.length) {
+    throw new Error(`No partner data on customers.aspx (${html1.length} chars)`);
+  }
+  const totalPages = parseInt(html1.match(/Page 1 of (\d+)/)?.[1] || "1", 10);
+  const MAX_PAGES = Math.min(totalPages, 5);
+  let all = [...page1];
+
+  if (MAX_PAGES > 1) {
+    const fields = extractFormFields(html1);
+    let currentFields = { ...fields };
+    for (let page = 2; page <= MAX_PAGES; page++) {
+      try {
+        broadcast(
+          "refresh_progress",
+          `Loading partners page ${page}/${MAX_PAGES}…`,
+        );
+        const postFields = {
+          ...currentFields,
+          __EVENTTARGET: "ctl00$Main$NavigatorControl$NextButton",
+          __EVENTARGUMENT: "",
+          __ASYNCPOST: "true",
+          ctl00$ScriptManager1:
+            "ctl00$Main$CustomersUpdatePanel|ctl00$Main$NavigatorControl$NextButton",
+        };
+        const resp = await fetch(`${ERP_BASE}/customers.aspx?m=1`, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+            Accept: "*/*",
+            Origin: ERP_BASE,
+            "X-MicrosoftAjax": "Delta=true",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          body: new URLSearchParams(postFields).toString(),
+        });
+        const text = await resp.text();
+        const sections = parseUpdatePanel(text);
+        if (sections["__VIEWSTATE"]?.content) {
+          currentFields["__VIEWSTATE"] = sections["__VIEWSTATE"].content;
+        }
+        const combined = Object.values(sections).map((s) => s.content).join("\n");
+        const pageData = parsePartnersFromHtml(combined);
+        if (!pageData.length) break;
+        all = all.concat(pageData);
+      } catch (e) {
+        console.warn(`Partner list page ${page} failed:`, e.message);
+        break;
+      }
+    }
+  }
+  return all;
+}
+
+async function runFullScrape() {
+  const health = await checkSessionHealth();
+  if (!health.healthy) {
+    const issue = health.issues[0];
+    throw Object.assign(new Error(issue.msg), { code: issue.code });
+  }
+  const repEmail = health.sessionInfo?.email;
+  if (!repEmail || repEmail === "unknown") {
+    throw new Error("Could not determine rep email from staff.3cx.com session");
+  }
+
+  broadcast("refresh_progress", "Fetching partner list…");
+  const partners = await fetchPartnerList();
+
+  const onyxBase = await getOnyxUrl();
+  broadcast("refresh_progress", `Sending ${partners.length} partners to ONYX…`);
+  const r = await fetch(`${onyxBase}/api/ingest/erp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      repEmail,
+      repName: repEmail.split("@")[0],
+      partners,
+      orders: [],
+      licenseKeys: [],
+      calls: [],
+      notes: [],
+    }),
+  });
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(body.error || `Ingest failed (${r.status})`);
+
+  await chrome.storage.local.set({
+    lastRefreshAt: Date.now(),
+    lastRefreshRepEmail: repEmail,
+    lastRefreshCounts: body.counts,
+  });
+
+  return { repEmail, ...body };
+}
+
 async function fetchPage(url) {
   const r = await fetch(url, {
     credentials: "include",
@@ -321,6 +519,18 @@ const handlers = {
   POST_NOTE: async (msg) => {
     const result = await postNoteDual(msg.payload || {});
     return { ok: result.onyx?.ok || result.erp?.ok, ...result };
+  },
+  REFRESH_DATA: async () => {
+    const result = await runFullScrape();
+    return { ok: true, result };
+  },
+  GET_LAST_REFRESH: async () => {
+    const stored = await chrome.storage.local.get([
+      "lastRefreshAt",
+      "lastRefreshRepEmail",
+      "lastRefreshCounts",
+    ]);
+    return { ok: true, ...stored };
   },
 };
 
