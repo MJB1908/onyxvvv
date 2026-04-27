@@ -1,0 +1,46 @@
+[
+  {
+    "sku": "PBX-ENT-AI-ANN",
+    "name": "Phone System Enterprise / AI Edition - Annual (per SC / year)",
+    "priceUsd": 210,
+    "billing": "annual per simultaneous call",
+    "highlights": [
+      "Enterprise + AI features",
+      "Provisioning API",
+      "Advanced queues"
+    ]
+  },
+  {
+    "sku": "PBX-PRO-ANN",
+    "name": "Phone System Professional - Annual (per SC / year)",
+    "priceUsd": 145,
+    "billing": "annual per simultaneous call",
+    "highlights": [
+      "CRM integration",
+      "Call flows",
+      "Reporting"
+    ]
+  },
+  {
+    "sku": "PBX-BASIC-ANN",
+    "name": "Phone System - Basic Annual (per SC / year)",
+    "priceUsd": 95,
+    "billing": "annual per simultaneous call",
+    "highlights": [
+      "Basic queues",
+      "Softphones",
+      "Standard reporting"
+    ]
+  },
+  {
+    "sku": "PBX-HOST",
+    "name": "Hosted cloud PBX",
+    "priceUsd": 0,
+    "billing": "usage + hosting tier",
+    "highlights": [
+      "Managed updates",
+      "Elastic capacity",
+      "SBC options"
+    ]
+  }
+]
