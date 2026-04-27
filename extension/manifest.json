@@ -1,16 +1,24 @@
 {
   "manifest_version": 3,
   "name": "ONYX Bridge",
-  "version": "2.0.0",
-  "description": "Thin browser bridge into the ONYX AI Sales Force Assistant. Opens partner-aware deep links into the ONYX dashboard from Gmail.",
-  "permissions": ["activeTab", "scripting", "storage"],
+  "version": "2.1.0",
+  "description": "Browser bridge into the ONYX AI Sales Force Assistant. Inbound caller-id partner match on team.3cx.com, Gmail email-to-chat, and partner notes dual-written to the staff.3cx.com ERP and ONYX.",
+  "permissions": ["activeTab", "scripting", "storage", "cookies"],
   "host_permissions": [
-    "https://mail.google.com/*"
+    "https://mail.google.com/*",
+    "https://team.3cx.com/*",
+    "https://staff.3cx.com/*"
   ],
+  "background": { "service_worker": "background.js" },
   "content_scripts": [
     {
       "matches": ["https://mail.google.com/*"],
       "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://team.3cx.com/*"],
+      "js": ["webclient.js"],
       "run_at": "document_idle"
     }
   ],

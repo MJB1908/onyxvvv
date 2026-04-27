@@ -11,7 +11,7 @@
 }
 * { box-sizing:border-box; margin:0; padding:0; }
 body {
-  width:320px; background:var(--bg); color:var(--t);
+  width:340px; background:var(--bg); color:var(--t);
   font:13px 'Segoe UI', system-ui, sans-serif;
 }
 header {
@@ -31,7 +31,9 @@ header .sub { font-size:10px; color:var(--m); display:block; margin-top:2px; fon
 .section h2 {
   font-size:10px; color:var(--m); text-transform:uppercase;
   letter-spacing:.06em; font-weight:600; margin-bottom:8px;
+  display:flex; align-items:center; gap:6px;
 }
+.section h2 .right { margin-left:auto; font-weight:400; text-transform:none; letter-spacing:0; }
 button {
   width:100%; background:var(--a); color:#fff; border:none; border-radius:var(--r);
   padding:8px 12px; font:13px 'Segoe UI', system-ui, sans-serif;
@@ -42,15 +44,31 @@ button:hover:not(:disabled) { opacity:.85; }
 button:disabled { opacity:.45; cursor:not-allowed; }
 button.secondary { background:var(--b); }
 button .hint { color:rgba(255,255,255,.55); font-size:11px; font-weight:400; }
-.config {
-  display:flex; gap:6px; align-items:center;
+input[type=text], textarea, select {
+  width:100%; background:var(--bg); border:1px solid var(--b); color:var(--t);
+  padding:6px 8px; border-radius:var(--r);
+  font:12px 'Segoe UI', system-ui, sans-serif; outline:none;
 }
-.config input {
-  flex:1; background:var(--bg); border:1px solid var(--b); color:var(--t);
-  padding:6px 8px; border-radius:var(--r); font:12px 'Segoe UI', system-ui, sans-serif; outline:none;
-}
-.config input:focus { border-color:var(--a); }
+input[type=text]:focus, textarea:focus, select:focus { border-color:var(--a); }
+textarea { resize:vertical; min-height:54px; }
+label { display:block; font-size:10px; color:var(--m); margin:6px 0 3px; }
+.row { display:flex; gap:6px; }
+.row > * { flex:1; }
+.config { display:flex; gap:6px; align-items:center; }
+.config input { flex:1; }
 .config button { width:auto; padding:6px 10px; margin:0; }
+#erpStatus {
+  display:flex; align-items:center; gap:8px;
+  font-size:12px; color:var(--m);
+}
+#erpDot {
+  width:8px; height:8px; border-radius:50%; background:var(--m); flex-shrink:0;
+}
+#erpDot.ok { background:var(--green); }
+#erpDot.bad { background:var(--red); }
+#erpDot.warn { background:var(--amber); }
+#erpStatus a { color:var(--a2); text-decoration:none; margin-left:auto; }
+#erpStatus a:hover { text-decoration:underline; }
 #status {
   padding:8px 14px; font-size:12px; min-height:32px;
   display:flex; align-items:center; gap:6px;
@@ -58,6 +76,13 @@ button .hint { color:rgba(255,255,255,.55); font-size:11px; font-weight:400; }
 #status.idle { color:var(--m); }
 #status.ok { color:var(--green); }
 #status.err { color:var(--red); }
+#status.busy { color:var(--amber); }
+.spinner {
+  width:10px; height:10px; border:2px solid var(--m);
+  border-top-color:var(--a); border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -70,9 +95,46 @@ button .hint { color:rgba(255,255,255,.55); font-size:11px; font-weight:400; }
   </header>
 
   <div class="section">
+    <h2>ERP session <span class="right" id="erpStatus"><span id="erpDot"></span><span id="erpText">Checking…</span><a id="erpLogin" href="https://staff.3cx.com" target="_blank" hidden>Sign in →</a></span></h2>
+  </div>
+
+  <div class="section">
     <h2>Open</h2>
     <button id="btnDash">Open ONYX dashboard</button>
     <button id="btnEmail" disabled>Ask ONYX about this email <span class="hint" id="emailHint">(open Gmail first)</span></button>
+  </div>
+
+  <div class="section">
+    <h2>Post a note <span class="right">writes to <strong>ERP + ONYX</strong></span></h2>
+    <label for="pid">Partner ID</label>
+    <input type="text" id="pid" placeholder="prt-001 or staff.3cx.com customer id" autocomplete="off">
+
+    <div class="row">
+      <div>
+        <label for="ntype">Type</label>
+        <select id="ntype">
+          <option value="1">General</option>
+          <option value="2" selected>Call</option>
+          <option value="3">Email</option>
+          <option value="4">Meeting</option>
+        </select>
+      </div>
+      <div style="flex:2">
+        <label for="seller">Seller (optional)</label>
+        <input type="text" id="seller" placeholder="Alex Chen" autocomplete="off">
+      </div>
+    </div>
+
+    <label for="subj">Subject</label>
+    <input type="text" id="subj" placeholder="Subject" autocomplete="off">
+
+    <label for="nbody">Body</label>
+    <textarea id="nbody" placeholder="Note body…"></textarea>
+
+    <div class="row" style="margin-top:8px">
+      <button id="btnPost">Post note</button>
+      <button id="btnClr" class="secondary">Clear</button>
+    </div>
   </div>
 
   <div class="section">

@@ -466,6 +466,100 @@ function homeDashboardForSeller(sellerName, partnerId) {
   };
 }
 
+function digitsOnly(s) {
+  return String(s == null ? "" : s).replace(/\D/g, "");
+}
+
+/**
+ * Match an inbound caller-id against partner phone fields.
+ * Returns { matched, candidates } where each candidate is
+ * { partner, accountOwner, matchedField, matchedDigits }.
+ *
+ * Match rule: the caller's digit string must end with ≥7 digits of a
+ * partner field's digit string (or vice versa). Suffix-match handles
+ * E.164, national, and stripped variants without exact-format coupling.
+ */
+function matchCaller(rawPhone) {
+  const callerDigits = digitsOnly(rawPhone);
+  if (callerDigits.length < 7) {
+    return { matched: false, callerDigits, candidates: [] };
+  }
+  const tail = callerDigits.slice(-10);
+  const candidates = [];
+  for (const p of partners) {
+    for (const field of ["phone", "contactPhone", "accountOwnerPhone"]) {
+      const fieldDigits = digitsOnly(p[field]);
+      if (!fieldDigits || fieldDigits.length < 7) continue;
+      const fieldTail = fieldDigits.slice(-10);
+      const minLen = Math.min(tail.length, fieldTail.length, 10);
+      if (minLen < 7) continue;
+      if (tail.slice(-minLen) === fieldTail.slice(-minLen)) {
+        candidates.push({
+          partner: {
+            id: p.id,
+            partnerCode: p.partnerCode,
+            companyName: p.companyName,
+            country: p.country,
+            distributorLevel: p.distributorLevel,
+            contactName: p.contactName,
+            salesRegion: p.salesRegion,
+            phone: p.phone,
+            contactPhone: p.contactPhone,
+          },
+          accountOwner: salesTeam.reps.find((r) => r.name === p.accountOwnerName) || {
+            name: p.accountOwnerName,
+            email: p.accountOwnerEmail,
+          },
+          matchedField: field,
+          matchedDigits: minLen,
+        });
+        break;
+      }
+    }
+  }
+  candidates.sort((a, b) => b.matchedDigits - a.matchedDigits);
+  return { matched: candidates.length > 0, callerDigits, candidates };
+}
+
+/**
+ * In-memory notes store for mock ONYX. The extension dual-writes here
+ * and to staff.3cx.com; this side always succeeds and is the read source
+ * for /api/notes.
+ */
+const notes = [];
+let nextNoteId = 1;
+
+function addNote({ partnerId, subject, body, noteType, seller, source }) {
+  if (!partnerId || typeof partnerId !== "string") {
+    throw new Error("partnerId is required");
+  }
+  if (!subject || typeof subject !== "string") {
+    throw new Error("subject is required");
+  }
+  if (!body || typeof body !== "string") {
+    throw new Error("body is required");
+  }
+  const note = {
+    id: `note-${String(nextNoteId++).padStart(5, "0")}`,
+    partnerId,
+    subject: subject.slice(0, 200),
+    body: body.slice(0, 8000),
+    noteType: Number.isFinite(noteType) ? noteType : 1,
+    seller: typeof seller === "string" ? seller : null,
+    source: typeof source === "string" ? source : "onyx",
+    createdAt: new Date().toISOString(),
+  };
+  notes.push(note);
+  return note;
+}
+
+function listNotes(partnerId) {
+  if (partnerId) {
+    return notes.filter((n) => n.partnerId === partnerId).slice().reverse();
+  }
+  return notes.slice().reverse();
+}
+
 module.exports = {
   getRepByName,
   getNextCallsForSeller,
@@ -474,6 +568,9 @@ module.exports = {
   preCallBrief,
   prospectsForSeller,
   homeDashboardForSeller,
+  matchCaller,
+  addNote,
+  listNotes,
   partners,
   orders,
   licenseKeys,

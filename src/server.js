@@ -14,6 +14,24 @@ const app = express();
 app.disable("x-powered-by");
 app.use(express.json({ limit: "256kb" }));
 
+const ALLOWED_ORIGINS = new Set([
+  "https://team.3cx.com",
+  "https://staff.3cx.com",
+  "https://mail.google.com",
+]);
+app.use("/api", (req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && (ALLOWED_ORIGINS.has(origin) || origin.startsWith("chrome-extension://"))) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Access-Control-Max-Age", "600");
+  }
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
 const chatLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 30,
@@ -110,6 +128,36 @@ app.get("/api/products", (_req, res) => {
 
 app.get("/api/license-types", (_req, res) => {
   res.json(mockApi.licenseTypes);
+});
+
+app.get("/api/match-caller", (req, res) => {
+  const phone = req.query.phone;
+  if (!phone || typeof phone !== "string") {
+    return res.status(400).json({ error: "Query parameter phone is required." });
+  }
+  res.json(mockApi.matchCaller(phone));
+});
+
+app.get("/api/notes", (req, res) => {
+  const partnerId = req.query.partnerId;
+  res.json({ notes: mockApi.listNotes(typeof partnerId === "string" ? partnerId : undefined) });
+});
+
+app.post("/api/notes", (req, res) => {
+  try {
+    const { partnerId, subject, body, noteType, seller, source } = req.body || {};
+    const note = mockApi.addNote({
+      partnerId,
+      subject,
+      body,
+      noteType: typeof noteType === "string" ? Number.parseInt(noteType, 10) : noteType,
+      seller,
+      source,
+    });
+    res.status(201).json({ ok: true, note });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
 });
 
 app.post("/api/chat", chatLimiter, async (req, res) => {
