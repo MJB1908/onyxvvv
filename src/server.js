@@ -6,6 +6,7 @@ const rateLimit = require("express-rate-limit");
 const { chatCompletion, partnerInsight } = require("./openaiClient");
 const mockApi = require("./mockApi");
 const snapshotStore = require("./snapshotStore");
+const erpDataAdapter = require("./erpDataAdapter");
 
 const PORT = Number.parseInt(process.env.PORT || "3000", 10);
 const MAX_MESSAGES = 40;
@@ -14,6 +15,40 @@ const MAX_CONTENT_LENGTH = 8000;
 const app = express();
 app.disable("x-powered-by");
 app.use(express.json({ limit: "256kb" }));
+
+/**
+ * Find the most recent snapshot for a seller name or email.
+ * First tries to find by rep name, then by email matching.
+ */
+function findSnapshot(sellerNameOrEmail) {
+  if (!sellerNameOrEmail) return null;
+  const snapshots = snapshotStore.listSnapshots();
+  if (!snapshots.length) return null;
+
+  // Sort by most recent first
+  snapshots.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
+
+  // Try exact name match first
+  for (const s of snapshots) {
+    if (s.name === sellerNameOrEmail) {
+      return snapshotStore.loadSnapshotBySlug(s.slug);
+    }
+  }
+
+  // Try email match
+  for (const s of snapshots) {
+    if (s.email === sellerNameOrEmail) {
+      return snapshotStore.loadSnapshotBySlug(s.slug);
+    }
+  }
+
+  // Return most recent as fallback
+  if (snapshots.length > 0) {
+    return snapshotStore.loadSnapshotBySlug(snapshots[0].slug);
+  }
+
+  return null;
+}
 
 const ALLOWED_ORIGINS = new Set([
   "https://team.3cx.com",
@@ -54,7 +89,11 @@ app.get("/api/insights", (req, res) => {
   if (!seller || typeof seller !== "string") {
     return res.status(400).json({ error: "Query parameter seller (name) is required." });
   }
-  res.json(mockApi.insightsForSeller(seller));
+  const snapshot = findSnapshot(seller);
+  const insights = snapshot
+    ? erpDataAdapter.insightsForSeller(seller, snapshot)
+    : mockApi.insightsForSeller(seller);
+  res.json(insights);
 });
 
 app.get("/api/next-caller", (req, res) => {
@@ -62,7 +101,11 @@ app.get("/api/next-caller", (req, res) => {
   if (!seller || typeof seller !== "string") {
     return res.status(400).json({ error: "Query parameter seller (name) is required." });
   }
-  res.json(mockApi.getNextCallsForSeller(seller));
+  const snapshot = findSnapshot(seller);
+  const next = snapshot
+    ? erpDataAdapter.getNextCallsForSeller(seller, snapshot)
+    : mockApi.getNextCallsForSeller(seller);
+  res.json(next);
 });
 
 app.get("/api/prospects", (req, res) => {
@@ -70,7 +113,11 @@ app.get("/api/prospects", (req, res) => {
   if (!seller || typeof seller !== "string") {
     return res.status(400).json({ error: "Query parameter seller (name) is required." });
   }
-  res.json(mockApi.prospectsForSeller(seller));
+  const snapshot = findSnapshot(seller);
+  const prospects = snapshot
+    ? erpDataAdapter.prospectsForSeller(seller, snapshot)
+    : mockApi.prospectsForSeller(seller);
+  res.json(prospects);
 });
 
 app.get("/api/alerts", (req, res) => {
@@ -78,7 +125,11 @@ app.get("/api/alerts", (req, res) => {
   if (!seller || typeof seller !== "string") {
     return res.status(400).json({ error: "Query parameter seller (name) is required." });
   }
-  res.json(mockApi.alertsForSeller(seller));
+  const snapshot = findSnapshot(seller);
+  const alerts = snapshot
+    ? erpDataAdapter.alertsForSeller(seller, snapshot)
+    : mockApi.alertsForSeller(seller);
+  res.json(alerts);
 });
 
 app.get("/api/home-dashboard", (req, res) => {
@@ -96,27 +147,41 @@ app.get("/api/pre-call-brief", (req, res) => {
     return res.status(400).json({ error: "Query parameter seller (name) is required." });
   }
   const partnerId = req.query.partnerId;
-  res.json(mockApi.preCallBrief(seller, typeof partnerId === "string" ? partnerId : undefined));
+  const snapshot = findSnapshot(seller);
+  const brief = snapshot
+    ? erpDataAdapter.preCallBrief(seller, typeof partnerId === "string" ? partnerId : undefined, snapshot)
+    : mockApi.preCallBrief(seller, typeof partnerId === "string" ? partnerId : undefined);
+  res.json(brief);
 });
 
 app.get("/api/partners", (_req, res) => {
-  res.json({ partners: mockApi.partners });
+  const snapshot = findSnapshot(null);
+  const partners = snapshot ? snapshot.partners || [] : mockApi.partners;
+  res.json({ partners });
 });
 
 app.get("/api/orders", (_req, res) => {
-  res.json({ orders: mockApi.orders });
+  const snapshot = findSnapshot(null);
+  const orders = snapshot ? snapshot.orders || [] : mockApi.orders;
+  res.json({ orders });
 });
 
 app.get("/api/license-keys", (_req, res) => {
-  res.json({ licenseKeys: mockApi.licenseKeys });
+  const snapshot = findSnapshot(null);
+  const licenseKeys = snapshot ? snapshot.licenseKeys || [] : mockApi.licenseKeys;
+  res.json({ licenseKeys });
 });
 
 app.get("/api/calls", (_req, res) => {
-  res.json({ calls: mockApi.calls });
+  const snapshot = findSnapshot(null);
+  const calls = snapshot ? snapshot.calls || [] : mockApi.calls;
+  res.json({ calls });
 });
 
 app.get("/api/emails", (_req, res) => {
-  res.json({ emails: mockApi.emails });
+  const snapshot = findSnapshot(null);
+  const emails = snapshot ? snapshot.emails || [] : mockApi.emails;
+  res.json({ emails });
 });
 
 app.get("/api/internal-users", (_req, res) => {
@@ -237,7 +302,11 @@ app.get("/api/match-caller", (req, res) => {
   if (!phone || typeof phone !== "string") {
     return res.status(400).json({ error: "Query parameter phone is required." });
   }
-  res.json(mockApi.matchCaller(phone));
+  const snapshot = findSnapshot(null) || null;
+  const result = snapshot
+    ? erpDataAdapter.matchCaller(phone, snapshot)
+    : mockApi.matchCaller(phone);
+  res.json(result);
 });
 
 app.get("/api/notes", (req, res) => {
