@@ -110,7 +110,20 @@ async function extractEmailFromTab(tab) {
 
 // ── Wire up UI ───────────────────────────────────────────────────────────────
 
-$("btnDash").addEventListener("click", () => openOnyx());
+$("btnDash").addEventListener("click", async () => {
+  // If we have a synced snapshot, deep-link straight into the reseller view.
+  const last = await bgSend("GET_LAST_REFRESH");
+  if (last?.lastRefreshRepEmail) {
+    const r = await bgSend("GET_ONYX_URL");
+    const base = (r?.url || DEFAULT_ONYX_URL).replace(/\/+$/, "");
+    const u = new URL(base + "/erp");
+    u.searchParams.set("repEmail", last.lastRefreshRepEmail);
+    await chrome.tabs.create({ url: u.toString() });
+    window.close();
+    return;
+  }
+  await openOnyx();
+});
 
 $("btnEmail").addEventListener("click", async () => {
   setStatus("Reading email…", "busy", true);

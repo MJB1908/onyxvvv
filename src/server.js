@@ -271,6 +271,10 @@ app.post("/api/chat", chatLimiter, async (req, res) => {
   }
 });
 
+app.get("/erp", (_req, res) => {
+  res.sendFile(path.join(__dirname, "..", "public", "erp.html"));
+});
+
 app.use(express.static(path.join(__dirname, "..", "public")));
 
 app.listen(PORT, () => {
