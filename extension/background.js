@@ -281,17 +281,16 @@ async function fetchPartnerList() {
     throw new Error(`No partner data on customers.aspx (${html1.length} chars)`);
   }
   const totalPages = parseInt(html1.match(/Page 1 of (\d+)/)?.[1] || "1", 10);
-  const MAX_PAGES = Math.min(totalPages, 5);
   let all = [...page1];
 
-  if (MAX_PAGES > 1) {
+  if (totalPages > 1) {
     const fields = extractFormFields(html1);
     let currentFields = { ...fields };
-    for (let page = 2; page <= MAX_PAGES; page++) {
+    for (let page = 2; page <= totalPages; page++) {
       try {
         broadcast(
           "refresh_progress",
-          `Loading partners page ${page}/${MAX_PAGES}…`,
+          `Loading partners page ${page}/${totalPages}…`,
         );
         const postFields = {
           ...currentFields,
