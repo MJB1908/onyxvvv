@@ -841,6 +841,52 @@
     }
   });
 
+  async function applyUrlParams() {
+    const params = new URLSearchParams(location.search);
+    if (![...params.keys()].length) return;
+
+    let targetSeller = null;
+    const sellerName = params.get("seller");
+    if (sellerName) {
+      targetSeller = reps.find(
+        (r) => r.name.toLowerCase() === sellerName.toLowerCase(),
+      );
+    }
+
+    const partnerId = params.get("partnerId");
+    if (partnerId && !targetSeller) {
+      try {
+        const res = await fetch("/api/partners");
+        const data = await res.json();
+        const partner = (data.partners || []).find((p) => p.id === partnerId);
+        if (partner) {
+          targetSeller = reps.find((r) => r.name === partner.accountOwnerName);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+
+    if (targetSeller) {
+      localStorage.setItem(STORAGE_KEY, targetSeller.id);
+      if (partnerId) {
+        localStorage.setItem(partnerStorageKey(targetSeller.id), partnerId);
+      }
+    }
+
+    const prefill = params.get("prefill");
+    if (prefill) sessionStorage.setItem(CHAT_PREFILL_KEY, prefill);
+
+    const route = params.get("route");
+    if (route) {
+      location.hash = route.startsWith("#")
+        ? route
+        : "#/" + route.replace(/^\/+/, "");
+    }
+
+    history.replaceState({}, "", location.pathname + location.hash);
+  }
+
   async function init() {
     const res = await fetch("/api/sellers");
     const data = await res.json();
@@ -851,6 +897,8 @@
           `<option value="${escapeHtml(r.id)}">${escapeHtml(r.name)} — ${escapeHtml(r.region)}</option>`,
       )
       .join("");
+
+    await applyUrlParams();
 
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved && reps.some((r) => r.id === saved)) sellerSelect.value = saved;

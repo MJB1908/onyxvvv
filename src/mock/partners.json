@@ -17,7 +17,9 @@
     "accountOwnerName": "Alex Chen",
     "accountOwnerEmail": "alex.chen@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2000",
-    "notes": "Focus on mid-market; strong hosting attach."
+    "notes": "Focus on mid-market; strong hosting attach.",
+    "phone": "+57-654-1778-95",
+    "contactPhone": "+57-777-9546-92"
   },
   {
     "id": "prt-002",
@@ -37,7 +39,9 @@
     "accountOwnerName": "Jordan Lee",
     "accountOwnerEmail": "jordan.lee@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2001",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+47-213-9411-65",
+    "contactPhone": "+47-772-3898-21"
   },
   {
     "id": "prt-003",
@@ -57,7 +61,9 @@
     "accountOwnerName": "Sam Rivera",
     "accountOwnerEmail": "sam.rivera@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2002",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+353-832-1253-77",
+    "contactPhone": "+353-635-5869-65"
   },
   {
     "id": "prt-004",
@@ -77,7 +83,9 @@
     "accountOwnerName": "Morgan Blake",
     "accountOwnerEmail": "morgan.blake@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2003",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+48-391-9258-44",
+    "contactPhone": "+48-894-3254-47"
   },
   {
     "id": "prt-005",
@@ -97,7 +105,9 @@
     "accountOwnerName": "Priya Desai",
     "accountOwnerEmail": "priya.desai@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2004",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+49-554-2427-54",
+    "contactPhone": "+49-909-4425-24"
   },
   {
     "id": "prt-006",
@@ -117,7 +127,9 @@
     "accountOwnerName": "Chris Okonkwo",
     "accountOwnerEmail": "chris.okonkwo@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2005",
-    "notes": "Renewal-heavy region; proactive QBRs recommended."
+    "notes": "Renewal-heavy region; proactive QBRs recommended.",
+    "phone": "+41-913-5082-84",
+    "contactPhone": "+41-552-8655-07"
   },
   {
     "id": "prt-007",
@@ -137,7 +149,9 @@
     "accountOwnerName": "Elena Vogel",
     "accountOwnerEmail": "elena.vogel@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2006",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+359-844-7072-43",
+    "contactPhone": "+359-367-1216-79"
   },
   {
     "id": "prt-008",
@@ -157,7 +171,9 @@
     "accountOwnerName": "Tomasz Kowalski",
     "accountOwnerEmail": "tomasz.kowalski@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2007",
-    "notes": "Focus on mid-market; strong hosting attach."
+    "notes": "Focus on mid-market; strong hosting attach.",
+    "phone": "+254-643-8509-12",
+    "contactPhone": "+254-226-5335-96"
   },
   {
     "id": "prt-009",
@@ -177,7 +193,9 @@
     "accountOwnerName": "Sofia Martins",
     "accountOwnerEmail": "sofia.martins@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2008",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+1-710-4122-96",
+    "contactPhone": "+1-769-7047-34"
   },
   {
     "id": "prt-010",
@@ -197,7 +215,9 @@
     "accountOwnerName": "James Whitaker",
     "accountOwnerEmail": "james.whitaker@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2009",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+1-560-1553-86",
+    "contactPhone": "+1-491-3686-20"
   },
   {
     "id": "prt-011",
@@ -217,7 +237,9 @@
     "accountOwnerName": "Alex Chen",
     "accountOwnerEmail": "alex.chen@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2010",
-    "notes": "Renewal-heavy region; proactive QBRs recommended."
+    "notes": "Renewal-heavy region; proactive QBRs recommended.",
+    "phone": "+1-805-6515-99",
+    "contactPhone": "+1-596-3564-68"
   },
   {
     "id": "prt-012",
@@ -237,7 +259,9 @@
     "accountOwnerName": "Jordan Lee",
     "accountOwnerEmail": "jordan.lee@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2011",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+1-894-0823-30",
+    "contactPhone": "+1-633-0071-17"
   },
   {
     "id": "prt-013",
@@ -257,7 +281,9 @@
     "accountOwnerName": "Sam Rivera",
     "accountOwnerEmail": "sam.rivera@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2012",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+1-955-6262-19",
+    "contactPhone": "+1-730-0394-30"
   },
   {
     "id": "prt-014",
@@ -277,7 +303,9 @@
     "accountOwnerName": "Morgan Blake",
     "accountOwnerEmail": "morgan.blake@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2013",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+39-316-4320-76",
+    "contactPhone": "+39-575-8799-88"
   },
   {
     "id": "prt-015",
@@ -297,7 +325,9 @@
     "accountOwnerName": "Priya Desai",
     "accountOwnerEmail": "priya.desai@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2014",
-    "notes": "Focus on mid-market; strong hosting attach."
+    "notes": "Focus on mid-market; strong hosting attach.",
+    "phone": "+61-801-4441-58",
+    "contactPhone": "+61-824-5034-87"
   },
   {
     "id": "prt-016",
@@ -317,7 +347,9 @@
     "accountOwnerName": "Chris Okonkwo",
     "accountOwnerEmail": "chris.okonkwo@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2015",
-    "notes": "Renewal-heavy region; proactive QBRs recommended."
+    "notes": "Renewal-heavy region; proactive QBRs recommended.",
+    "phone": "+972-442-7992-72",
+    "contactPhone": "+972-701-6745-43"
   },
   {
     "id": "prt-017",
@@ -337,7 +369,9 @@
     "accountOwnerName": "Elena Vogel",
     "accountOwnerEmail": "elena.vogel@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2016",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+33-695-0561-24",
+    "contactPhone": "+33-622-6071-01"
   },
   {
     "id": "prt-018",
@@ -357,7 +391,9 @@
     "accountOwnerName": "Tomasz Kowalski",
     "accountOwnerEmail": "tomasz.kowalski@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2017",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+33-680-0974-83",
+    "contactPhone": "+33-995-7381-69"
   },
   {
     "id": "prt-019",
@@ -377,7 +413,9 @@
     "accountOwnerName": "Sofia Martins",
     "accountOwnerEmail": "sofia.martins@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2018",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+33-445-9700-58",
+    "contactPhone": "+33-268-3953-50"
   },
   {
     "id": "prt-020",
@@ -397,7 +435,9 @@
     "accountOwnerName": "James Whitaker",
     "accountOwnerEmail": "james.whitaker@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2019",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+31-377-4084-51",
+    "contactPhone": "+31-848-3711-93"
   },
   {
     "id": "prt-021",
@@ -417,7 +457,9 @@
     "accountOwnerName": "Alex Chen",
     "accountOwnerEmail": "alex.chen@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2020",
-    "notes": "Renewal-heavy region; proactive QBRs recommended."
+    "notes": "Renewal-heavy region; proactive QBRs recommended.",
+    "phone": "+34-564-0425-71",
+    "contactPhone": "+34-567-2636-70"
   },
   {
     "id": "prt-022",
@@ -437,7 +479,9 @@
     "accountOwnerName": "Jordan Lee",
     "accountOwnerEmail": "jordan.lee@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2021",
-    "notes": "Focus on mid-market; strong hosting attach."
+    "notes": "Focus on mid-market; strong hosting attach.",
+    "phone": "+1-623-3473-73",
+    "contactPhone": "+1-518-6271-33"
   },
   {
     "id": "prt-023",
@@ -457,7 +501,9 @@
     "accountOwnerName": "Sam Rivera",
     "accountOwnerEmail": "sam.rivera@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2022",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+91-242-3862-97",
+    "contactPhone": "+91-597-9665-42"
   },
   {
     "id": "prt-024",
@@ -477,7 +523,9 @@
     "accountOwnerName": "Morgan Blake",
     "accountOwnerEmail": "morgan.blake@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2023",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+7-541-6777-89",
+    "contactPhone": "+7-748-6385-59"
   },
   {
     "id": "prt-025",
@@ -497,7 +545,9 @@
     "accountOwnerName": "Priya Desai",
     "accountOwnerEmail": "priya.desai@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2024",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+57-936-7284-87",
+    "contactPhone": "+57-259-9855-29"
   },
   {
     "id": "prt-026",
@@ -517,7 +567,9 @@
     "accountOwnerName": "Chris Okonkwo",
     "accountOwnerEmail": "chris.okonkwo@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2025",
-    "notes": "Renewal-heavy region; proactive QBRs recommended."
+    "notes": "Renewal-heavy region; proactive QBRs recommended.",
+    "phone": "+47-755-1987-42",
+    "contactPhone": "+47-978-1337-72"
   },
   {
     "id": "prt-027",
@@ -537,7 +589,9 @@
     "accountOwnerName": "Elena Vogel",
     "accountOwnerEmail": "elena.vogel@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2026",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+353-502-0317-19",
+    "contactPhone": "+353-945-8066-37"
   },
   {
     "id": "prt-028",
@@ -557,7 +611,9 @@
     "accountOwnerName": "Tomasz Kowalski",
     "accountOwnerEmail": "tomasz.kowalski@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2027",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+1-833-3138-96",
+    "contactPhone": "+1-856-9323-62"
   },
   {
     "id": "prt-029",
@@ -577,7 +633,9 @@
     "accountOwnerName": "Sofia Martins",
     "accountOwnerEmail": "sofia.martins@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2028",
-    "notes": "Focus on mid-market; strong hosting attach."
+    "notes": "Focus on mid-market; strong hosting attach.",
+    "phone": "+49-444-7211-17",
+    "contactPhone": "+49-799-5231-09"
   },
   {
     "id": "prt-030",
@@ -597,7 +655,9 @@
     "accountOwnerName": "James Whitaker",
     "accountOwnerEmail": "james.whitaker@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2029",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+43-326-0458-25",
+    "contactPhone": "+43-641-8899-65"
   },
   {
     "id": "prt-031",
@@ -617,7 +677,9 @@
     "accountOwnerName": "Alex Chen",
     "accountOwnerEmail": "alex.chen@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2030",
-    "notes": "Renewal-heavy region; proactive QBRs recommended."
+    "notes": "Renewal-heavy region; proactive QBRs recommended.",
+    "phone": "+359-483-8793-95",
+    "contactPhone": "+359-674-1275-24"
   },
   {
     "id": "prt-032",
@@ -637,7 +699,9 @@
     "accountOwnerName": "Jordan Lee",
     "accountOwnerEmail": "jordan.lee@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2031",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+234-760-4931-24",
+    "contactPhone": "+234-467-8713-32"
   },
   {
     "id": "prt-033",
@@ -657,7 +721,9 @@
     "accountOwnerName": "Sam Rivera",
     "accountOwnerEmail": "sam.rivera@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2032",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+1-205-1349-09",
+    "contactPhone": "+1-476-9523-82"
   },
   {
     "id": "prt-034",
@@ -677,7 +743,9 @@
     "accountOwnerName": "Morgan Blake",
     "accountOwnerEmail": "morgan.blake@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2033",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+1-226-4501-19",
+    "contactPhone": "+1-773-8146-93"
   },
   {
     "id": "prt-035",
@@ -697,7 +765,9 @@
     "accountOwnerName": "Priya Desai",
     "accountOwnerEmail": "priya.desai@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2034",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+1-991-2167-90",
+    "contactPhone": "+1-758-8548-53"
   },
   {
     "id": "prt-036",
@@ -717,7 +787,9 @@
     "accountOwnerName": "Chris Okonkwo",
     "accountOwnerEmail": "chris.okonkwo@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2035",
-    "notes": "Focus on mid-market; strong hosting attach."
+    "notes": "Focus on mid-market; strong hosting attach.",
+    "phone": "+1-644-7330-26",
+    "contactPhone": "+1-743-4807-90"
   },
   {
     "id": "prt-037",
@@ -737,7 +809,9 @@
     "accountOwnerName": "Elena Vogel",
     "accountOwnerEmail": "elena.vogel@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2036",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+1-809-7177-36",
+    "contactPhone": "+1-768-8336-49"
   },
   {
     "id": "prt-038",
@@ -757,7 +831,9 @@
     "accountOwnerName": "Tomasz Kowalski",
     "accountOwnerEmail": "tomasz.kowalski@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2037",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+39-462-1464-08",
+    "contactPhone": "+39-649-1769-24"
   },
   {
     "id": "prt-039",
@@ -777,7 +853,9 @@
     "accountOwnerName": "Sofia Martins",
     "accountOwnerEmail": "sofia.martins@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2038",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+64-299-6423-29",
+    "contactPhone": "+64-458-6774-07"
   },
   {
     "id": "prt-040",
@@ -797,7 +875,9 @@
     "accountOwnerName": "James Whitaker",
     "accountOwnerEmail": "james.whitaker@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2039",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+972-703-5624-68",
+    "contactPhone": "+972-310-7024-20"
   },
   {
     "id": "prt-041",
@@ -817,7 +897,9 @@
     "accountOwnerName": "Alex Chen",
     "accountOwnerEmail": "alex.chen@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2040",
-    "notes": "Renewal-heavy region; proactive QBRs recommended."
+    "notes": "Renewal-heavy region; proactive QBRs recommended.",
+    "phone": "+33-642-0185-79",
+    "contactPhone": "+33-229-8850-43"
   },
   {
     "id": "prt-042",
@@ -837,7 +919,9 @@
     "accountOwnerName": "Jordan Lee",
     "accountOwnerEmail": "jordan.lee@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2041",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+33-521-0634-14",
+    "contactPhone": "+33-320-6812-16"
   },
   {
     "id": "prt-043",
@@ -857,7 +941,9 @@
     "accountOwnerName": "Sam Rivera",
     "accountOwnerEmail": "sam.rivera@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2042",
-    "notes": "Focus on mid-market; strong hosting attach."
+    "notes": "Focus on mid-market; strong hosting attach.",
+    "phone": "+33-356-0787-04",
+    "contactPhone": "+33-999-5511-40"
   },
   {
     "id": "prt-044",
@@ -877,7 +963,9 @@
     "accountOwnerName": "Morgan Blake",
     "accountOwnerEmail": "morgan.blake@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2043",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+31-899-4478-55",
+    "contactPhone": "+31-930-1978-74"
   },
   {
     "id": "prt-045",
@@ -897,7 +985,9 @@
     "accountOwnerName": "Priya Desai",
     "accountOwnerEmail": "priya.desai@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2044",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+34-838-3915-03",
+    "contactPhone": "+34-993-7375-32"
   },
   {
     "id": "prt-046",
@@ -917,7 +1007,9 @@
     "accountOwnerName": "Chris Okonkwo",
     "accountOwnerEmail": "chris.okonkwo@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2045",
-    "notes": "Renewal-heavy region; proactive QBRs recommended."
+    "notes": "Renewal-heavy region; proactive QBRs recommended.",
+    "phone": "+1-717-4805-87",
+    "contactPhone": "+1-828-7999-50"
   },
   {
     "id": "prt-047",
@@ -937,7 +1029,9 @@
     "accountOwnerName": "Elena Vogel",
     "accountOwnerEmail": "elena.vogel@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2046",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+91-472-8388-01",
+    "contactPhone": "+91-819-7189-00"
   },
   {
     "id": "prt-048",
@@ -957,7 +1051,9 @@
     "accountOwnerName": "Tomasz Kowalski",
     "accountOwnerEmail": "tomasz.kowalski@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2047",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+7-423-5626-85",
+    "contactPhone": "+7-926-7434-37"
   },
   {
     "id": "prt-049",
@@ -977,7 +1073,9 @@
     "accountOwnerName": "Sofia Martins",
     "accountOwnerEmail": "sofia.martins@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2048",
-    "notes": "Standard partner health; quarterly business reviews."
+    "notes": "Standard partner health; quarterly business reviews.",
+    "phone": "+52-874-6173-18",
+    "contactPhone": "+52-941-3323-66"
   },
   {
     "id": "prt-050",
@@ -997,6 +1095,8 @@
     "accountOwnerName": "James Whitaker",
     "accountOwnerEmail": "james.whitaker@3cx-sales.example",
     "accountOwnerPhone": "+1-555-2049",
-    "notes": "Focus on mid-market; strong hosting attach."
+    "notes": "Focus on mid-market; strong hosting attach.",
+    "phone": "+47-244-1738-78",
+    "contactPhone": "+47-823-5177-86"
   }
 ]

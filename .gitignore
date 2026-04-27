@@ -41,6 +41,9 @@ build/Release
 node_modules/
 jspm_packages/
 
+# ONYX runtime snapshots (per-rep ERP data, written by /api/ingest/erp)
+data/snapshots/
+
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
 
