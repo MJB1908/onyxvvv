@@ -1,36 +1,46 @@
-{
-  "manifest_version": 3,
-  "name": "3CX Partner PRM",
-  "version": "1.3.1",
-  "description": "Partner Relationship Management — partner 360, Gmail intelligence, AI summaries.",
-  "permissions": ["activeTab","storage","tabs","scripting","cookies","notifications","alarms"],
-  "host_permissions": [
-    "https://staff.3cx.com/*",
-    "https://mail.google.com/*",
-    "https://docs.google.com/*",
-    "https://api.openai.com/*",
-    "https://team.3cx.com/*"
-  ],
-  "background": { "service_worker": "background.js" },
-  "content_scripts": [
-    {
-      "matches": ["https://mail.google.com/*"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": ["https://team.3cx.com/*"],
-      "js": ["webclient.js"],
-      "run_at": "document_start",
-      "all_frames": false
-    }
-  ],
-  "action": {
-    "default_popup": "popup.html",
-    "default_title": "3CX Partner PRM"
+[
+  {
+    "sku": "PBX-ENT-AI-ANN",
+    "name": "Phone System Enterprise / AI Edition - Annual (per SC / year)",
+    "priceUsd": 210,
+    "billing": "annual per simultaneous call",
+    "highlights": [
+      "Enterprise + AI features",
+      "Provisioning API",
+      "Advanced queues"
+    ]
   },
-  "web_accessible_resources": [{
-    "resources": ["dashboard.html", "webclient_inject.js"],
-    "matches": ["https://team.3cx.com/*"]
-  }]
-}
+  {
+    "sku": "PBX-PRO-ANN",
+    "name": "Phone System Professional - Annual (per SC / year)",
+    "priceUsd": 145,
+    "billing": "annual per simultaneous call",
+    "highlights": [
+      "CRM integration",
+      "Call flows",
+      "Reporting"
+    ]
+  },
+  {
+    "sku": "PBX-BASIC-ANN",
+    "name": "Phone System - Basic Annual (per SC / year)",
+    "priceUsd": 95,
+    "billing": "annual per simultaneous call",
+    "highlights": [
+      "Basic queues",
+      "Softphones",
+      "Standard reporting"
+    ]
+  },
+  {
+    "sku": "PBX-HOST",
+    "name": "Hosted cloud PBX",
+    "priceUsd": 0,
+    "billing": "usage + hosting tier",
+    "highlights": [
+      "Managed updates",
+      "Elastic capacity",
+      "SBC options"
+    ]
+  }
+]
