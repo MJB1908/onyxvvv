@@ -19,14 +19,19 @@ app.use(express.json({ limit: "256kb" }));
 /**
  * Find the most recent snapshot for a seller name or email.
  * First tries to find by rep name, then by email matching.
+ * If no seller specified, returns the most recent snapshot.
  */
 function findSnapshot(sellerNameOrEmail) {
-  if (!sellerNameOrEmail) return null;
   const snapshots = snapshotStore.listSnapshots();
   if (!snapshots.length) return null;
 
   // Sort by most recent first
   snapshots.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
+
+  // If no seller specified, return most recent
+  if (!sellerNameOrEmail) {
+    return snapshotStore.loadSnapshotBySlug(snapshots[0].slug);
+  }
 
   // Try exact name match first
   for (const s of snapshots) {
@@ -43,11 +48,7 @@ function findSnapshot(sellerNameOrEmail) {
   }
 
   // Return most recent as fallback
-  if (snapshots.length > 0) {
-    return snapshotStore.loadSnapshotBySlug(snapshots[0].slug);
-  }
-
-  return null;
+  return snapshotStore.loadSnapshotBySlug(snapshots[0].slug);
 }
 
 const ALLOWED_ORIGINS = new Set([
@@ -302,7 +303,7 @@ app.get("/api/match-caller", (req, res) => {
   if (!phone || typeof phone !== "string") {
     return res.status(400).json({ error: "Query parameter phone is required." });
   }
-  const snapshot = findSnapshot(null) || null;
+  const snapshot = findSnapshot("");
   const result = snapshot
     ? erpDataAdapter.matchCaller(phone, snapshot)
     : mockApi.matchCaller(phone);
