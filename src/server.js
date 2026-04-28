@@ -16,9 +16,9 @@ const PORT = Number.parseInt(process.env.PORT || "3000", 10);
 const MAX_MESSAGES = 40;
 const MAX_CONTENT_LENGTH = 8000;
 
-function validateSellerParam(sellerNameOrEmail) {
-  if (!sellerNameOrEmail || typeof sellerNameOrEmail !== "string") {
-    return { valid: false, error: "Query parameter seller (name or email) is required." };
+function validateSellerParam(sellerName) {
+  if (!sellerName || typeof sellerName !== "string") {
+    return { valid: false, error: "Query parameter seller (name) is required." };
   }
   return { valid: true };
 }
@@ -28,11 +28,10 @@ app.disable("x-powered-by");
 app.use(express.json({ limit: "256kb" }));
 
 /**
- * Find the most recent snapshot for a seller name or email.
- * First tries to find by rep name, then by email matching.
+ * Find the most recent snapshot for a seller name.
  * If no seller specified, returns the most recent snapshot.
  */
-function findSnapshot(sellerNameOrEmail) {
+function findSnapshot(sellerName) {
   const snapshots = snapshotStore.listSnapshots();
   if (!snapshots.length) return null;
 
@@ -40,20 +39,13 @@ function findSnapshot(sellerNameOrEmail) {
   snapshots.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
 
   // If no seller specified, return most recent
-  if (!sellerNameOrEmail) {
+  if (!sellerName) {
     return snapshotStore.loadSnapshotBySlug(snapshots[0].slug);
   }
 
-  // Try exact name match first
+  // Try exact name match
   for (const s of snapshots) {
-    if (s.name === sellerNameOrEmail) {
-      return snapshotStore.loadSnapshotBySlug(s.slug);
-    }
-  }
-
-  // Try email match
-  for (const s of snapshots) {
-    if (s.email === sellerNameOrEmail) {
+    if (s.name === sellerName) {
       return snapshotStore.loadSnapshotBySlug(s.slug);
     }
   }
