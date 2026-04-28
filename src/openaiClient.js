@@ -1,8 +1,11 @@
 "use strict";
 
 const OpenAI = require("openai");
+const settingsStore = require("./settingsStore");
 
-const MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
+function getModel() {
+  return process.env.OPENAI_MODEL || settingsStore.loadSettings().openaiModel;
+}
 
 /**
  * Build context string from live ERP data
@@ -74,7 +77,7 @@ async function chatCompletion(userFacingMessages, seller, snapshot) {
   const apiMessages = [system, ...userFacingMessages.map((m) => ({ role: m.role, content: m.content }))];
 
   const completion = await client.chat.completions.create({
-    model: MODEL,
+    model: getModel(),
     messages: apiMessages,
     temperature: 0.6,
     max_tokens: 1024,
@@ -121,4 +124,4 @@ async function partnerInsight(partner) {
   return text;
 }
 
-module.exports = { chatCompletion, buildSystemPrompt, partnerInsight, MODEL };
+module.exports = { chatCompletion, buildSystemPrompt, partnerInsight, getModel };
