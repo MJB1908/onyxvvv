@@ -299,17 +299,45 @@ async function fetchPartnerList() {
   if (!page1.length) {
     throw new Error(`No partner data on customers.aspx (${html1.length} chars)`);
   }
-  const totalPages = parseInt(html1.match(/Page 1 of (\d+)/)?.[1] || "1", 10);
+
+  // Try multiple patterns to detect total pages
+  let totalPages = 1;
+  const patterns = [
+    /Page 1 of (\d+)/i,
+    /of (\d+)(?:\s*pages?)?/i,
+    /Pages?:\s*1\s*-\s*\d+\s*of\s*(\d+)/i,
+    /Total Pages?:?\s*(\d+)/i
+  ];
+
+  for (const pattern of patterns) {
+    const match = html1.match(pattern);
+    if (match && match[1]) {
+      totalPages = parseInt(match[1], 10);
+      console.log(`[ONYX] Detected ${totalPages} pages of partners`);
+      break;
+    }
+  }
+
+  // If still only 1 page detected but we have 45+ partners (page size), likely multiple pages exist
+  if (totalPages === 1 && page1.length >= 45) {
+    // Try to fetch next page to confirm pagination exists
+    console.warn(`[ONYX] Detected only 1 page but have ${page1.length} partners (suspicious). Will attempt pagination.`);
+    totalPages = 999; // Sentinel value - keep fetching until no more data
+  }
+
   let all = [...page1];
 
   if (totalPages > 1) {
     const fields = extractFormFields(html1);
     let currentFields = { ...fields };
-    for (let page = 2; page <= totalPages; page++) {
+    let pageNum = 2;
+
+    while (pageNum <= Math.max(totalPages, 999)) {
       try {
+        const pageLabel = totalPages === 999 ? pageNum : `${pageNum}/${totalPages}`;
         broadcast(
           "refresh_progress",
-          `Loading partners page ${page}/${totalPages}…`,
+          `Loading partners page ${pageLabel}…`,
         );
         const postFields = {
           ...currentFields,
@@ -338,14 +366,20 @@ async function fetchPartnerList() {
         }
         const combined = Object.values(sections).map((s) => s.content).join("\n");
         const pageData = parsePartnersFromHtml(combined);
-        if (!pageData.length) break;
+        if (!pageData.length) {
+          console.log(`[ONYX] Page ${pageNum} returned no data, stopping pagination`);
+          break;
+        }
         all = all.concat(pageData);
+        console.log(`[ONYX] Page ${pageNum}: ${pageData.length} partners (total: ${all.length})`);
+        pageNum++;
       } catch (e) {
-        console.warn(`Partner list page ${page} failed:`, e.message);
+        console.warn(`[ONYX] Partner list page ${pageNum} failed:`, e.message);
         break;
       }
     }
   }
+  console.log(`[ONYX] Finished fetching partners: ${all.length} total`);
   return all;
 }
 
