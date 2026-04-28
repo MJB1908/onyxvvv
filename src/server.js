@@ -4,9 +4,12 @@ const path = require("path");
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const { chatCompletion, partnerInsight } = require("./openaiClient");
-const mockApi = require("./mockApi");
 const snapshotStore = require("./snapshotStore");
 const erpDataAdapter = require("./erpDataAdapter");
+
+// In-memory notes store (local to this server instance)
+const notes = [];
+let nextNoteId = 1;
 
 const PORT = Number.parseInt(process.env.PORT || "3000", 10);
 const MAX_MESSAGES = 40;
@@ -82,7 +85,15 @@ app.get("/health", (_req, res) => {
 });
 
 app.get("/api/sellers", (_req, res) => {
-  res.json({ reps: mockApi.salesTeam.reps });
+  const snapshots = snapshotStore.listSnapshots();
+  const reps = snapshots
+    .map((s) => ({
+      id: s.email,
+      name: s.name || s.email.split("@")[0],
+      email: s.email,
+    }))
+    .filter((r) => r.name);
+  res.json({ reps });
 });
 
 app.get("/api/insights", (req, res) => {
@@ -91,10 +102,10 @@ app.get("/api/insights", (req, res) => {
     return res.status(400).json({ error: "Query parameter seller (name) is required." });
   }
   const snapshot = findSnapshot(seller);
-  const insights = snapshot
-    ? erpDataAdapter.insightsForSeller(seller, snapshot)
-    : mockApi.insightsForSeller(seller);
-  res.json(insights);
+  if (!snapshot) {
+    return res.status(404).json({ error: "No snapshot found for seller. Refresh ERP data first." });
+  }
+  res.json(erpDataAdapter.insightsForSeller(seller, snapshot));
 });
 
 app.get("/api/next-caller", (req, res) => {
@@ -103,10 +114,10 @@ app.get("/api/next-caller", (req, res) => {
     return res.status(400).json({ error: "Query parameter seller (name) is required." });
   }
   const snapshot = findSnapshot(seller);
-  const next = snapshot
-    ? erpDataAdapter.getNextCallsForSeller(seller, snapshot)
-    : mockApi.getNextCallsForSeller(seller);
-  res.json(next);
+  if (!snapshot) {
+    return res.json({ next: null, queue: [] });
+  }
+  res.json(erpDataAdapter.getNextCallsForSeller(seller, snapshot));
 });
 
 app.get("/api/prospects", (req, res) => {
@@ -115,10 +126,10 @@ app.get("/api/prospects", (req, res) => {
     return res.status(400).json({ error: "Query parameter seller (name) is required." });
   }
   const snapshot = findSnapshot(seller);
-  const prospects = snapshot
-    ? erpDataAdapter.prospectsForSeller(seller, snapshot)
-    : mockApi.prospectsForSeller(seller);
-  res.json(prospects);
+  if (!snapshot) {
+    return res.json({ region: "—", prospects: [] });
+  }
+  res.json(erpDataAdapter.prospectsForSeller(seller, snapshot));
 });
 
 app.get("/api/alerts", (req, res) => {
@@ -127,10 +138,10 @@ app.get("/api/alerts", (req, res) => {
     return res.status(400).json({ error: "Query parameter seller (name) is required." });
   }
   const snapshot = findSnapshot(seller);
-  const alerts = snapshot
-    ? erpDataAdapter.alertsForSeller(seller, snapshot)
-    : mockApi.alertsForSeller(seller);
-  res.json(alerts);
+  if (!snapshot) {
+    return res.json({ alerts: [] });
+  }
+  res.json(erpDataAdapter.alertsForSeller(seller, snapshot));
 });
 
 app.get("/api/home-dashboard", (req, res) => {
@@ -138,8 +149,14 @@ app.get("/api/home-dashboard", (req, res) => {
   if (!seller || typeof seller !== "string") {
     return res.status(400).json({ error: "Query parameter seller (name) is required." });
   }
+  const snapshot = findSnapshot(seller);
+  if (!snapshot) {
+    return res.status(404).json({ error: "No snapshot found for seller. Refresh ERP data first." });
+  }
   const partnerId = req.query.partnerId;
-  res.json(mockApi.homeDashboardForSeller(seller, typeof partnerId === "string" ? partnerId : undefined));
+  // For now, return basic dashboard from insights
+  const insights = erpDataAdapter.insightsForSeller(seller, snapshot);
+  res.json({ ...insights, scope: partnerId ? { mode: "partner" } : { mode: "all" } });
 });
 
 app.get("/api/pre-call-brief", (req, res) => {
@@ -149,52 +166,40 @@ app.get("/api/pre-call-brief", (req, res) => {
   }
   const partnerId = req.query.partnerId;
   const snapshot = findSnapshot(seller);
-  const brief = snapshot
-    ? erpDataAdapter.preCallBrief(seller, typeof partnerId === "string" ? partnerId : undefined, snapshot)
-    : mockApi.preCallBrief(seller, typeof partnerId === "string" ? partnerId : undefined);
-  res.json(brief);
+  if (!snapshot) {
+    return res.status(404).json({ ok: false, message: "No snapshot found. Refresh ERP data first.", brief: null });
+  }
+  res.json(erpDataAdapter.preCallBrief(seller, typeof partnerId === "string" ? partnerId : undefined, snapshot));
 });
 
 app.get("/api/partners", (_req, res) => {
-  const snapshot = findSnapshot(null);
-  const partners = snapshot ? snapshot.partners || [] : mockApi.partners;
+  const snapshot = findSnapshot("");
+  const partners = snapshot ? snapshot.partners || [] : [];
   res.json({ partners });
 });
 
 app.get("/api/orders", (_req, res) => {
-  const snapshot = findSnapshot(null);
-  const orders = snapshot ? snapshot.orders || [] : mockApi.orders;
+  const snapshot = findSnapshot("");
+  const orders = snapshot ? snapshot.orders || [] : [];
   res.json({ orders });
 });
 
 app.get("/api/license-keys", (_req, res) => {
-  const snapshot = findSnapshot(null);
-  const licenseKeys = snapshot ? snapshot.licenseKeys || [] : mockApi.licenseKeys;
+  const snapshot = findSnapshot("");
+  const licenseKeys = snapshot ? snapshot.licenseKeys || [] : [];
   res.json({ licenseKeys });
 });
 
 app.get("/api/calls", (_req, res) => {
-  const snapshot = findSnapshot(null);
-  const calls = snapshot ? snapshot.calls || [] : mockApi.calls;
+  const snapshot = findSnapshot("");
+  const calls = snapshot ? snapshot.calls || [] : [];
   res.json({ calls });
 });
 
 app.get("/api/emails", (_req, res) => {
-  const snapshot = findSnapshot(null);
-  const emails = snapshot ? snapshot.emails || [] : mockApi.emails;
+  const snapshot = findSnapshot("");
+  const emails = snapshot ? snapshot.emails || [] : [];
   res.json({ emails });
-});
-
-app.get("/api/internal-users", (_req, res) => {
-  res.json({ internalUsers: mockApi.internalUsers });
-});
-
-app.get("/api/products", (_req, res) => {
-  res.json({ products: mockApi.products });
-});
-
-app.get("/api/license-types", (_req, res) => {
-  res.json(mockApi.licenseTypes);
 });
 
 app.post("/api/ingest/erp", (req, res) => {
@@ -304,21 +309,53 @@ app.get("/api/match-caller", (req, res) => {
     return res.status(400).json({ error: "Query parameter phone is required." });
   }
   const snapshot = findSnapshot("");
-  const result = snapshot
-    ? erpDataAdapter.matchCaller(phone, snapshot)
-    : mockApi.matchCaller(phone);
-  res.json(result);
+  if (!snapshot) {
+    return res.json({ matched: false, callerDigits: "", candidates: [] });
+  }
+  res.json(erpDataAdapter.matchCaller(phone, snapshot));
 });
+
+// Helper functions for notes management
+function addNote({ partnerId, subject, body, noteType, seller, source }) {
+  if (!partnerId || typeof partnerId !== "string") {
+    throw new Error("partnerId is required");
+  }
+  if (!subject || typeof subject !== "string") {
+    throw new Error("subject is required");
+  }
+  if (!body || typeof body !== "string") {
+    throw new Error("body is required");
+  }
+  const note = {
+    id: `note-${String(nextNoteId++).padStart(5, "0")}`,
+    partnerId,
+    subject: subject.slice(0, 200),
+    body: body.slice(0, 8000),
+    noteType: Number.isFinite(noteType) ? noteType : 1,
+    seller: typeof seller === "string" ? seller : null,
+    source: typeof source === "string" ? source : "onyx",
+    createdAt: new Date().toISOString(),
+  };
+  notes.push(note);
+  return note;
+}
+
+function listNotes(partnerId) {
+  if (partnerId) {
+    return notes.filter((n) => n.partnerId === partnerId).slice().reverse();
+  }
+  return notes.slice().reverse();
+}
 
 app.get("/api/notes", (req, res) => {
   const partnerId = req.query.partnerId;
-  res.json({ notes: mockApi.listNotes(typeof partnerId === "string" ? partnerId : undefined) });
+  res.json({ notes: listNotes(typeof partnerId === "string" ? partnerId : undefined) });
 });
 
 app.post("/api/notes", (req, res) => {
   try {
     const { partnerId, subject, body, noteType, seller, source } = req.body || {};
-    const note = mockApi.addNote({
+    const note = addNote({
       partnerId,
       subject,
       body,
