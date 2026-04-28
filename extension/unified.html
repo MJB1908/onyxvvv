@@ -643,9 +643,9 @@ const isBrowser = !isExtension;
 
 if (isExtension) {
   document.getElementById('body').classList.add('ext-mode');
-  // Load extension popup script
+  // Load extension popup script using chrome.runtime.getURL for correct path
   const script = document.createElement('script');
-  script.src = '/popup.js';
+  script.src = chrome.runtime.getURL('popup.js');
   document.body.appendChild(script);
 } else {
   document.getElementById('body').classList.add('web-mode');
