@@ -15,6 +15,13 @@ const PORT = Number.parseInt(process.env.PORT || "3000", 10);
 const MAX_MESSAGES = 40;
 const MAX_CONTENT_LENGTH = 8000;
 
+function validateSellerParam(sellerNameOrEmail) {
+  if (!sellerNameOrEmail || typeof sellerNameOrEmail !== "string") {
+    return { valid: false, error: "Query parameter seller (name or email) is required." };
+  }
+  return { valid: true };
+}
+
 const app = express();
 app.disable("x-powered-by");
 app.use(express.json({ limit: "256kb" }));
@@ -98,9 +105,9 @@ app.get("/api/sellers", (_req, res) => {
 
 app.get("/api/insights", (req, res) => {
   const seller = req.query.seller;
-  if (!seller || typeof seller !== "string") {
-    return res.status(400).json({ error: "Query parameter seller (name) is required." });
-  }
+  const valid = validateSellerParam(seller);
+  if (!valid.valid) return res.status(400).json({ error: valid.error });
+
   const snapshot = findSnapshot(seller);
   if (!snapshot) {
     return res.status(404).json({ error: "No snapshot found for seller. Refresh ERP data first." });
@@ -110,9 +117,9 @@ app.get("/api/insights", (req, res) => {
 
 app.get("/api/next-caller", (req, res) => {
   const seller = req.query.seller;
-  if (!seller || typeof seller !== "string") {
-    return res.status(400).json({ error: "Query parameter seller (name) is required." });
-  }
+  const valid = validateSellerParam(seller);
+  if (!valid.valid) return res.status(400).json({ error: valid.error });
+
   const snapshot = findSnapshot(seller);
   if (!snapshot) {
     return res.json({ next: null, queue: [] });
@@ -122,9 +129,9 @@ app.get("/api/next-caller", (req, res) => {
 
 app.get("/api/prospects", (req, res) => {
   const seller = req.query.seller;
-  if (!seller || typeof seller !== "string") {
-    return res.status(400).json({ error: "Query parameter seller (name) is required." });
-  }
+  const valid = validateSellerParam(seller);
+  if (!valid.valid) return res.status(400).json({ error: valid.error });
+
   const snapshot = findSnapshot(seller);
   if (!snapshot) {
     return res.json({ region: "—", prospects: [] });
@@ -134,9 +141,9 @@ app.get("/api/prospects", (req, res) => {
 
 app.get("/api/alerts", (req, res) => {
   const seller = req.query.seller;
-  if (!seller || typeof seller !== "string") {
-    return res.status(400).json({ error: "Query parameter seller (name) is required." });
-  }
+  const valid = validateSellerParam(seller);
+  if (!valid.valid) return res.status(400).json({ error: valid.error });
+
   const snapshot = findSnapshot(seller);
   if (!snapshot) {
     return res.json({ alerts: [] });
@@ -146,22 +153,21 @@ app.get("/api/alerts", (req, res) => {
 
 app.get("/api/home-dashboard", (req, res) => {
   const seller = req.query.seller;
-  if (!seller || typeof seller !== "string") {
-    return res.status(400).json({ error: "Query parameter seller (name) is required." });
-  }
+  const valid = validateSellerParam(seller);
+  if (!valid.valid) return res.status(400).json({ error: valid.error });
+
   const snapshot = findSnapshot(seller);
   if (!snapshot) {
     return res.json(erpDataAdapter.homeDashboardForSeller(seller, null));
   }
-  const partnerId = req.query.partnerId;
   res.json(erpDataAdapter.homeDashboardForSeller(seller, snapshot));
 });
 
 app.get("/api/pre-call-brief", (req, res) => {
   const seller = req.query.seller;
-  if (!seller || typeof seller !== "string") {
-    return res.status(400).json({ error: "Query parameter seller (name) is required." });
-  }
+  const valid = validateSellerParam(seller);
+  if (!valid.valid) return res.status(400).json({ error: valid.error });
+
   const partnerId = req.query.partnerId;
   const snapshot = findSnapshot(seller);
   if (!snapshot) {
@@ -416,7 +422,12 @@ app.post("/api/chat", chatLimiter, async (req, res) => {
         ? { id: seller.id, name: seller.name, region: seller.region }
         : null;
 
-    const reply = await chatCompletion(messages, sellerPayload);
+    let snapshot = null;
+    if (sellerPayload?.name) {
+      snapshot = findSnapshot(sellerPayload.name);
+    }
+
+    const reply = await chatCompletion(messages, sellerPayload, snapshot);
     res.json({ reply });
   } catch (err) {
     console.error(err);

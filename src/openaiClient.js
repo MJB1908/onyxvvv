@@ -2,7 +2,7 @@
 
 const OpenAI = require("openai");
 
-const MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
+const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
 /**
  * Build context string from live ERP data

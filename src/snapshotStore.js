@@ -7,6 +7,10 @@ const SNAPSHOT_DIR = process.env.ONYX_SNAPSHOT_DIR
   ? path.resolve(process.env.ONYX_SNAPSHOT_DIR)
   : path.join(__dirname, "..", "data", "snapshots");
 
+let snapshotListCache = null;
+let cacheTime = 0;
+const CACHE_TTL = 5000; // 5 seconds
+
 function ensureDir() {
   fs.mkdirSync(SNAPSHOT_DIR, { recursive: true });
 }
@@ -34,6 +38,7 @@ function saveSnapshot(repEmail, snapshot) {
     updatedAt: new Date().toISOString(),
   };
   fs.writeFileSync(file, JSON.stringify(enriched, null, 2));
+  snapshotListCache = null; // Invalidate cache
   return enriched;
 }
 
@@ -51,6 +56,7 @@ function savePartnerDetail(repEmail, partnerId, detail) {
   };
   snapshot.updatedAt = new Date().toISOString();
   fs.writeFileSync(file, JSON.stringify(snapshot, null, 2));
+  snapshotListCache = null; // Invalidate cache
   return snapshot.details[partnerId];
 }
 
@@ -65,7 +71,13 @@ function loadSnapshot(repEmail) {
 }
 
 function loadSnapshotBySlug(slug) {
-  const file = path.join(SNAPSHOT_DIR, `${slug.replace(/[^a-z0-9_]/gi, "")}.json`);
+  const sanitized = String(slug || "").replace(/[^a-z0-9_]/gi, "");
+  if (!sanitized || sanitized.length === 0) return null;
+
+  const file = path.join(SNAPSHOT_DIR, `${sanitized}.json`);
+  // Prevent directory traversal
+  if (!file.startsWith(SNAPSHOT_DIR)) return null;
+
   try {
     return JSON.parse(fs.readFileSync(file, "utf8"));
   } catch (e) {
@@ -93,12 +105,20 @@ function appendCallLog(repEmail, entry) {
     snapshot.callLog = snapshot.callLog.slice(-5000);
   }
   fs.writeFileSync(file, JSON.stringify(snapshot, null, 2));
+  snapshotListCache = null; // Invalidate cache
   return stored;
 }
 
 function listSnapshots() {
   ensureDir();
-  return fs
+  const now = Date.now();
+
+  // Return cached list if still fresh
+  if (snapshotListCache && now - cacheTime < CACHE_TTL) {
+    return snapshotListCache;
+  }
+
+  const result = fs
     .readdirSync(SNAPSHOT_DIR)
     .filter((f) => f.endsWith(".json"))
     .map((f) => {
@@ -116,6 +136,10 @@ function listSnapshots() {
       }
     })
     .filter(Boolean);
+
+  snapshotListCache = result;
+  cacheTime = now;
+  return result;
 }
 
 module.exports = {
