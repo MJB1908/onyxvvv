@@ -1,21 +1,63 @@
 "use strict";
 
 const OpenAI = require("openai");
-const { getMockContextString } = require("./mock/context");
 
 const MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
 
 /**
- * @param {{ id?: string, name?: string, region?: string } | null | undefined} seller
+ * Build context string from live ERP data
+ * @param {object} snapshot - The ERP snapshot with live data
+ * @returns {string}
  */
-function buildSystemPrompt(seller) {
-  const context = getMockContextString();
+function buildContextFromSnapshot(snapshot) {
+  if (!snapshot) {
+    return "No ERP data available. This is a live system with real partner and order data.";
+  }
+
+  const lines = [];
+  lines.push("### Live ERP Data");
+  lines.push("");
+  lines.push(`**Sales Rep**: ${snapshot.rep?.name || "Unknown"} (${snapshot.rep?.email || "unknown@example.com"})`);
+  lines.push(`**Region**: ${snapshot.rep?.region || "—"}`);
+  lines.push("");
+
+  if (snapshot.partners?.length) {
+    lines.push(`**Partners (${snapshot.partners.length} total)**`);
+    snapshot.partners.slice(0, 10).forEach((p) => {
+      lines.push(
+        `- ${p.companyName} (${p.country}) - Level: ${p.distributorLevel} - Contact: ${p.contactName}`,
+      );
+    });
+    if (snapshot.partners.length > 10) {
+      lines.push(`... and ${snapshot.partners.length - 10} more partners`);
+    }
+    lines.push("");
+  }
+
+  if (snapshot.orders?.length) {
+    lines.push(`**Orders (${snapshot.orders.length} total)**`);
+    const recentOrders = snapshot.orders.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+    recentOrders.forEach((o) => {
+      lines.push(`- ${o.company} (${o.date}): ${o.type} - $${o.totalUsd} (Status: ${o.status})`);
+    });
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * @param {{ id?: string, name?: string, region?: string } | null | undefined} seller
+ * @param {object} snapshot - Optional live ERP snapshot
+ */
+function buildSystemPrompt(seller, snapshot) {
+  const context = buildContextFromSnapshot(snapshot);
   let userBlock = "";
   if (seller && seller.name) {
     const idLine = seller.id ? `Rep ID: ${seller.id}. ` : "";
     userBlock = `\n\n**Current user (sales rep)**\n${idLine}Name: ${seller.name}. Primary region: ${seller.region || "—"}. Treat questions as coming from this rep unless the user says otherwise.`;
   }
-  return `You are the ONYX AI Sales Force Assistant: a concise, professional helper for reps who sell PBX phone system licenses and related services through distributors (partners/resellers). Support pre-call prep, in-call positioning, and post-call follow-up. Use the mock ERP/CRM data below when relevant; if something is not in the data, say you do not have that information in this demo dataset. Do not invent customer emails, license keys, or commercial terms beyond what is listed. Prefer bullet points for clarity when listing options.
+  return `You are the ONYX AI Sales Force Assistant: a concise, professional helper for sales reps who sell PBX phone system licenses and related services through distributors (partners/resellers). Support pre-call prep, in-call positioning, and post-call follow-up. Use the live ERP data below when relevant; if something is not in the data, say you do not have that information. Do not invent customer emails, license keys, or commercial terms beyond what is listed. Prefer bullet points for clarity when listing options.
 
 ${context}${userBlock}`;
 }
@@ -23,11 +65,12 @@ ${context}${userBlock}`;
 /**
  * @param {Array<{ role: string, content: string }>} userFacingMessages
  * @param {{ id?: string, name?: string, region?: string } | null | undefined} seller
+ * @param {object} snapshot - Optional live ERP snapshot
  * @returns {Promise<string>}
  */
-async function chatCompletion(userFacingMessages, seller) {
+async function chatCompletion(userFacingMessages, seller, snapshot) {
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const system = { role: "system", content: buildSystemPrompt(seller) };
+  const system = { role: "system", content: buildSystemPrompt(seller, snapshot) };
   const apiMessages = [system, ...userFacingMessages.map((m) => ({ role: m.role, content: m.content }))];
 
   const completion = await client.chat.completions.create({
