@@ -264,9 +264,26 @@ function parsePartnersFromHtml(html) {
     });
     if (!row.country && row["Country"]) row.country = row["Country"];
     if (!row.region && row["Sales Region"]) row.region = row["Sales Region"];
-    if (!row.distributorLevel && row["Cert"]) row.distributorLevel = row["Cert"];
-    if (!row.distributorLevel && row["Partner Category"]) row.distributorLevel = row["Partner Category"];
-    if (!row.distributorLevel && row["Partner Program"]) row.distributorLevel = row["Partner Program"];
+    // Extract partner level - intelligently find the tier name
+    if (!row.distributorLevel) {
+      // Check standard column names
+      for (const key of ["Partner Level", "Cert", "Partner Category", "Partner Program"]) {
+        if (row[key]) {
+          row.distributorLevel = row[key];
+          break;
+        }
+      }
+      // If still not found, look for any value containing tier names
+      if (!row.distributorLevel) {
+        for (const [key, val] of Object.entries(row)) {
+          const str = String(val || '').toLowerCase();
+          if (/titanium|platinum|silver|gold|bronze|partner type/i.test(str) && str.length > 2) {
+            row.distributorLevel = val;
+            break;
+          }
+        }
+      }
+    }
     if (!row.agent && row["Team Agent"]) row.agent = row["Team Agent"];
     if (!row.revenue && row["Annual Revenue"]) row.revenue = row["Annual Revenue"];
     if (!row.cert) row.cert = row.distributorLevel;
