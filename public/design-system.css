@@ -1,0 +1,199 @@
+/* ONYX Design System — Based on Claude Design Principles */
+
+:root {
+  /* Color: Semantic */
+  --bg-base: #0b0f14;
+  --bg-surface: #141c28;
+  --bg-hover: #1a2332;
+  --bg-active: #22293a;
+
+  --fg: #e8eaee;
+  --fg-secondary: #8b909a;
+  --fg-muted: #5a5f6b;
+
+  --border: #2a2d36;
+  --border-light: #1f2229;
+
+  /* Color: Status & Semantic */
+  --success: #4caf82;
+  --warning: #f0a500;
+  --error: #e05c5c;
+  --info: #3d8bfd;
+
+  /* Partner Tier Badges */
+  --tier-titanium: #a8d5ff;
+  --tier-platinum: #d4af37;
+  --tier-silver: #c0c0c0;
+  --tier-gold: #ffd700;
+  --tier-bronze: #cd7f32;
+
+  /* Spacing Scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Typography */
+  --font-sans: 'Segoe UI', -apple-system, system-ui, sans-serif;
+  --font-mono: 'Consolas', 'Courier New', monospace;
+
+  /* Type Scale */
+  --type-h1: 18px;
+  --type-h2: 16px;
+  --type-h3: 14px;
+  --type-body: 13px;
+  --type-secondary: 12px;
+  --type-footnote: 11px;
+  --type-mono: 13px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.4);
+
+  /* Z-index */
+  --z-dropdown: 100;
+  --z-modal: 1000;
+  --z-tooltip: 1100;
+}
+
+/* Type Scale */
+h1 {
+  font-size: var(--type-h1);
+  font-weight: 700;
+  color: var(--fg);
+  margin: 0;
+}
+
+h2 {
+  font-size: var(--type-h2);
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0 0 var(--space-3) 0;
+}
+
+h3 {
+  font-size: var(--type-h3);
+  font-weight: 600;
+  color: var(--fg-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--type-body);
+  color: var(--fg);
+  background: var(--bg-base);
+}
+
+/* Buttons */
+button, .btn {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--type-body);
+  font-family: var(--font-sans);
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+button:hover:not(:disabled),
+.btn:hover:not(:disabled) {
+  opacity: 0.85;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+button:active:not(:disabled),
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+button:disabled,
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Badge */
+.badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--type-footnote);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-tier {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.badge-tier.titanium { background: var(--tier-titanium); color: #000; }
+.badge-tier.platinum { background: var(--tier-platinum); color: #000; }
+.badge-tier.silver { background: var(--tier-silver); color: #000; }
+.badge-tier.gold { background: var(--tier-gold); color: #000; }
+.badge-tier.bronze { background: var(--tier-bronze); color: #fff; }
+
+/* Card */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+.card-compact {
+  padding: var(--space-4);
+}
+
+/* Input */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea,
+select {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-base);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: var(--type-body);
+  transition: border-color 0.2s ease;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--info);
+  box-shadow: 0 0 0 3px rgba(61, 139, 253, 0.1);
+}
+
+/* Status Colors */
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-error { color: var(--error); }
+.text-muted { color: var(--fg-muted); }
+
+.bg-success { background: var(--success); color: #fff; }
+.bg-warning { background: var(--warning); color: #000; }
+.bg-error { background: var(--error); color: #fff; }
