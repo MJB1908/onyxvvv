@@ -264,10 +264,12 @@ function parsePartnersFromHtml(html) {
     });
     if (!row.country && row["Country"]) row.country = row["Country"];
     if (!row.region && row["Sales Region"]) row.region = row["Sales Region"];
-    if (!row.cert && row["Cert"]) row.cert = row["Cert"];
-    if (!row.category && row["Partner Category"]) row.category = row["Partner Category"];
+    if (!row.distributorLevel && row["Cert"]) row.distributorLevel = row["Cert"];
+    if (!row.distributorLevel && row["Partner Category"]) row.distributorLevel = row["Partner Category"];
+    if (!row.distributorLevel && row["Partner Program"]) row.distributorLevel = row["Partner Program"];
     if (!row.agent && row["Team Agent"]) row.agent = row["Team Agent"];
     if (!row.revenue && row["Annual Revenue"]) row.revenue = row["Annual Revenue"];
+    if (!row.cert) row.cert = row.distributorLevel;
 
     partners.push(row);
   }

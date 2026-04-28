@@ -32,7 +32,7 @@
   }
 
   function getPartnerLevel(p) {
-    return p.cert || p["Cert"] || p["Partner Category"] || p.category || "—";
+    return p.distributorLevel || p.cert || p["Cert"] || p.category || p["Partner Category"] || "—";
   }
 
   function getPartnerCountry(p) {
