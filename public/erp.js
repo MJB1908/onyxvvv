@@ -140,23 +140,12 @@
   // ── Snapshot load ──────────────────────────────────────────────────────────
 
   async function pickSnapshot() {
-    const repEmail = params.get("repEmail");
     const slug = params.get("slug");
     if (slug) {
       const r = await fetch(`/api/snapshots/${encodeURIComponent(slug)}`);
       if (r.ok) return r.json();
     }
-    if (repEmail) {
-      const summary = await fetch(
-        `/api/sellers/me?email=${encodeURIComponent(repEmail)}`,
-      );
-      if (summary.ok) {
-        const s = await summary.json();
-        const r = await fetch(`/api/snapshots/${encodeURIComponent(s.rep.slug)}`);
-        if (r.ok) return r.json();
-      }
-    }
-    // Fall back to most recently updated snapshot
+    // Load most recently updated snapshot
     const list = await fetch("/api/snapshots").then((r) => r.json());
     if (!list.snapshots?.length) return null;
     list.snapshots.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
