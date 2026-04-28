@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { background: var(--bg-base); padding: 20px; font-family: var(--font-sans); display: flex; gap: 12px; align-items: flex-start; }
+  .btn { padding: 7px 14px; border: none; border-radius: 6px; font-family: var(--font-sans); font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
+  .btn-primary  { background: linear-gradient(135deg,#00c4aa,#0097c7); color:#fff; }
+  .btn-secondary{ background: #22252e; color: #c8cdd6; border: 1px solid #2a2d36; }
+  .btn-ghost    { background: transparent; color: #5a5f6b; border: 1px solid #2a2d36; }
+  .btn:hover    { opacity: .85; }
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+  .btn-lg { padding: 9px 20px; font-size: 13px; }
+  .col { display: flex; flex-direction: column; gap: 8px; }
+  .lbl { font-size: 10px; color: var(--fg-muted); }
+</style>
+</head>
+<body>
+  <div class="col">
+    <div class="lbl">Primary</div>
+    <button class="btn btn-primary btn-sm">Open Partner</button>
+    <button class="btn btn-primary">Open Partner</button>
+    <button class="btn btn-primary btn-lg">Open Partner</button>
+  </div>
+  <div class="col">
+    <div class="lbl">Secondary</div>
+    <button class="btn btn-secondary btn-sm">+ Note</button>
+    <button class="btn btn-secondary">+ Note</button>
+    <button class="btn btn-secondary btn-lg">+ Note</button>
+  </div>
+  <div class="col">
+    <div class="lbl">Ghost</div>
+    <button class="btn btn-ghost btn-sm">Dismiss</button>
+    <button class="btn btn-ghost">Dismiss</button>
+    <button class="btn btn-ghost btn-lg">Dismiss</button>
+  </div>
+</body>
+</html>

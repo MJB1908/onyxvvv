@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { background: var(--bg-base); padding: 20px; font-family: var(--font-sans); display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+  .section { }
+  .lbl { font-size: 10px; font-weight: 600; color: var(--fg-muted); text-transform: uppercase; letter-spacing:.06em; margin-bottom: 10px; }
+  /* Spacing scale */
+  .space-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .space-box { height: 14px; background: #00c4aa22; border: 1px solid #00c4aa55; border-radius: 2px; }
+  .space-info { font-size: 10px; color: #8b909a; font-family: var(--font-mono); }
+  /* Radius scale */
+  .radius-row { display: flex; gap: 10px; align-items: flex-end; }
+  .radius-box { background: #22252e; border: 1px solid #2a2d36; width: 44px; height: 44px; }
+  .radius-lbl { font-size: 9px; color: #5a5f6b; text-align: center; margin-top: 4px; }
+</style>
+</head>
+<body>
+  <div class="section">
+    <div class="lbl">Spacing scale</div>
+    <div class="space-row"><div class="space-box" style="width:4px"></div><span class="space-info">--space-1 · 4px</span></div>
+    <div class="space-row"><div class="space-box" style="width:8px"></div><span class="space-info">--space-2 · 8px</span></div>
+    <div class="space-row"><div class="space-box" style="width:12px"></div><span class="space-info">--space-3 · 12px</span></div>
+    <div class="space-row"><div class="space-box" style="width:16px"></div><span class="space-info">--space-4 · 16px</span></div>
+    <div class="space-row"><div class="space-box" style="width:20px"></div><span class="space-info">--space-5 · 20px</span></div>
+    <div class="space-row"><div class="space-box" style="width:24px"></div><span class="space-info">--space-6 · 24px</span></div>
+    <div class="space-row"><div class="space-box" style="width:32px"></div><span class="space-info">--space-8 · 32px</span></div>
+  </div>
+  <div class="section">
+    <div class="lbl">Border radius</div>
+    <div class="radius-row">
+      <div><div class="radius-box" style="border-radius:4px"></div><div class="radius-lbl">sm·4px</div></div>
+      <div><div class="radius-box" style="border-radius:6px"></div><div class="radius-lbl">md·6px</div></div>
+      <div><div class="radius-box" style="border-radius:8px"></div><div class="radius-lbl">lg·8px</div></div>
+      <div><div class="radius-box" style="border-radius:12px"></div><div class="radius-lbl">xl·12px</div></div>
+    </div>
+  </div>
+</body>
+</html>

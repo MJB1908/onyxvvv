@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { background: var(--bg-base); padding: 24px; font-family: var(--font-sans); }
+  .brand-block { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+  .wordmark { font-size: 28px; font-weight: 800; letter-spacing: .12em; color: #e8eaee; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: linear-gradient(135deg,#00c4aa,#0097c7); }
+  .sub { font-size: 11px; color: #5a5f6b; text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
+  .divider { height: 1px; background: #2a2d36; margin-bottom: 20px; }
+  .variants { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+  .on-dark { background: #1a1d24; padding: 14px 20px; border-radius: 10px; border: 1px solid #2a2d36; }
+  .on-accent { background: linear-gradient(135deg,#00c4aa,#0097c7); padding: 14px 20px; border-radius: 10px; }
+  .on-accent .wordmark { color: #fff; }
+  .logo-sm { font-size: 16px; font-weight: 800; letter-spacing: .1em; color: #e8eaee; }
+</style>
+</head>
+<body>
+  <div class="variants">
+    <div class="on-dark">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="dot"></div>
+        <div class="wordmark">ONYX</div>
+      </div>
+      <div class="sub">AI Sales Force Assistant</div>
+    </div>
+    <div class="on-accent">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="wordmark">ONYX</div>
+      </div>
+      <div class="sub" style="color:rgba(255,255,255,.7)">AI Sales Force Assistant</div>
+    </div>
+    <div class="on-dark">
+      <div class="logo-sm">ONYX</div>
+    </div>
+  </div>
+</body>
+</html>

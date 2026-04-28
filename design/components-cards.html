@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { background: var(--bg-base); padding: 20px; font-family: var(--font-sans); }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 4px; letter-spacing:.02em; }
+  .status { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+  .div { width: 100%; height: 1px; background: var(--border); margin: 14px 0; }
+</style>
+</head>
+<body>
+  <div class="badges">
+    <span class="badge" style="background:#2a2040;color:#c8a8f0">Platinum</span>
+    <span class="badge" style="background:#2d2410;color:#f0c060">Gold</span>
+    <span class="badge" style="background:#1e2228;color:#a0b0c0">Silver</span>
+    <span class="badge" style="background:#1a2a1a;color:#70c070">Auth.</span>
+  </div>
+  <div class="div"></div>
+  <div class="badges">
+    <span class="status" style="background:#1a2a1a;color:#4caf82">Active</span>
+    <span class="status" style="background:#2d2410;color:#f0a500">Pending</span>
+    <span class="status" style="background:#2a1a1a;color:#e05c5c">Expired</span>
+    <span class="status" style="background:#1a2030;color:#4a9eff">In Call</span>
+    <span class="status" style="background:#22252e;color:#8b909a">Inactive</span>
+  </div>
+</body>
+</html>

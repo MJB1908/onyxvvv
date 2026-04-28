@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { background: var(--bg-base); padding: 20px; font-family: var(--font-sans); }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  .swatch { width: 72px; }
+  .swatch-box { height: 48px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.07); }
+  .swatch-name { font-size: 10px; color: var(--fg-muted); margin-top: 5px; }
+  .swatch-val  { font-size: 10px; color: var(--fg-secondary); font-family: var(--font-mono); }
+  .label { font-size: 10px; font-weight: 600; color: var(--fg-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+  .gradient-box { height: 48px; border-radius: 8px; width: 154px; background: linear-gradient(135deg, #00c4aa, #0097c7); }
+</style>
+</head>
+<body>
+  <div class="label">Primary Accent</div>
+  <div class="row">
+    <div class="swatch"><div class="swatch-box" style="background:#00c4aa"></div><div class="swatch-name">accent-teal</div><div class="swatch-val">#00c4aa</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#0097c7"></div><div class="swatch-name">accent-blue</div><div class="swatch-val">#0097c7</div></div>
+    <div><div class="gradient-box"></div><div class="swatch-name" style="font-size:10px;color:var(--fg-muted);margin-top:5px;">accent-gradient (135°)</div></div>
+  </div>
+  <div class="label">Semantic</div>
+  <div class="row">
+    <div class="swatch"><div class="swatch-box" style="background:#4caf82"></div><div class="swatch-name">green</div><div class="swatch-val">#4caf82</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#f0a500"></div><div class="swatch-name">warning</div><div class="swatch-val">#f0a500</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#e05c5c"></div><div class="swatch-name">error</div><div class="swatch-val">#e05c5c</div></div>
+    <div class="swatch"><div class="swatch-box" style="background:#4a9eff"></div><div class="swatch-name">blue</div><div class="swatch-val">#4a9eff</div></div>
+  </div>
+</body>
+</html>

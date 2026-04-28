@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { background: var(--bg-base); padding: 20px; font-family: var(--font-sans); }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { font-size: 10px; font-weight: 600; color: #8b909a; text-transform: uppercase; letter-spacing:.05em; padding: 8px 10px; border-bottom: 1px solid #2a2d36; text-align: left; white-space: nowrap; }
+  td { padding: 8px 10px; color: #e8eaee; border-bottom: 1px solid rgba(42,45,54,.5); }
+  tr:hover td { background: #22252e; }
+  .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+  .status { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+</style>
+</head>
+<body>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Partner</th><th>Region</th><th>Level</th><th>Revenue</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>TechGroup GmbH</td><td>DACH</td>
+          <td><span class="badge" style="background:#2d2410;color:#f0c060">Gold</span></td>
+          <td>$124,000</td>
+          <td><span class="status" style="background:#1a2a1a;color:#4caf82">Active</span></td>
+        </tr>
+        <tr>
+          <td>Nexus Systems B.V.</td><td>BENELUX</td>
+          <td><span class="badge" style="background:#2a2040;color:#c8a8f0">Platinum</span></td>
+          <td>$318,500</td>
+          <td><span class="status" style="background:#1a2a1a;color:#4caf82">Active</span></td>
+        </tr>
+        <tr>
+          <td>Iberia Connect SL</td><td>South EU</td>
+          <td><span class="badge" style="background:#1e2228;color:#a0b0c0">Silver</span></td>
+          <td>$42,200</td>
+          <td><span class="status" style="background:#2d2410;color:#f0a500">Pending</span></td>
+        </tr>
+        <tr>
+          <td>Baltic Tech OÜ</td><td>Nordics</td>
+          <td><span class="badge" style="background:#1a2a1a;color:#70c070">Auth.</span></td>
+          <td>$18,800</td>
+          <td><span class="status" style="background:#2a1a1a;color:#e05c5c">Expired</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
