@@ -10,8 +10,5 @@ if (isExtension) {
   document.body.appendChild(script);
 } else {
   document.getElementById('body').classList.add('web-mode');
-  // Load web UI script
-  const script = document.createElement('script');
-  script.src = '/erp.js';
-  document.body.appendChild(script);
+  // Web UI is handled by app.js (partner dashboard in renderHome)
 }
