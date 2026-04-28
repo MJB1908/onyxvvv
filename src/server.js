@@ -425,8 +425,14 @@ app.post("/api/chat", chatLimiter, async (req, res) => {
   }
 });
 
-app.get("/erp", (_req, res) => {
+// Serve the unified dashboard
+app.get("/", (_req, res) => {
   res.sendFile(path.join(__dirname, "..", "public", "unified.html"));
+});
+
+// Legacy /erp route - redirect to root
+app.get("/erp", (_req, res) => {
+  res.redirect("/");
 });
 
 app.use(express.static(path.join(__dirname, "..", "public")));
