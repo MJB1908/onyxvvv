@@ -151,12 +151,10 @@ app.get("/api/home-dashboard", (req, res) => {
   }
   const snapshot = findSnapshot(seller);
   if (!snapshot) {
-    return res.status(404).json({ error: "No snapshot found for seller. Refresh ERP data first." });
+    return res.json(erpDataAdapter.homeDashboardForSeller(seller, null));
   }
   const partnerId = req.query.partnerId;
-  // For now, return basic dashboard from insights
-  const insights = erpDataAdapter.insightsForSeller(seller, snapshot);
-  res.json({ ...insights, scope: partnerId ? { mode: "partner" } : { mode: "all" } });
+  res.json(erpDataAdapter.homeDashboardForSeller(seller, snapshot));
 });
 
 app.get("/api/pre-call-brief", (req, res) => {
