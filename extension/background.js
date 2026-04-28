@@ -835,10 +835,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     }
   };
 
-  // Add timeout to prevent hanging responses
+  // Add timeout to prevent hanging responses (5 minutes for long operations like REFRESH_DATA)
   const timeout = setTimeout(() => {
-    wrappedRespond({ ok: false, error: "Handler timeout (60s)" });
-  }, 60000);
+    wrappedRespond({ ok: false, error: "Handler timeout (300s)" });
+  }, 300000);
 
   Promise.resolve()
     .then(() => handler(msg))
