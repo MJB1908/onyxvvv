@@ -41,9 +41,12 @@ async function setOnyxUrl(value) {
 
 function broadcast(type, payload) {
   try {
-    chrome.runtime.sendMessage({ type, payload });
+    chrome.runtime.sendMessage({ type, payload }, (response) => {
+      // Clear any runtime errors from "no listener" warnings
+      void chrome.runtime.lastError;
+    });
   } catch {
-    /* no listener — ignore */
+    // No listener or connection failed — silently ignore
   }
 }
 
@@ -788,10 +791,32 @@ const handlers = {
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   const handler = handlers[msg?.type];
   if (!handler) return false;
+
+  // Wrap in try/catch and ensure response is sent
+  let responded = false;
+  const wrappedRespond = (response) => {
+    if (!responded) {
+      responded = true;
+      sendResponse(response || { ok: false, error: "Empty response" });
+    }
+  };
+
+  // Add timeout to prevent hanging responses
+  const timeout = setTimeout(() => {
+    wrappedRespond({ ok: false, error: "Handler timeout (60s)" });
+  }, 60000);
+
   Promise.resolve()
     .then(() => handler(msg))
-    .then(sendResponse)
-    .catch((e) => sendResponse({ ok: false, error: e?.message || String(e), code: e?.code }));
+    .then((result) => {
+      clearTimeout(timeout);
+      wrappedRespond(result);
+    })
+    .catch((e) => {
+      clearTimeout(timeout);
+      wrappedRespond({ ok: false, error: e?.message || String(e), code: e?.code });
+    });
+
   return true; // async response
 });
 

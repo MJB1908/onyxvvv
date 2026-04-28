@@ -23,7 +23,7 @@ function bgSend(type, extra = {}) {
         if (chrome.runtime.lastError) {
           resolve({ ok: false, error: chrome.runtime.lastError.message });
         } else {
-          resolve(r);
+          resolve(r || { ok: false, error: "No response from background" });
         }
       });
     } catch (e) {
