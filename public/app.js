@@ -134,131 +134,182 @@
     }
   }
 
+  function getPartnerLevel(p) {
+    return p.distributorLevel || p.cert || p["Cert"] || p.category || p["Partner Category"] || "—";
+  }
+
+  function getPartnerCountry(p) {
+    return p.country || p["Country"] || "—";
+  }
+
+  function getPartnerRegion(p) {
+    return p.region || p["Sales Region"] || "—";
+  }
+
+  function getPartnerAgent(p) {
+    return p.agent || p["Team Agent"] || "—";
+  }
+
+  function getTierClass(level) {
+    if (!level || level === "—") return "";
+    const normalized = (level || "").toLowerCase().trim();
+    if (normalized.includes("titanium")) return "badge-tier titanium";
+    if (normalized.includes("platinum")) return "badge-tier platinum";
+    if (normalized.includes("silver")) return "badge-tier silver";
+    if (normalized.includes("gold")) return "badge-tier gold";
+    if (normalized.includes("bronze")) return "badge-tier bronze";
+    return "";
+  }
+
+  function renderTierBadge(level) {
+    const cls = getTierClass(level);
+    return cls ? `<span class="${cls}">${escapeHtml(level)}</span>` : escapeHtml(level);
+  }
+
   async function renderHome() {
     const seller = currentSeller();
-    await loadHomePartnerOptions(seller);
-    const selectedPartnerId = partnerSelect ? partnerSelect.value : "all";
-    const res = await fetch(
-      `/api/home-dashboard?seller=${encodeURIComponent(seller.name)}${selectedPartnerId && selectedPartnerId !== "all" ? `&partnerId=${encodeURIComponent(selectedPartnerId)}` : ""}`,
-    );
+    const res = await fetch("/api/partners");
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || "Could not load home dashboard.");
+    const allPartners = (data.partners || []).filter((p) => !seller || p.accountOwnerName === seller.name);
 
-    const account = data.accountHeader || {};
-    const installMix = data.installMix || {};
-    const kpis = data.kpis || {};
-    const deals = data.newDeals || [];
-    const ongoing = data.ongoingDeals || [];
-    const comms = data.communicationLog || [];
-    const renewals = data.renewalRadar || [];
-    const nextBestAction = data.nextBestAction || {};
-    const scopeLabel = data.scope?.mode === "partner" ? "Partner view" : "Portfolio view";
+    const levels = new Map();
+    levels.set("", allPartners.length);
+    for (const p of allPartners) {
+      const lvl = getPartnerLevel(p);
+      if (lvl && lvl !== "—") levels.set(lvl, (levels.get(lvl) || 0) + 1);
+    }
+    const levelNames = [...levels.keys()].filter((l) => l && l !== "—");
+    levelNames.sort();
 
-    const dealsHtml = deals.length
-      ? deals
-          .map(
-            (d) =>
-              `<tr><td>${escapeHtml(d.customer)}</td><td>${escapeHtml(d.license)}</td><td>${escapeHtml(d.stage)}</td><td>${escapeHtml(d.close)}</td><td>${escapeHtml(d.owner)}</td><td><span class="home-status home-status--${escapeHtml(String(d.status || "").toLowerCase())}">${escapeHtml(d.status)}</span></td></tr>`,
-          )
-          .join("")
-      : `<tr><td colspan="6">No deals for this view.</td></tr>`;
+    const levelChipsHtml = [
+      `<div class="chip active" data-level="">All<span class="count">${levels.get("")}</span></div>`,
+      ...levelNames.map(
+        (l) => `<div class="chip" data-level="${escapeHtml(l)}">${escapeHtml(l)}<span class="count">${levels.get(l)}</span></div>`,
+      ),
+    ].join("");
 
-    const ongoingHtml = ongoing.length
-      ? ongoing
-          .map(
-            (d) =>
-              `<tr><td>${escapeHtml(d.customer)}</td><td>${escapeHtml(d.contract)}</td><td><span class="home-pill">${escapeHtml(d.type)}</span></td><td>${escapeHtml(d.stage)}</td><td>${escapeHtml(d.close)}</td><td><span class="home-status home-status--${escapeHtml(String(d.status || "").toLowerCase())}">${escapeHtml(d.status)}</span></td></tr>`,
-          )
-          .join("")
-      : `<tr><td colspan="6">No ongoing deals.</td></tr>`;
-
-    const commsHtml = comms.length
-      ? comms
-          .map(
-            (c) =>
-              `<tr><td>${escapeHtml(c.customer)}</td><td>${escapeHtml(c.lastContact)}</td><td>${escapeHtml(c.mood)}</td><td>${escapeHtml(c.nextStep)}</td><td><button class="home-icon-btn" type="button" disabled>→</button></td></tr>`,
-          )
-          .join("")
-      : `<tr><td colspan="5">No communication entries.</td></tr>`;
-
-    const renewalHtml = renewals.length
-      ? renewals
-          .map(
-            (r) =>
-              `<tr><td>${escapeHtml(r.customer)}</td><td>${escapeHtml(r.due)}</td><td>${escapeHtml(r.proposal)}</td><td><input type="checkbox" ${r.proposal === "Yes" ? "checked" : ""} disabled /></td></tr>`,
-          )
-          .join("")
-      : `<tr><td colspan="4">No upcoming renewals.</td></tr>`;
+    const partnersHtml = allPartners
+      .map(
+        (p) => `
+        <div class="pitem" data-id="${escapeHtml(p.id)}">
+          <div class="pitem-name">${escapeHtml(p.companyName || p.company || "—")}</div>
+          <div class="pitem-meta">
+            ID: ${escapeHtml(p.id)} · ${escapeHtml(getPartnerRegion(p))} · ${renderTierBadge(getPartnerLevel(p))} · Owner: ${escapeHtml(getPartnerAgent(p))}
+          </div>
+        </div>`,
+      )
+      .join("");
 
     viewEl.innerHTML = `
-      <div class="partner-home">
-        <section class="home-account card">
-          <div>
-            <h2 class="home-account-title">${escapeHtml(account.name || seller.name)}</h2>
-            <p class="home-account-meta">${escapeHtml(account.level || "Partner")} · ${escapeHtml(account.region || seller.region)} · ${escapeHtml(scopeLabel)}</p>
+      <div class="home-partners-layout">
+        <aside class="home-partners-sidebar">
+          <div class="sidebar-filters">
+            <div id="levelChips" class="level-chips">${levelChipsHtml}</div>
           </div>
-          <div class="home-health">
-            <span class="home-health-score">${escapeHtml(String(account.installBase || 0))}</span>
-            <span class="home-health-label">${escapeHtml(account.partnerHealth || "Stable")}</span>
+          <div class="sidebar-search">
+            <input type="text" id="partnerSearch" placeholder="Search partners…" class="search-input" />
           </div>
-          <ul class="home-account-badges">
-            <li>Open tickets ${escapeHtml(String(account.openTickets || 0))}</li>
-            <li>New projects +${escapeHtml(String(account.newProjects || 0))}</li>
-            <li>Growth ${escapeHtml(account.growthBadge || "+0%")}</li>
-          </ul>
-        </section>
-
-        <div class="home-main-grid">
-          <section class="card">
-            <h3 class="h3">Install mix</h3>
-            <div class="home-mix-row"><span>Enterprise</span><div class="home-progress"><div style="width:${Number(installMix.enterprisePct || 0)}%"></div></div><strong>${Number(installMix.enterprisePct || 0)}%</strong></div>
-            <div class="home-mix-row"><span>PRO</span><div class="home-progress"><div style="width:${Number(installMix.proPct || 0)}%"></div></div><strong>${Number(installMix.proPct || 0)}%</strong></div>
-            <div class="home-mix-row"><span>Basic</span><div class="home-progress"><div style="width:${Number(installMix.basicPct || 0)}%"></div></div><strong>${Number(installMix.basicPct || 0)}%</strong></div>
-            <div class="home-kpi-stack">
-              <p><span>Install base</span><strong>${escapeHtml(String(kpis.installBase || 0))} ext</strong></p>
-              <p><span>Forecast</span><strong>${escapeHtml(String(kpis.forecastLabel || "$0"))}</strong></p>
-              <p><span>Renewal rate</span><strong>${escapeHtml(String(kpis.renewalRate || 0))}%</strong></p>
-              <p><span>YoY growth</span><strong>+${escapeHtml(String(kpis.yoyGrowth || 0))}%</strong></p>
-            </div>
-          </section>
-
-          <section class="card home-table-card">
-            <h3 class="h3">New deals</h3>
-            <div class="table-wrap"><table class="data-table"><thead><tr><th>Customer</th><th>License</th><th>Stage</th><th>Close</th><th>Owner</th><th>Status</th></tr></thead><tbody>${dealsHtml}</tbody></table></div>
-          </section>
-
-          <section class="card home-table-card">
-            <h3 class="h3">Ongoing deals</h3>
-            <div class="table-wrap"><table class="data-table"><thead><tr><th>Customer</th><th>Contract</th><th>Type</th><th>Stage</th><th>Close</th><th>Status</th></tr></thead><tbody>${ongoingHtml}</tbody></table></div>
-          </section>
-
-          <section class="card home-table-card">
-            <h3 class="h3">Communication log</h3>
-            <div class="table-wrap"><table class="data-table"><thead><tr><th>Customer</th><th>Last contact</th><th>Mood</th><th>Next step</th><th>Action</th></tr></thead><tbody>${commsHtml}</tbody></table></div>
-          </section>
-        </div>
-
-        <div class="home-lower-grid">
-          <section class="card">
-            <h3 class="h3">Renewal radar</h3>
-            <div class="table-wrap"><table class="data-table"><thead><tr><th>Customer</th><th>Due</th><th>Proposal</th><th>Done</th></tr></thead><tbody>${renewalHtml}</tbody></table></div>
-          </section>
-          <section class="card">
-            <h3 class="h3">Next best action</h3>
-            <p class="home-nba-title">${escapeHtml(nextBestAction.title || "Schedule follow-up this month")}</p>
-            <ul class="home-nba-list">
-              ${(nextBestAction.bullets || []).map((b) => `<li>${escapeHtml(b)}</li>`).join("")}
-            </ul>
-            <div class="home-nba-actions">
-              <button type="button" class="btn-secondary" disabled>Schedule</button>
-              <button type="button" class="btn-secondary" disabled>Email</button>
-              <button type="button" class="btn-secondary" disabled>Note</button>
-            </div>
-            <p class="muted small">Open opportunities: <strong>$${Number(kpis.openOpportunitiesUsd || 0).toLocaleString("en-US")}</strong></p>
-          </section>
-        </div>
+          <div class="sidebar-list">
+            <div id="partnersList" class="partners-list">${partnersHtml}</div>
+            <div id="partnerCount" class="list-info"><span id="partnerCountValue">${allPartners.length}</span> partners</div>
+          </div>
+        </aside>
+        <main class="home-partners-main" id="partnersMain">
+          <div class="empty">Pick a partner from the left</div>
+        </main>
       </div>
     `;
+
+    let filteredPartners = allPartners;
+    let activeLevel = "";
+    let searchQuery = "";
+
+    function applyFilters() {
+      const q = searchQuery.trim().toLowerCase();
+      filteredPartners = allPartners.filter((p) => {
+        if (activeLevel && getPartnerLevel(p) !== activeLevel) return false;
+        if (q && !String(p.companyName || p.company || "").toLowerCase().includes(q)) return false;
+        return true;
+      });
+      document.getElementById("partnerCountValue").textContent = filteredPartners.length;
+      renderPartnersList();
+    }
+
+    function renderPartnersList() {
+      const list = filteredPartners;
+      const html = list.length
+        ? list
+            .map(
+              (p) => `
+              <div class="pitem" data-id="${escapeHtml(p.id)}">
+                <div class="pitem-name">${escapeHtml(p.companyName || p.company || "—")}</div>
+                <div class="pitem-meta">
+                  ID: ${escapeHtml(p.id)} · ${escapeHtml(getPartnerRegion(p))} · ${renderTierBadge(getPartnerLevel(p))} · Owner: ${escapeHtml(getPartnerAgent(p))}
+                </div>
+              </div>`,
+            )
+            .join("")
+        : `<div class="empty">No matches</div>`;
+      document.getElementById("partnersList").innerHTML = html;
+      document.querySelectorAll(".pitem").forEach((el) => {
+        el.addEventListener("click", () => selectPartner(el.dataset.id));
+      });
+    }
+
+    function selectPartner(id) {
+      const partner = allPartners.find((p) => p.id === id);
+      if (!partner) return;
+      document.querySelectorAll(".pitem").forEach((el) => el.classList.remove("active"));
+      document.querySelector(`[data-id="${escapeHtml(id)}"]`)?.classList.add("active");
+
+      const level = getPartnerLevel(partner);
+      const initials = partner.companyName
+        ? partner.companyName.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase()
+        : "?";
+
+      document.getElementById("partnersMain").innerHTML = `
+        <div class="p-header">
+          <div class="p-avatar">${escapeHtml(initials)}</div>
+          <div class="p-info">
+            <div class="p-name">${escapeHtml(partner.companyName || partner.company || "—")}</div>
+            <div class="p-sub">ID ${escapeHtml(partner.id)} · ${escapeHtml(getPartnerCountry(partner))}</div>
+          </div>
+          <div class="tier-badge ${getTierClass(level)}">${escapeHtml(level)}</div>
+        </div>
+
+        <div class="pills-row">
+          <div class="spill">Region <strong>${escapeHtml(getPartnerRegion(partner))}</strong></div>
+          <div class="spill">Team agent <strong>${escapeHtml(getPartnerAgent(partner))}</strong></div>
+          ${partner.category ? `<div class="spill">Category <strong>${escapeHtml(partner.category)}</strong></div>` : ""}
+        </div>
+
+        <section class="card">
+          <h3 class="h3">Partner info</h3>
+          <table class="data-table"><tbody>
+            <tr><td><strong>Company</strong></td><td>${escapeHtml(partner.companyName || partner.company || "—")}</td></tr>
+            <tr><td><strong>ID</strong></td><td>${escapeHtml(partner.id)}</td></tr>
+            <tr><td><strong>Level</strong></td><td>${renderTierBadge(level)}</td></tr>
+            <tr><td><strong>Region</strong></td><td>${escapeHtml(getPartnerRegion(partner))}</td></tr>
+            <tr><td><strong>Country</strong></td><td>${escapeHtml(getPartnerCountry(partner))}</td></tr>
+            <tr><td><strong>Account owner</strong></td><td>${escapeHtml(partner.accountOwnerName || "—")}</td></tr>
+          </tbody></table>
+        </section>
+      `;
+    }
+
+    document.getElementById("levelChips").addEventListener("click", (e) => {
+      const chip = e.target.closest(".chip");
+      if (!chip) return;
+      activeLevel = chip.dataset.level;
+      document.querySelectorAll(".chip").forEach((c) => c.classList.remove("active"));
+      chip.classList.add("active");
+      applyFilters();
+    });
+
+    document.getElementById("partnerSearch").addEventListener("input", (e) => {
+      searchQuery = e.target.value;
+      applyFilters();
+    });
   }
 
   async function renderDashboard(sub, seller) {
