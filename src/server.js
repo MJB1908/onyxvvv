@@ -5,6 +5,7 @@ const express = require("express");
 const rateLimit = require("express-rate-limit");
 const { chatCompletion, partnerInsight } = require("./openaiClient");
 const snapshotStore = require("./snapshotStore");
+const settingsStore = require("./settingsStore");
 const erpDataAdapter = require("./erpDataAdapter");
 
 // In-memory notes store (local to this server instance)
@@ -305,6 +306,30 @@ app.get("/api/snapshots/:slug", (req, res) => {
   const snapshot = snapshotStore.loadSnapshotBySlug(req.params.slug);
   if (!snapshot) return res.status(404).json({ error: "Snapshot not found" });
   res.json(snapshot);
+});
+
+app.get("/api/admin/settings", (req, res) => {
+  res.json({
+    current: settingsStore.loadSettings(),
+    available: { models: settingsStore.AVAILABLE_MODELS },
+  });
+});
+
+app.post("/api/admin/settings", (req, res) => {
+  try {
+    const { openaiModel } = req.body || {};
+    if (!openaiModel || typeof openaiModel !== "string") {
+      return res.status(400).json({ error: "openaiModel is required" });
+    }
+    const validModels = settingsStore.AVAILABLE_MODELS.map((m) => m.id);
+    if (!validModels.includes(openaiModel)) {
+      return res.status(400).json({ error: `Invalid model. Valid options: ${validModels.join(", ")}` });
+    }
+    const updated = settingsStore.saveSettings({ openaiModel });
+    res.json({ ok: true, settings: updated });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 app.get("/api/match-caller", (req, res) => {
