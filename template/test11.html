@@ -1,0 +1,2408 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en-EN">
+<head id="Head1"><title>
+	3CX Network - Administration Area
+</title><meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><link rel="shortcut icon" href="https://www.3cx.com/wp-content/themes/MDM/favicon.ico" /><link rel="stylesheet" type="text/css" href="/css/print.css?ver=1.8" media="print" /><link rel="stylesheet" type="text/css" href="/css/popup.css?ver=1.7" /><link rel="stylesheet" type="text/css" href="/content/3cx/portal/styles.css" /><link rel="stylesheet" type="text/css" href="/css/webinars.css?ver=1.1" /><link rel="stylesheet" type="text/css" href="/content/bootstrap.min.css?ver=5.3.7" /><link rel="stylesheet" type="text/css" href="/css/styles.css?ver=1.56" /><link rel="stylesheet" type="text/css" href="/css/font.css" /><link rel="stylesheet" type="text/css" href="/content/font-awesome.css" /><link rel="stylesheet" type="text/css" href="/content/simple-line-icons.css" />
+    <script type="text/javascript" src="/scripts/jquery-3.7.1.min.js"></script>
+    <script type="text/javascript" src="/scripts/popup.js?ver=1.9"></script>
+    <script type="text/javascript" src="/scripts/datagrid.js?ver=1.53"></script>
+    <script type="text/javascript" src="/scripts/checkboxes.js?ver=1.1"></script>
+    <script type="text/javascript" src="/scripts/bootstrap.min.js?ver=5.3.7"></script>
+    <script type="text/javascript" src="/scripts/moment.min.js?ver=2.29.4"></script>
+    <script type="text/javascript" src="/scripts/moment-timezone.min.js?ver=0.5.43"></script>
+    <script type="text/javascript" src="/pagescripts/dashboard.js?ver=1.11"></script>
+
+    
+    <style type="text/css">
+        #contents, .mycontent {
+            max-width: 1025px;
+            margin: 10px;
+            position: fixed;
+            bottom: 0;
+        }
+
+            .mycontent a {
+                text-decoration: none;
+            }
+
+            #contents, #contents td, #contents th,
+            .mycontent, .mycontent td, .mycontent th,
+            #top_navigation {
+                font-family: Arial,Helvetica,sans-serif;
+                font-size: 15px;
+            }
+
+        #top_header {
+            background-color: #363636;
+            height: 55px;
+            position: relative;
+        }
+
+        #logo {
+            position: absolute;
+            top: 5px;
+            left: 10px;
+            width: 100px;
+        }
+
+        #partner_portal {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+        }
+
+            #partner_portal img {
+                width: 100%;
+            }
+
+        #top_navigation {
+            position: absolute;
+            bottom: 10px;
+            left: 100px;
+            color: #FFF;
+            width: auto;
+        }
+
+            #top_navigation ul, #top_navigation ul li {
+                list-style: none;
+                padding-left: 10px;
+            }
+
+                #top_navigation ul li {
+                    float: left;
+                    padding-left: 15px;
+                    padding-right: 15px;
+                    padding-bottom: 0;
+                    background-image: url('/content/shared/images/menu-separator.jpg');
+                    background-position: left bottom;
+                    background-repeat: no-repeat;
+                }
+
+                    #top_navigation ul li:first-child {
+                        background: none;
+                        padding-left: 0;
+                    }
+
+                    #top_navigation ul li a {
+                        color: #CCC;
+                        text-decoration: none;
+                        font-weight: 400;
+                        font-size: 14px;
+                    }
+
+        #contents h2, .mycontent h2 {
+            color: #888888;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .algnleft {
+            float: left;
+            margin-bottom: 8px;
+            margin-right: 8px;
+            border-radius: 3px;
+            -moz-border-radius: 3px;
+            -webkit-border-radius: 3px;
+            position: relative;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .box {
+            width: 110px;
+            height: 110px;
+            display: block;
+            color: #FFF;
+            position: relative;
+        }
+
+        .green_box {
+            background-color: #019c10;
+        }
+
+        .blue_box {
+            background-color: #0596d4;
+        }
+
+        .red_box {
+            background-color: #9e0b0f;
+        }
+
+        .grey_box {
+            background-color: #696969;
+        }
+
+        .light_grey_box {
+            background-color: #b3b3b3;
+        }
+
+        .amber_box {
+            background-color: #CE9400;
+        }
+
+        .mainmessage {
+            font-size: 20px;
+            position: relative;
+            top: 45%;
+            -ms-transform: translateY(-45%);
+            -webkit-transform: translateY(-45%);
+            -moz-transform: translateY(-45%);
+            -o-transform: translateY(-45%);
+            transform: translateY(-45%);
+            font-weight: 600;
+        }
+
+        .largefont .mainmessage {
+            font-size: 40px;
+        }
+
+        .submessage {
+            font-size: 13px;
+            font-weight: bold;
+            color: #FFF;
+            position: absolute;
+            bottom: 16%;
+            width: 100%;
+            line-height: 13px;
+            -ms-transform: translateY(50%);
+            -webkit-transform: translateY(50%);
+            -moz-transform: translateY(50%);
+            -o-transform: translateY(50%);
+            transform: translateY(50%);
+        }
+
+        .icon {
+            margin-top: 19px;
+        }
+
+        .iconp {
+            margin-top: -5px;
+        }
+
+        #my_performance, #my_tools, #my_tools_acx {
+            display: block;
+            clear: both;
+            position: relative;
+            margin-bottom: 5px;
+        }
+
+        .clear {
+            clear: both;
+        }
+
+        #upcoming a {
+            color: #0596d4;
+            display: block;
+            line-height: 30px;
+            font-size: 14px;
+        }
+
+        .quarter_points {
+            position: absolute;
+            top: 5px;
+            left: 0;
+            font-size: 35px;
+            text-align: right !important;
+            width: 52px;
+        }
+
+        .quarter_points_of {
+            position: absolute;
+            bottom: 32px;
+            right: 0;
+            font-size: 35px;
+            text-align: left !important;
+            width: 52px;
+        }
+
+        #top_header .viewas {
+            margin: 1px;
+        }
+
+        #feeds a {
+            color: #000;
+            text-decoration: underline;
+        }
+
+        #support a, #sales a {
+            color: #363636;
+            font-weight: normal;
+            text-decoration: underline
+        }
+
+        @media screen and (max-width: 1870px) {
+            img#partner_portal {
+                position: relative;
+                float: right;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="popupbg" style="display: none; z-index: 100"></div>
+    <form method="post" action="/partner/edit.aspx?i=35424" onsubmit="javascript:return WebForm_OnSubmit();" id="Form1" autocomplete="off" enctype="multipart/form-data">
+<div class="aspNetHidden">
+<input type="hidden" name="__LASTFOCUS" id="__LASTFOCUS" value="" />
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" />
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" />
+<input type="hidden" name="Main_CustomerEditBanner_LogoFileUpload_ClientState" id="Main_CustomerEditBanner_LogoFileUpload_ClientState" value="" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="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" />
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['Form1'];
+if (!theForm) {
+    theForm = document.Form1;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<script src="/WebResource.axd?d=pynGkmcFUV13He1Qd6_TZHWIsq5fiYutbsziKdUQf92WHOKX4wEJSAkeErp1okeke6YUzviOQgtXIjFTLWcMARMe2EfBpcvwk9ZQWbGWCxUbbskufaYwdH1e1f2OgYb_0&amp;t=638901536248157332" type="text/javascript"></script>
+
+
+<script src="/ScriptResource.axd?d=nv7asgRUU0tRmHNR2D6t1P9TZivHq471bllUnmTb9Starhh9H77iTOPN6OHgm9flHRKDxbirNOh321jbRdM7eZzc66s5ccd76k8KFH7QUWoGe7iSTAVQ1qpf_ahTltFofwiGFmclJ73Xt4YwKvf4rUN2WygvRamwggS1S88stzngPOspyoZNP4J7CtMs7MGl0&amp;t=ffffffff93d1c106" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=NJmAwtEo3Ipnlaxl6CMhvun3gtkNo_f9gsJh-e782R6iyu1nndL-SO1Ria0ywddHLNThm6hJ5mu5P-YhUYiPpKQYQFe710KKZrQqGOGU7W7DX7NuZbwOT_wYIEuEuM1QsfGcXaMswHNxETMgn25kzzptcH4phPRqGbGkAEhzCxRgLD3xu_5snsMHORGtTdHHl0FT3U2GqzjeolD8KpYZqQ2&amp;t=5c0e0825" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=dwY9oWetJoJoVpgL6Zq8OGhulz57m9f-quqr96DJRDZcg29C2TqoG-IVyQ1P9HGsNs_1Msm2eNqMCAobitd1LSt4uZvmN85DGGvhYj2d1tQkKdKtsaKbQel160p3VamlrJFfQ2oeKj8adt9e6d4gYH-bzF_xo_yZejh2K3qPixn2-hQdsaIVxpDs-C_vyGlXHvdAvq8HklG5lYGYmwT7jw2&amp;t=5c0e0825" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=eE6V8nDbUVn0gtG6hKNX_LshZAbmKGOLgAL1iCNV8VsQ3lxvFiWPPIpEK4ENj3d6v47jeUSAbrNQbep3M24CwUUrQyuiz50GqgiCQiEDoIaQgVu6rGxia2qcmicnqYTMwhTN5UKmIFPz_PTaBvabSkqxCVMQXAKGlxx94sJVoRg1&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=mcAASOSteirJeuV-3by3UXHyyLyWEDDaPKwnsoOW6xTh16Nn-I1EKgW5iFuNyBkUVqZUplsHx46AiG-UBl9iQiQ0l5CAPdWtao4qAqodvdz7jOIP_fpkNaLhN9nbXFUVXjqtlfIgRLyu1_HBrjwKuA2&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=jwf4VSQi7LeShc44FJ-gAXSTC9AkoPO96sWpT4MjAkIuprdKR715av9BBRjzk_TiImmwZRPqxgAY1taIPVrNfYCR3jTQ_clYH-JcDfTL0K1CWTp4mKFXHsn760JykRjZG5aI1fSL0t20gjr0xTiCmmdcvhjSLGDj9J7DE4idpg41&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=HEFpVKbnoeQjkjHkFKu3MP9IJU-KjpIqjswPA3H-prFPPXlK0rHg2JoSYqU67gKb1KiBRtnJLYixvD_CzXwM7kNs0ZXDcN6fPaNCz-POP731V3zlfJva8bR2Znw9mJCZ9yOhfSdNsRjMw8So72-S9S2XiAslzxU0-63sQkvm7uk1&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/ScriptResource.axd?d=AoKJn7nMAVZSOkZkFwIO-o0r_45UEf7y3ABzPXzPVcvjcv2yTh47xIBkwB5x-gxK5JeXgWDrpqj3mBiGcVYIJlYummHFI3BT38hRHx06h3FtxOM_Ba5UGGA6jqYZz1WDaQ0AaCq-qt9sdYQSJl2wl8rc-edKNkxITEWx4hAvUQw1&amp;t=7d5986a" type="text/javascript"></script>
+<script src="/WebResource.axd?d=JoBkLzP19aTuxbWOhHobYmyoBj00-vnAmwBMnHZaPxjE9F44AWp7h_gTtpgZSObI1qiE-Ywn8rvsudpAB9yxE0ZL-lU-Q2x7fiHm2t62ZReA8jTJCPGS5jGmIO2RWDfK0&amp;t=638901536248157332" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+function WebForm_OnSubmit() {
+if (typeof(ValidatorOnSubmit) == "function" && ValidatorOnSubmit() == false) return false;
+return true;
+}
+//]]>
+</script>
+
+<div class="aspNetHidden">
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="0D9C52FD" />
+</div>
+        <script type="text/javascript">
+//<![CDATA[
+Sys.WebForms.PageRequestManager._initialize('ctl00$ScriptManager1', 'Form1', ['tctl00$Main$MessageBoxUpdatePanel','Main_MessageBoxUpdatePanel','tctl00$Main$CustomerEditUpdatePanel','Main_CustomerEditUpdatePanel','tctl00$Main$CustomerEditParent$upDirectPurchasesEndusers','Main_CustomerEditParent_upDirectPurchasesEndusers','tctl00$Main$CustomerEditExpiringKeys$CustomerExpiringKeysUpdatePanel','Main_CustomerEditExpiringKeys_CustomerExpiringKeysUpdatePanel','tctl00$Main$CustomerEditBanner$ImageUpdatePanel','Main_CustomerEditBanner_ImageUpdatePanel','tctl00$Main$CustomerEditBilling$BillingDetailsUpdatePanel','Main_CustomerEditBilling_BillingDetailsUpdatePanel','tctl00$Main$ConcurrencyWarningUpdatePanel','Main_ConcurrencyWarningUpdatePanel','tctl00$Main$ConcurrencyWarningUpdatePanel2','Main_ConcurrencyWarningUpdatePanel2','tctl00$Main$ConcurrencyWarningUpdatePanel3','Main_ConcurrencyWarningUpdatePanel3','tctl00$Main$ConcurrencyWarningUpdatePanel4','Main_ConcurrencyWarningUpdatePanel4'], ['ctl00$Main$ConcurrencyWarningSaveRecord','Main_ConcurrencyWarningSaveRecord','ctl00$Main$ConcurrencyWarningMakeDirect','Main_ConcurrencyWarningMakeDirect','ctl00$Main$ConcurrencyWarningAssignParent','Main_ConcurrencyWarningAssignParent','ctl00$Main$ConcurrencyWarningExtendNonDeactivationPeriod','Main_ConcurrencyWarningExtendNonDeactivationPeriod'], ['ctl00$Main$CustomerEditCreditLimit','Main_CustomerEditCreditLimit'], 90, 'ctl00');
+//]]>
+</script>
+
+        <div id="top_header">
+            <div>
+                <a href="/">
+                    <img src="/content/3cx/dashboard/images/logo.png" alt="3CX Logo" id="logo" /></a>
+            </div>
+            
+<div id="top_navigation">
+    <ul>
+        
+                <li id="MainTabs_TabRepeater_li_0"><a id="MainTabs_TabRepeater_href_0" href="../default.aspx">Dashboard</a></li>
+            
+                <li id="MainTabs_TabRepeater_li_1"><a id="MainTabs_TabRepeater_href_1" href="../partnerapplications.aspx">Application</a></li>
+            
+                <li id="MainTabs_TabRepeater_li_2"><a id="MainTabs_TabRepeater_href_2" href="../partneronboarding.aspx">Onboarding</a></li>
+            
+                <li id="MainTabs_TabRepeater_li_3"><a id="MainTabs_TabRepeater_href_3" href="../leads.aspx">Lead Filter</a></li>
+            
+                <li id="MainTabs_TabRepeater_li_4"><a id="MainTabs_TabRepeater_href_4" href="../customers.aspx?m=0">Distributors</a></li>
+            
+                <li id="MainTabs_TabRepeater_li_5"><a id="MainTabs_TabRepeater_href_5" href="../customers.aspx?m=1">Partners</a></li>
+            
+                <li id="MainTabs_TabRepeater_li_6"><a id="MainTabs_TabRepeater_href_6" href="../keys.aspx">License Keys</a></li>
+            
+                <li id="MainTabs_TabRepeater_li_7"><a id="MainTabs_TabRepeater_href_7" href="../ExpiringKeys.aspx">Expiring Keys</a></li>
+            
+                <li id="MainTabs_TabRepeater_li_8"><a id="MainTabs_TabRepeater_href_8" href="../orders.aspx">Orders</a></li>
+            
+                <li id="MainTabs_TabRepeater_li_9"><a id="MainTabs_TabRepeater_href_9" href="../invoices.aspx">Invoices</a></li>
+            
+                <li id="MainTabs_TabRepeater_li_10"><a id="MainTabs_TabRepeater_href_10" href="../users.aspx">Users</a></li>
+            
+                
+            
+                <li id="MainTabs_TabRepeater_li_12"><a id="MainTabs_TabRepeater_href_12" href="../candidates.aspx">Certifications</a></li>
+            
+                <li id="MainTabs_TabRepeater_li_13"><a id="MainTabs_TabRepeater_href_13" href="../reports/menu.aspx">Reports</a></li>
+            
+                <li id="MainTabs_TabRepeater_li_14"><a id="MainTabs_TabRepeater_href_14" href="../customers.aspx?m=3">Search</a></li>
+            
+                
+            
+        
+        <li><a href="../settings/configmenu.aspx" id="MainTabs_ConfigMenuLink">Configuration</a></li>
+        <li id="MainTabs_Logout"><a id="MainTabs_LogoutBtn" href="/logout.aspx">Logout</a></li>
+    </ul>
+    <div class="clear"></div>
+</div>
+
+        </div>
+        <div id="panel">
+            
+            
+
+    
+<div id="progress" style="display: none">
+    <div id="popupbg" style="display: block; z-index: 1000"></div>
+    <div class="popup" style="display: block; z-index: 1001">
+        <div class="middle" style="z-index: 1000; width: 500px;">
+            <table style="margin: 0 auto">
+                <tr>
+                    <td style="vertical-align: middle; padding-right: 0.5em">
+                        <img src="/content/shared/images/wait.gif" alt="" /></td>
+                    <td style="vertical-align: middle">Please wait...</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+    <div id="main">
+        <style>
+            input[type=checkbox] {
+                vertical-align: text-bottom;
+            }
+
+            .tab-link-active {
+                font-weight: bolder;
+            }
+        </style>
+        <div id="Main_MessageBoxUpdatePanel">
+	
+                
+            
+</div>
+
+        <div id="Main_CustomerEditUpdatePanel">
+	
+                <div id="Main_pnlCustomerEdit" class="editcust" onkeypress="javascript:return WebForm_FireDefaultButton(event, &#39;Main_btnSaveExit&#39;)">
+		
+
+                    
+
+                    <h3>
+                        Edit Partner '.incotech GmbH'</h3>
+
+                    <div id="Main_plhTabs" class="custtabs">
+			
+                        <a id="Main_btnProperties" class="tab-link tab-link-active" href="javascript:__doPostBack(&#39;ctl00$Main$btnProperties&#39;,&#39;&#39;)">General</a>
+                        | 
+                    <a id="Main_btnUsers" class="tab-link" href="javascript:__doPostBack(&#39;ctl00$Main$btnUsers&#39;,&#39;&#39;)">Users</a>
+                        |
+                    <a id="Main_btnBilling" class="tab-link" href="javascript:__doPostBack(&#39;ctl00$Main$btnBilling&#39;,&#39;&#39;)">Account & Billing</a>
+                        
+                        |
+                        <a id="Main_btnNotes" class="tab-link" href="javascript:__doPostBack(&#39;ctl00$Main$btnNotes&#39;,&#39;&#39;)">Notes</a>|
+                                <a id="Main_btnAdditionalListings" class="tab-link" href="javascript:__doPostBack(&#39;ctl00$Main$btnAdditionalListings&#39;,&#39;&#39;)">Additional Listings</a>
+                            |
+                            <a id="Main_btnCertification" class="tab-link" href="javascript:__doPostBack(&#39;ctl00$Main$btnCertification&#39;,&#39;&#39;)">Certification</a>
+
+                        |
+                                <a id="Main_btnLeads" href="javascript:__doPostBack(&#39;ctl00$Main$btnLeads&#39;,&#39;&#39;)">Leads</a>|
+                                <a id="Main_btnPerformance" href="javascript:__doPostBack(&#39;ctl00$Main$btnPerformance&#39;,&#39;&#39;)">Performance</a>|
+                                <a id="Main_btnOrders" href="javascript:__doPostBack(&#39;ctl00$Main$btnOrders&#39;,&#39;&#39;)">Orders</a>|
+                                <a id="Main_btnKeys" href="javascript:__doPostBack(&#39;ctl00$Main$btnKeys&#39;,&#39;&#39;)">Keys</a>
+
+                        |
+                            <a id="Main_hlFreshdeskTickets" CausesValidation="false" href="https://helpdesk.3cx.com/companies/9000584805" target="_blank">Tickets</a>
+
+                        |
+                            <a id="Main_btnPoints" class="tab-link" href="javascript:__doPostBack(&#39;ctl00$Main$btnPoints&#39;,&#39;&#39;)">Revenue</a>
+
+                        |
+                            <a id="Main_btnStatistics" class="tab-link" href="javascript:__doPostBack(&#39;ctl00$Main$btnStatistics&#39;,&#39;&#39;)">Statistics</a>
+                    
+		</div>
+
+                    <div id="Main_pnlProperties" class="tab-panel">
+			
+                        <table class="cols">
+                            <tr>
+                                <td>
+                                    <div style="margin-right: 50px">
+                                        
+                                        
+<h3>General Information</h3>
+<table class="c">
+    
+        <tr>
+            <td class="s">Partner ID</td>
+            <td colspan="3">
+                <span id="Main_CustomerEditGeneral_lblSupportCustID" style="font-weight:bold;">235424</span></td>
+        </tr>
+        <tr>
+            <td>Phone Support PIN</td>
+            <td colspan="4">
+                <span id="Main_CustomerEditGeneral_lblSupportPIN" style="font-weight:bold;">5459</span></td>
+        </tr>
+    
+    
+        <tr>
+            <td class="s"><span>Customers Up to date</span><span id="Main_CustomerEditGeneral_lblCustomersUpToDateHint" title="Dedicated: 20.0.8
+SMB: 20.0.8" class="customers-up-to-date-hint">?</span></td>
+            <td>
+                <span id="Main_CustomerEditGeneral_lblCustomersUpToDate" style="font-weight:bold;">93%</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="s">Revenue</td>
+            <td>
+                <span id="Main_CustomerEditGeneral_lblRevenue" style="font-weight:bold;">17521.00</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="s">Customer Type<span class="required">*</span></td>
+            <td>
+                <select name="ctl00$Main$CustomerEditGeneral$ddlCustomerType" onchange="javascript:setTimeout(&#39;__doPostBack(\&#39;ctl00$Main$CustomerEditGeneral$ddlCustomerType\&#39;,\&#39;\&#39;)&#39;, 0)" id="Main_CustomerEditGeneral_ddlCustomerType" disabled="disabled" class="aspNetDisabled" style="width:200px;">
+				<option value="12">Titanium Partner</option>
+				<option selected="selected" value="9">Platinum Partner</option>
+
+			</select><span id="Main_CustomerEditGeneral_vldCustomerType" class="validator" style="display:none;">Customer type is required</span>
+            </td>
+        </tr>
+    
+    
+        <tr>
+            <td class="s">Maximum Partner Level</td>
+            <td>
+                <select name="ctl00$Main$CustomerEditGeneral$ddlMaxCustomerType" onchange="javascript:setTimeout(&#39;__doPostBack(\&#39;ctl00$Main$CustomerEditGeneral$ddlMaxCustomerType\&#39;,\&#39;\&#39;)&#39;, 0)" id="Main_CustomerEditGeneral_ddlMaxCustomerType" style="width:200px;">
+				<option selected="selected" value="">Any</option>
+				<option value="12">Titanium Partner</option>
+				<option value="9">Platinum Partner</option>
+				<option value="2">Gold Partner</option>
+				<option value="3">Silver Partner</option>
+				<option value="10">Bronze Partner</option>
+
+			</select>
+            </td>
+        </tr>
+    
+
+
+    
+        <tr>
+            <td class="s">Product discount (%)<span class="required">*</span></td>
+            <td colspan="5">
+                <input name="ctl00$Main$CustomerEditGeneral$tbProductDiscount" type="text" value="30.0" maxlength="5" readonly="readonly" id="Main_CustomerEditGeneral_tbProductDiscount" style="width:50px;" /><span id="Main_CustomerEditGeneral_vldProductDiscount" class="validator" style="display:none;">Product discount is required.</span><span id="Main_CustomerEditGeneral_vldProductDiscount2" class="validator" style="display:none;">Discount must be between 0 and 100.</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="s">Hosting discount (%)<span class="required">*</span></td>
+            <td colspan="5">
+                <input name="ctl00$Main$CustomerEditGeneral$tbHostingDiscount" type="text" value="20.0" maxlength="5" id="Main_CustomerEditGeneral_tbHostingDiscount" style="width:50px;" /><span id="Main_CustomerEditGeneral_vldHostingDiscount" class="validator" style="display:none;">Hosting discount is required.</span><span id="Main_CustomerEditGeneral_vldHostingDiscount2" class="validator" style="display:none;">Hosting discount must be between 0 and 100.</span>
+            </td>
+        </tr>
+        <tr>
+            <td class="s">Maintenance discount (%)<span class="required">*</span></td>
+            <td colspan="5">
+                <input name="ctl00$Main$CustomerEditGeneral$tbMaintenanceDiscount" type="text" value="30.0" maxlength="5" readonly="readonly" id="Main_CustomerEditGeneral_tbMaintenanceDiscount" style="width:50px;" /><span id="Main_CustomerEditGeneral_vldMaintenanceDiscount" class="validator" style="display:none;">Maintenance discount is required.</span><span id="Main_CustomerEditGeneral_vldMaintenanceDiscount2" class="validator" style="display:none;">Discount must be between 0 and 100.</span>
+            </td>
+        </tr>
+    
+
+    <tr>
+        <td class="s">Enabled</td>
+        <td colspan="4">
+            <table style="width: 300px; white-space: normal">
+                <tr>
+                    <td style="margin-right: 1em">
+                        <input id="Main_CustomerEditGeneral_cbEnabled" type="checkbox" name="ctl00$Main$CustomerEditGeneral$cbEnabled" checked="checked" /></td>
+                    <td id="Main_CustomerEditGeneral_DisableWarning" style="border: 1px dashed #c0c0c0; padding: 0.2em; white-space: normal"><span>WARNING: Disabling an account will auto-reallocate any assigned leads.</span></td>
+			
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    
+        <tr>
+            
+                <td class="s">List on 3CX Website</td>
+                <td>
+                    <input id="Main_CustomerEditGeneral_cbShowOnWebsite" type="checkbox" name="ctl00$Main$CustomerEditGeneral$cbShowOnWebsite" checked="checked" /></td>
+            
+        </tr>
+    
+
+    
+        <tr>
+            <td class="s">High Potential</td>
+            <td>
+                <input id="Main_CustomerEditGeneral_cbHighPotential" type="checkbox" name="ctl00$Main$CustomerEditGeneral$cbHighPotential" /></td>
+        </tr>
+    
+
+    
+
+    
+        <tr>
+            <td class="s">Not Committed Partner</td>
+            <td>
+                <input id="Main_CustomerEditGeneral_cbNotCommited" type="checkbox" name="ctl00$Main$CustomerEditGeneral$cbNotCommited" /></td>
+        </tr>
+    
+
+    <tr>
+        <td class="s">Start Date</td>
+        <td>
+            <span id="Main_CustomerEditGeneral_lblStartDate" style="font-weight:bold;">08/04/16</span>
+        </td>
+    </tr>
+
+    <tr>
+        <td class="s">Sales Rep</td>
+        <td>
+            <span id="Main_CustomerEditGeneral_lblSalesRep" style="font-weight:bold;">Petros Chatziioannidis</span>
+        </td>
+    </tr>
+
+    <tr>
+        <td class="s" colspan="2">
+            <h3>Partner Profiling</h3>
+        </td>
+    </tr>
+    <tr>
+        <td class="s">Category</td>
+        <td>
+            <select name="ctl00$Main$CustomerEditGeneral$ddlPartnerCategories" id="Main_CustomerEditGeneral_ddlPartnerCategories">
+				<option value="1">MSP</option>
+				<option selected="selected" value="2">System Integrator</option>
+				<option value="4">VoIP Provider</option>
+				<option value="6">Telecom Reseller</option>
+				<option value="7">Consultant</option>
+				<option value="8">Other</option>
+
+			</select></td>
+    </tr>
+    <tr>
+        <td class="s">How do you predominantly sell 3CX</td>
+        <td>
+            <select name="ctl00$Main$CustomerEditGeneral$ddlPartnerSellOptions" id="Main_CustomerEditGeneral_ddlPartnerSellOptions">
+				<option value="1">Per user per month complete package</option>
+				<option value="2">Installation only</option>
+				<option selected="selected" value="3">Installation and monthly per install support</option>
+				<option value="4">Bundled with MSP services</option>
+
+			</select></td>
+    </tr>
+    <tr>
+        <td class="s">Do you require a particular VoIP
+            <br />
+            provider to be used with 3CX</td>
+        <td>
+            <select name="ctl00$Main$CustomerEditGeneral$ddlPartnerSipTrunkOption" id="Main_CustomerEditGeneral_ddlPartnerSipTrunkOption">
+				<option selected="selected" value=""></option>
+				<option value="1">My own service</option>
+				<option value="2">Rebranded service</option>
+				<option value="3">Other</option>
+				<option value="1073741826" data-category="Known VoIP Providers">1CX</option>
+				<option value="1073741827" data-category="Known VoIP Providers">1TEL.DK</option>
+				<option value="1073741828" data-category="Known VoIP Providers">28VOIP</option>
+				<option value="1073741829" data-category="Known VoIP Providers">2APlus</option>
+				<option value="1073741830" data-category="Known VoIP Providers">2Talk</option>
+				<option value="1073741831" data-category="Known VoIP Providers">3C1B TELEKOM</option>
+				<option value="1073741833" data-category="Known VoIP Providers">58VoIP</option>
+				<option value="1073741834" data-category="Known VoIP Providers">A1 Bulgaria</option>
+				<option value="1073741835" data-category="Known VoIP Providers">AAA SIP</option>
+				<option value="1073741836" data-category="Known VoIP Providers">Aatrox Comm</option>
+				<option value="1073741837" data-category="Known VoIP Providers">Actio.pl</option>
+				<option value="1073741838" data-category="Known VoIP Providers">AfterDark</option>
+				<option value="1073741839" data-category="Known VoIP Providers">Ahoy Telecom, LLC</option>
+				<option value="1073741841" data-category="Known VoIP Providers">AlloyVoice</option>
+				<option value="1073741842" data-category="Known VoIP Providers">Alphalink</option>
+				<option value="1073741843" data-category="Known VoIP Providers">Amazon Chime Voice Connector</option>
+				<option value="1073741844" data-category="Known VoIP Providers">Asterisk</option>
+				<option value="1073741845" data-category="Known VoIP Providers">Australian Phone Company</option>
+				<option value="1073741846" data-category="Known VoIP Providers">Avanphone</option>
+				<option value="1073741847" data-category="Known VoIP Providers">Avencom</option>
+				<option value="1073741848" data-category="Known VoIP Providers">Bandwidth</option>
+				<option value="1073741849" data-category="Known VoIP Providers">Beeline MPBX</option>
+				<option value="1073741852" data-category="Known VoIP Providers">Bouygues Telecom Entreprises</option>
+				<option value="1073741850" data-category="Known VoIP Providers">Breeze</option>
+				<option value="1073741851" data-category="Known VoIP Providers">Brightstar</option>
+				<option value="1073741853" data-category="Known VoIP Providers">BT</option>
+				<option value="1073741854" data-category="Known VoIP Providers">BT Italy</option>
+				<option value="1073741855" data-category="Known VoIP Providers">Buroserv</option>
+				<option value="1073741856" data-category="Known VoIP Providers">C2 Comm</option>
+				<option value="1073741858" data-category="Known VoIP Providers">CallaCloud</option>
+				<option value="1073741859" data-category="Known VoIP Providers">CallCentric</option>
+				<option value="1073741857" data-category="Known VoIP Providers">Callnclear</option>
+				<option value="1073741860" data-category="Known VoIP Providers">CalnCall</option>
+				<option value="1073741861" data-category="Known VoIP Providers">CC Architect</option>
+				<option value="1073741862" data-category="Known VoIP Providers">CenturyLink</option>
+				<option value="1073741863" data-category="Known VoIP Providers">China Mobile</option>
+				<option value="1073741864" data-category="Known VoIP Providers">Citelia</option>
+				<option value="1073741865" data-category="Known VoIP Providers">Clarity</option>
+				<option value="1073741867" data-category="Known VoIP Providers">Cloud Nippon</option>
+				<option value="1073741868" data-category="Known VoIP Providers">CM.com SIP Trunking</option>
+				<option value="1073741869" data-category="Known VoIP Providers">Cobalt IT</option>
+				<option value="1073741870" data-category="Known VoIP Providers">Colt SIP Trunking</option>
+				<option value="1073741871" data-category="Known VoIP Providers">Connectviet</option>
+				<option value="1073741872" data-category="Known VoIP Providers">Convergia</option>
+				<option value="1073741873" data-category="Known VoIP Providers">Coriolis</option>
+				<option value="1073741874" data-category="Known VoIP Providers">Cyta</option>
+				<option value="1073741875" data-category="Known VoIP Providers">Dataphone</option>
+				<option value="1073741876" data-category="Known VoIP Providers">Datora Telecom</option>
+				<option value="1073741878" data-category="Known VoIP Providers">Destiny</option>
+				<option value="1073741877" data-category="Known VoIP Providers">Destiny Flux</option>
+				<option value="1073741969" data-category="Known VoIP Providers">Deutsche Telekom</option>
+				<option value="1073741879" data-category="Known VoIP Providers">DID Logic</option>
+				<option value="1073741880" data-category="Known VoIP Providers">Directcall</option>
+				<option value="1073741881" data-category="Known VoIP Providers">Dominion Telecom</option>
+				<option value="1073741832" data-category="Known VoIP Providers">Drei Business SIP Connect</option>
+				<option value="1073741937" data-category="Known VoIP Providers">Dstny</option>
+				<option value="1073741882" data-category="Known VoIP Providers">dus.net</option>
+				<option value="1073741883" data-category="Known VoIP Providers">Easybell</option>
+				<option value="1073741884" data-category="Known VoIP Providers">Elastix</option>
+				<option value="1073741926" data-category="Known VoIP Providers">epic</option>
+				<option value="1073741885" data-category="Known VoIP Providers">EWE TEL</option>
+				<option value="1073741886" data-category="Known VoIP Providers">fiberstream</option>
+				<option value="1073741887" data-category="Known VoIP Providers">Fidalia Networks</option>
+				<option value="1073741888" data-category="Known VoIP Providers">FL1 Telecom</option>
+				<option value="1073741889" data-category="Known VoIP Providers">Flex Network</option>
+				<option value="1073741890" data-category="Known VoIP Providers">Flowroute</option>
+				<option value="1073741891" data-category="Known VoIP Providers">FM Telecom</option>
+				<option value="1073741892" data-category="Known VoIP Providers">Fuse 2</option>
+				<option value="1073741893" data-category="Known VoIP Providers">Gamma</option>
+				<option value="1073741894" data-category="Known VoIP Providers">Generic</option>
+				<option value="1073741895" data-category="Known VoIP Providers">GO</option>
+				<option value="1073741896" data-category="Known VoIP Providers">Gradwell</option>
+				<option value="1073741840" data-category="Known VoIP Providers">handSIP (by Alhambra)</option>
+				<option value="1073741897" data-category="Known VoIP Providers">HFO Telecom Vertriebs GmbH</option>
+				<option value="1073741898" data-category="Known VoIP Providers">HostProfis</option>
+				<option value="1073741899" data-category="Known VoIP Providers">Infoset</option>
+				<option value="1073741900" data-category="Known VoIP Providers">Internetport</option>
+				<option value="1073741901" data-category="Known VoIP Providers">Intertel</option>
+				<option value="1073741866" data-category="Known VoIP Providers">IRIDEOS</option>
+				<option value="1073741902" data-category="Known VoIP Providers">IT Communications Limited</option>
+				<option value="1073741903" data-category="Known VoIP Providers">Itel Solutions SIP Trunk</option>
+				<option value="1073741904" data-category="Known VoIP Providers">iWay AG</option>
+				<option value="1073741905" data-category="Known VoIP Providers">Ixica</option>
+				<option value="1073741906" data-category="Known VoIP Providers">Jaguar Network</option>
+				<option value="1073741907" data-category="Known VoIP Providers">Jivetel</option>
+				<option value="1073741908" data-category="Known VoIP Providers">KeenSystems</option>
+				<option value="1073741909" data-category="Known VoIP Providers">Keyyo</option>
+				<option value="1073741910" data-category="Known VoIP Providers">Kinetix Connect</option>
+				<option value="1073741911" data-category="Known VoIP Providers">Kiwi VoIP</option>
+				<option value="1073741912" data-category="Known VoIP Providers">Koesio</option>
+				<option value="1073741913" data-category="Known VoIP Providers">Kyivstar</option>
+				<option value="1073741915" data-category="Known VoIP Providers">LCR Telecom NV</option>
+				<option value="1073741914" data-category="Known VoIP Providers">LCRcom</option>
+				<option value="1073741916" data-category="Known VoIP Providers">LIBRA</option>
+				<option value="1073741917" data-category="Known VoIP Providers">lifecell</option>
+				<option value="1073741918" data-category="Known VoIP Providers">Lightwire</option>
+				<option value="1073741919" data-category="Known VoIP Providers">MANGO OFFICE</option>
+				<option value="1073741920" data-category="Known VoIP Providers">MCNtelecom GmbH</option>
+				<option value="1073741921" data-category="Known VoIP Providers">Messagenet</option>
+				<option value="1073741922" data-category="Known VoIP Providers">MixVoip</option>
+				<option value="1073741923" data-category="Known VoIP Providers">MK Netzdienste</option>
+				<option value="1073741924" data-category="Known VoIP Providers">M-Net SIP-Trunk</option>
+				<option value="1073741925" data-category="Known VoIP Providers">modulus</option>
+				<option value="1073741927" data-category="Known VoIP Providers">Multiconnect GmbH</option>
+				<option value="1073741929" data-category="Known VoIP Providers">NASK SA</option>
+				<option value="1073741930" data-category="Known VoIP Providers">NETPLANET</option>
+				<option value="1073741931" data-category="Known VoIP Providers">Netpluz SIP</option>
+				<option value="1073741932" data-category="Known VoIP Providers">NGX Networks</option>
+				<option value="1073741933" data-category="Known VoIP Providers">Nova SIP Trunk</option>
+				<option value="1073741934" data-category="Known VoIP Providers">Novofon</option>
+				<option value="1073741935" data-category="Known VoIP Providers">NTES</option>
+				<option value="1073741936" data-category="Known VoIP Providers">Nvoip</option>
+				<option value="1073741938" data-category="Known VoIP Providers">Orange Romania</option>
+				<option value="1073741939" data-category="Known VoIP Providers">OVH</option>
+				<option value="1073741940" data-category="Known VoIP Providers">Partner Communications</option>
+				<option value="1073741941" data-category="Known VoIP Providers">Peoplefone</option>
+				<option value="1073741942" data-category="Known VoIP Providers">Phenix Partner</option>
+				<option value="1073741943" data-category="Known VoIP Providers">PLINK</option>
+				<option value="1073741944" data-category="Known VoIP Providers">Plusnet</option>
+				<option value="1073741945" data-category="Known VoIP Providers">Pocos</option>
+				<option value="1073741946" data-category="Known VoIP Providers">Primetel SIP Trunk</option>
+				<option value="1073741947" data-category="Known VoIP Providers">Proximus</option>
+				<option value="1073741948" data-category="Known VoIP Providers">QBit</option>
+				<option value="1073741949" data-category="Known VoIP Providers">Quickline AG</option>
+				<option value="1073741950" data-category="Known VoIP Providers">Reventix</option>
+				<option value="1073741951" data-category="Known VoIP Providers">RingOffice</option>
+				<option value="1073741953" data-category="Known VoIP Providers">Sewan</option>
+				<option value="1073741954" data-category="Known VoIP Providers">SFR</option>
+				<option value="1073741955" data-category="Known VoIP Providers">SingTel</option>
+				<option value="1073741960" data-category="Known VoIP Providers">SIP.US</option>
+				<option value="1073741956" data-category="Known VoIP Providers">Sipcall</option>
+				<option value="1073741957" data-category="Known VoIP Providers">SipConnect</option>
+				<option value="1073741958" data-category="Known VoIP Providers">SipGate</option>
+				<option value="1073741959" data-category="Known VoIP Providers">SIPTRUNK.com</option>
+				<option value="1073741961" data-category="Known VoIP Providers">Skyetel</option>
+				<option value="1073741962" data-category="Known VoIP Providers">SkyWire</option>
+				<option value="1073741963" data-category="Known VoIP Providers">Spitfire</option>
+				<option value="1073741964" data-category="Known VoIP Providers">Sunrise Business</option>
+				<option value="1073741984" data-category="Known VoIP Providers">Sunrise Registration</option>
+				<option value="1073741965" data-category="Known VoIP Providers">Swisscom</option>
+				<option value="1073741928" data-category="Known VoIP Providers">Symbio Networks/MyNetFone</option>
+				<option value="1073741966" data-category="Known VoIP Providers">T4Com Ltd</option>
+				<option value="1073741967" data-category="Known VoIP Providers">Tata Communications</option>
+				<option value="1073741968" data-category="Known VoIP Providers">TechIT.be</option>
+				<option value="1073741970" data-category="Known VoIP Providers">Telerys</option>
+				<option value="1073741971" data-category="Known VoIP Providers">Teletek Sip Trunk</option>
+				<option value="1073741972" data-category="Known VoIP Providers">TeleVoIP</option>
+				<option value="1073741973" data-category="Known VoIP Providers">Telin</option>
+				<option value="1073741824" data-category="Known VoIP Providers">Telnyx LLC</option>
+				<option value="1073741974" data-category="Known VoIP Providers">Telstra</option>
+				<option value="1073741825" data-category="Known VoIP Providers">Telxi LLC</option>
+				<option value="1073741975" data-category="Known VoIP Providers">Trenove</option>
+				<option value="1073741976" data-category="Known VoIP Providers">Trunk SIP SRR</option>
+				<option value="1073741977" data-category="Known VoIP Providers">Trunk Voip Telecom</option>
+				<option value="1073741978" data-category="Known VoIP Providers">Twilio</option>
+				<option value="1073741980" data-category="Known VoIP Providers">UC Experts</option>
+				<option value="1073741981" data-category="Known VoIP Providers">UFONE</option>
+				<option value="1073741982" data-category="Known VoIP Providers">Ukrtelecom</option>
+				<option value="1073741979" data-category="Known VoIP Providers">UNIDATA</option>
+				<option value="1073741983" data-category="Known VoIP Providers">Unidata S.p.A.</option>
+				<option value="1073741952" data-category="Known VoIP Providers">unyc</option>
+				<option value="1073741986" data-category="Known VoIP Providers">Versatel</option>
+				<option value="1073741987" data-category="Known VoIP Providers">Vitelity</option>
+				<option value="1073741988" data-category="Known VoIP Providers">Vivacom</option>
+				<option value="1073741989" data-category="Known VoIP Providers">Vivo</option>
+				<option value="1073741990" data-category="Known VoIP Providers">Vocus</option>
+				<option value="1073741991" data-category="Known VoIP Providers">Vodafone</option>
+				<option value="1073741985" data-category="Known VoIP Providers">Vodafone Czech Republic</option>
+				<option value="1073741992" data-category="Known VoIP Providers">Vodafone Iceland</option>
+				<option value="1073741993" data-category="Known VoIP Providers">Vodafone SIP</option>
+				<option value="1073741994" data-category="Known VoIP Providers">Voiceflex</option>
+				<option value="1073741995" data-category="Known VoIP Providers">VoiceHost</option>
+				<option value="1073741996" data-category="Known VoIP Providers">Voiceland SIP Trunk</option>
+				<option value="1073741997" data-category="Known VoIP Providers">VoiceMeUp</option>
+				<option value="1073741999" data-category="Known VoIP Providers">VoIP.MS</option>
+				<option value="1073741998" data-category="Known VoIP Providers">VoipCall</option>
+				<option value="1073742000" data-category="Known VoIP Providers">VoipVoice</option>
+				<option value="1073742001" data-category="Known VoIP Providers">VOX SIP</option>
+				<option value="1073742002" data-category="Known VoIP Providers">Voxtelesys</option>
+				<option value="1073742003" data-category="Known VoIP Providers">Wavix</option>
+				<option value="1073742004" data-category="Known VoIP Providers">Weepee</option>
+				<option value="1073742005" data-category="Known VoIP Providers">Wilhelm.tel</option>
+				<option value="1073742006" data-category="Known VoIP Providers">Wiretap Telecom</option>
+				<option value="1073742007" data-category="Known VoIP Providers">Yellowgrid</option>
+				<option value="1073742008" data-category="Known VoIP Providers">Zen Business</option>
+
+			</select></td>
+    </tr>
+
+
+    
+
+</table>
+
+
+                                        <br />
+                                        
+
+<script type="text/javascript">
+    function ConfirmMakeDirect() { return confirm('Are you sure you want to make this customer a direct partner?'); }
+</script>
+
+<h3>Parent (<span id="Main_CustomerEditParent_parentType">Distributor</span>)</h3>
+
+
+    <table class="submit" style="margin: 0">
+        <tr>
+            <td class="s">Solution Provider</td>
+            <td>
+                <input id="Main_CustomerEditParent_cbSolutionProvider" type="checkbox" name="ctl00$Main$CustomerEditParent$cbSolutionProvider" /></td>
+        </tr>
+    </table>
+
+
+
+
+
+    <table class="submit" style="margin: 0">
+        <tr>
+            <td class="s">Company</td>
+            <td>
+                <a id="Main_CustomerEditParent_hlCompany" href="edit.aspx?i=23217" style="font-weight:bold;">ADN – Advanced Digital Network Distribution GmbH</a></td>
+        </tr>
+        <tr>
+            <td class="s">Country</td>
+            <td>
+                <span id="Main_CustomerEditParent_lblCountry" style="font-weight:bold;">Germany</span></td>
+        </tr>
+    </table>
+    
+        <p>
+            Click
+            <a onclick="return ConfirmMakeDirect();" id="Main_CustomerEditParent_btnMakeDirect" href="javascript:__doPostBack(&#39;ctl00$Main$CustomerEditParent$btnMakeDirect&#39;,&#39;&#39;)"><b>here</b></a>
+            to unlink from parent company.
+        </p>
+    
+
+
+<p>
+    
+    Onboarded by:&nbsp;3CX
+    
+</p>
+
+
+
+    <h3>Distributor/SP Override</h3>
+    <table class="submit" style="margin: 0">
+        <tr>
+            <td class="s">Can Order Direct</td>
+            <td>
+                <input id="Main_CustomerEditParent_cbCanOrderDirect" type="checkbox" name="ctl00$Main$CustomerEditParent$cbCanOrderDirect" /></td>
+        </tr>
+    </table>
+
+
+<div id="Main_CustomerEditParent_DirectPurchasesEndusers" style="margin-top: 10px">
+				
+    <h3>End-User Rights</h3>
+    <div id="Main_CustomerEditParent_upDirectPurchasesEndusers">
+					
+            <table>
+                <tr>
+                    <td colspan="2"><span>Select which rights assigned customers shall have while linked to this account:</span></td>
+                </tr>
+                <tr>
+                    <td>
+                        <table class="submit" style="margin: 0; margin-right: 60px;">
+                            <tr>
+                                <td colspan="2"><span>Onboarded by 3CX</span></td>
+                            </tr>
+                            <tr>
+                                <td class="s">Unlink Themself</td>
+                                <td>
+                                    <input id="Main_CustomerEditParent_cbAllowSelfOnboardedEnduserUnlink" type="checkbox" name="ctl00$Main$CustomerEditParent$cbAllowSelfOnboardedEnduserUnlink" checked="checked" /></td>
+                            </tr>
+                            <tr id="Main_CustomerEditParent_tr1">
+						<td class="s">Buy Subscriptions</td>
+						<td>
+                                    <input id="Main_CustomerEditParent_cbAllowSelfOnboardedEnduserPurchases" type="checkbox" name="ctl00$Main$CustomerEditParent$cbAllowSelfOnboardedEnduserPurchases" /></td>
+					</tr>
+					
+                            <tr id="Main_CustomerEditParent_tr2">
+						<td class="s">Buy Upgrades</td>
+						<td>
+                                    <input id="Main_CustomerEditParent_cbAllowSelfOnboardedEnduserUpgrades" type="checkbox" name="ctl00$Main$CustomerEditParent$cbAllowSelfOnboardedEnduserUpgrades" /></td>
+					</tr>
+					
+                            <tr id="Main_CustomerEditParent_tr3">
+						<td class="s">Renew Subscriptions</td>
+						<td>
+                                    <input id="Main_CustomerEditParent_cbAllowSelfOnboardedEnduserRenewals" type="checkbox" name="ctl00$Main$CustomerEditParent$cbAllowSelfOnboardedEnduserRenewals" checked="checked" /></td>
+					</tr>
+					
+                        </table>
+                    </td>
+                    <td>
+                        <table class="submit" style="margin: 0;">
+                            <tr>
+                                <td colspan="2"><span>Onboarded by  Partner </span></td>
+                            </tr>
+                            <tr>
+                                <td class="s">Unlink Themself</td>
+                                <td>
+                                    <input id="Main_CustomerEditParent_cbAllowEnduserUnlink" type="checkbox" name="ctl00$Main$CustomerEditParent$cbAllowEnduserUnlink" /></td>
+                            </tr>
+                            <tr id="Main_CustomerEditParent_tr7">
+						<td class="s">Buy Subscriptions</td>
+						<td>
+                                    <input id="Main_CustomerEditParent_cbAllowEnduserPurchases" type="checkbox" name="ctl00$Main$CustomerEditParent$cbAllowEnduserPurchases" /></td>
+					</tr>
+					
+                            <tr>
+                                <td class="s">Buy Upgrades</td>
+                                <td>
+                                    <input id="Main_CustomerEditParent_cbAllowEnduserUpgrades" type="checkbox" name="ctl00$Main$CustomerEditParent$cbAllowEnduserUpgrades" /></td>
+                            </tr>
+                            <tr>
+                                <td class="s">Renew Subscriptions</td>
+                                <td>
+                                    <input id="Main_CustomerEditParent_cbAllowEnduserRenewals" type="checkbox" name="ctl00$Main$CustomerEditParent$cbAllowEnduserRenewals" /></td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        
+				</div>
+
+			</div>
+
+
+
+
+
+
+
+
+
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="margin-right: 50px">
+                                        
+
+<h3>Commercial Keys</h3>
+
+<table class="datagrid" cellspacing="0" rules="all" border="1" id="Main_CustomerEditKeysStatistic_dg" style="width:700px;border-collapse:collapse;">
+				<tr class="header">
+					<td>SC</td><td># of Keys</td><td>% of Total</td><td style="font-style:italic;">of which non-activated</td>
+				</tr><tr>
+					<td>
+                4
+            </td><td style="white-space:nowrap;">
+                5
+            </td><td style="white-space:nowrap;">
+                5 %
+            </td><td style="white-space:nowrap;">
+                0
+            </td>
+				</tr><tr>
+					<td>
+                8
+            </td><td style="white-space:nowrap;">
+                78
+            </td><td style="white-space:nowrap;">
+                76 %
+            </td><td style="white-space:nowrap;">
+                0
+            </td>
+				</tr><tr>
+					<td>
+                16+
+            </td><td style="white-space:nowrap;">
+                19
+            </td><td style="white-space:nowrap;">
+                19 %
+            </td><td style="white-space:nowrap;">
+                0
+            </td>
+				</tr>
+			</table>
+
+                                        <br />
+                                        
+
+<h3>New Commercial Keys</h3>
+
+<table class="datagrid" cellspacing="0" rules="all" border="1" id="Main_CustomerEditNewKeysStatistic_dg" style="width:700px;border-collapse:collapse;">
+				<tr class="header">
+					<td>Period</td><td>SC</td><td># of Keys</td><td>% of Total</td><td style="font-style:italic;">of which non-activated</td>
+				</tr><tr class="header">
+					<td>
+                This Year
+            </td><td>
+                &nbsp;
+            </td><td style="white-space:nowrap;">
+                &nbsp;
+            </td><td style="white-space:nowrap;">
+                &nbsp;
+            </td><td style="white-space:nowrap;">
+                &nbsp;
+            </td>
+				</tr><tr>
+					<td>
+                &nbsp;
+            </td><td>
+                16+
+            </td><td style="white-space:nowrap;">
+                0
+            </td><td style="white-space:nowrap;">
+                0
+            </td><td style="white-space:nowrap;">
+                0
+            </td>
+				</tr><tr>
+					<td>
+                &nbsp;
+            </td><td>
+                8
+            </td><td style="white-space:nowrap;">
+                3
+            </td><td style="white-space:nowrap;">
+                100 %
+            </td><td style="white-space:nowrap;">
+                0
+            </td>
+				</tr><tr class="header">
+					<td>
+                Last Year
+            </td><td>
+                &nbsp;
+            </td><td style="white-space:nowrap;">
+                &nbsp;
+            </td><td style="white-space:nowrap;">
+                &nbsp;
+            </td><td style="white-space:nowrap;">
+                &nbsp;
+            </td>
+				</tr><tr>
+					<td>
+                &nbsp;
+            </td><td>
+                16+
+            </td><td style="white-space:nowrap;">
+                0
+            </td><td style="white-space:nowrap;">
+                0
+            </td><td style="white-space:nowrap;">
+                0
+            </td>
+				</tr><tr>
+					<td>
+                &nbsp;
+            </td><td>
+                8
+            </td><td style="white-space:nowrap;">
+                6
+            </td><td style="white-space:nowrap;">
+                100 %
+            </td><td style="white-space:nowrap;">
+                0
+            </td>
+				</tr>
+			</table>
+
+                                        <br />
+                                        
+
+<h3>Not Renewed</h3>
+
+<table class="datagrid" cellspacing="0" rules="all" border="1" id="Main_CustomerEditExpiringKeysStatistic_dg" style="width:700px;border-collapse:collapse;">
+				<tr class="header">
+					<td>Period</td><td>SC</td><td>Expired</td><td>Expiring</td><td>Renewed</td>
+				</tr><tr class="header">
+					<td>
+                This Year
+            </td><td>
+                &nbsp;
+            </td><td style="white-space:nowrap;">
+                &nbsp;
+            </td><td style="white-space:nowrap;">
+                &nbsp;
+            </td><td style="white-space:nowrap;">
+                &nbsp;
+            </td>
+				</tr><tr>
+					<td>
+                &nbsp;
+            </td><td>
+                4
+            </td><td style="white-space:nowrap;">
+                0
+            </td><td style="white-space:nowrap;">
+                3
+            </td><td style="white-space:nowrap;">
+                2
+            </td>
+				</tr><tr>
+					<td>
+                &nbsp;
+            </td><td>
+                8+
+            </td><td style="white-space:nowrap;">
+                0
+            </td><td style="white-space:nowrap;">
+                58
+            </td><td style="white-space:nowrap;">
+                34
+            </td>
+				</tr><tr class="header">
+					<td>
+                Last Year
+            </td><td>
+                &nbsp;
+            </td><td style="white-space:nowrap;">
+                &nbsp;
+            </td><td style="white-space:nowrap;">
+                &nbsp;
+            </td><td style="white-space:nowrap;">
+                &nbsp;
+            </td>
+				</tr><tr>
+					<td>
+                &nbsp;
+            </td><td>
+                4
+            </td><td style="white-space:nowrap;">
+                0
+            </td><td style="white-space:nowrap;">
+                0
+            </td><td style="white-space:nowrap;">
+                5
+            </td>
+				</tr><tr>
+					<td>
+                &nbsp;
+            </td><td>
+                8+
+            </td><td style="white-space:nowrap;">
+                0
+            </td><td style="white-space:nowrap;">
+                0
+            </td><td style="white-space:nowrap;">
+                86
+            </td>
+				</tr>
+			</table>
+
+                                        <br />
+                                        
+
+<h3>Free/Trials</h3>
+
+<table class="datagrid" cellspacing="0" rules="all" border="1" id="Main_CustomerEditFreeKeysStatistic_dg" style="width:700px;border-collapse:collapse;">
+				<tr class="header">
+					<td>Type</td><td># of Keys</td>
+				</tr><tr>
+					<td>
+                Free
+            </td><td style="white-space:nowrap;">
+                1
+            </td>
+				</tr><tr>
+					<td>
+                Trial
+            </td><td style="white-space:nowrap;">
+                0
+            </td>
+				</tr><tr>
+					<td>
+                SMB(Free)
+            </td><td style="white-space:nowrap;">
+                0
+            </td>
+				</tr>
+			</table>
+
+                                        <br />
+                                        
+
+<h3>Expiring License Keys</h3>
+<div id="Main_CustomerEditExpiringKeys_CustomerExpiringKeysUpdatePanel">
+				
+        
+
+<div class="navigator">
+    <span id="Main_CustomerEditExpiringKeys_NavigatorControl_lblRecordCount">3 of 3 record(s)</span> - 
+        <span id="Main_CustomerEditExpiringKeys_NavigatorControl_lblPage">Page 1 of 1</span>
+    <span id="Main_CustomerEditExpiringKeys_NavigatorControl_lblExtra"></span>
+</div>
+
+
+
+        <table class="datagrid" cellspacing="0" rules="all" border="1" id="Main_CustomerEditExpiringKeys_dg" style="width:700px;border-collapse:collapse;">
+					<tr class="header">
+						<td>License Key</td><td>Product</td><td>Version</td><td>Type</td><td>Maintenance<br />Expiry</td><td>Last<br />Activity</td><td align="right">ACTS</td>
+					</tr><tr>
+						<td>
+                        <a id="Main_CustomerEditExpiringKeys_dg_hlLicenseKey_0" href="../key/edit.aspx?i=598665&amp;r=%2fpartner%2fedit.aspx%3fi%3d35424">3BZU-L8BW-GBMZ-QG72</a>
+                        
+                    </td><td style="white-space:nowrap;">
+                        <span id="Main_CustomerEditExpiringKeys_dg_lblProductDescription_0">3CX Professional</span> <br />
+                        <i><span id="Main_CustomerEditExpiringKeys_dg_lblAdditionalDescription_0">Annual</span></i>
+                    </td><td style="white-space:nowrap;">
+                        <span id="Main_CustomerEditExpiringKeys_dg_lblVersion_0">v20.0 Update 8 (Build 1121)</span></td><td align="center" style="white-space:nowrap;">
+                        <span id="Main_CustomerEditExpiringKeys_dg_lblType_0" title="Commercial">C</span></td><td style="white-space:nowrap;">
+                        <span id="Main_CustomerEditExpiringKeys_dg_lblMaintenanceExpiry_0">May 22, 2026</span></td><td>
+                        <span id="Main_CustomerEditExpiringKeys_dg_lblLastActivityDate_0">Apr 27, 2026</span></td><td align="right">
+                        <span id="Main_CustomerEditExpiringKeys_dg_lblActivations_0">186</span></td>
+					</tr><tr>
+						<td>
+                        <a id="Main_CustomerEditExpiringKeys_dg_hlLicenseKey_1" href="../key/edit.aspx?i=1569420&amp;r=%2fpartner%2fedit.aspx%3fi%3d35424">G8RI-IYOD-SNUK-AHFN</a>
+                        
+                    </td><td style="white-space:nowrap;">
+                        <span id="Main_CustomerEditExpiringKeys_dg_lblProductDescription_1">3CX Enterprise</span> <br />
+                        <i><span id="Main_CustomerEditExpiringKeys_dg_lblAdditionalDescription_1">Annual</span></i>
+                    </td><td style="white-space:nowrap;">
+                        <span id="Main_CustomerEditExpiringKeys_dg_lblVersion_1">v20.0 Update 8 (Build 1121)</span></td><td align="center" style="white-space:nowrap;">
+                        <span id="Main_CustomerEditExpiringKeys_dg_lblType_1" title="Commercial">C</span></td><td style="white-space:nowrap;">
+                        <span id="Main_CustomerEditExpiringKeys_dg_lblMaintenanceExpiry_1">May 26, 2026</span></td><td>
+                        <span id="Main_CustomerEditExpiringKeys_dg_lblLastActivityDate_1">Apr 27, 2026</span></td><td align="right">
+                        <span id="Main_CustomerEditExpiringKeys_dg_lblActivations_1">50</span></td>
+					</tr><tr>
+						<td>
+                        <a id="Main_CustomerEditExpiringKeys_dg_hlLicenseKey_2" href="../key/edit.aspx?i=1715310&amp;r=%2fpartner%2fedit.aspx%3fi%3d35424">TNEI-O2PO-TB4S-Y2QG</a>
+                        
+                    </td><td style="white-space:nowrap;">
+                        <span id="Main_CustomerEditExpiringKeys_dg_lblProductDescription_2">3CX Professional</span> <br />
+                        <i><span id="Main_CustomerEditExpiringKeys_dg_lblAdditionalDescription_2">Annual</span></i>
+                    </td><td style="white-space:nowrap;">
+                        <span id="Main_CustomerEditExpiringKeys_dg_lblVersion_2">v20.0 Update 8 (Build 1121)</span></td><td align="center" style="white-space:nowrap;">
+                        <span id="Main_CustomerEditExpiringKeys_dg_lblType_2" title="Commercial">C</span></td><td style="white-space:nowrap;">
+                        <span id="Main_CustomerEditExpiringKeys_dg_lblMaintenanceExpiry_2">May 28, 2026</span></td><td>
+                        <span id="Main_CustomerEditExpiringKeys_dg_lblLastActivityDate_2">Apr 28, 2026</span></td><td align="right">
+                        <span id="Main_CustomerEditExpiringKeys_dg_lblActivations_2">55</span></td>
+					</tr>
+				</table>
+    
+			</div>
+
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    
+		</div>
+
+                    
+
+                    <div id="Main_pnlBilling" class="tab-panel hidden">
+			
+                        <table class="cols">
+                            <tr>
+                                <td>
+                                    <div style="margin-right: 50px">
+                                        
+
+<h3>Contact Information (Public)</h3>
+<table class="c">
+    <tr>
+        <td class="s">Company<span class="required">*</span></td>
+        <td>
+            <input name="ctl00$Main$CustomerEditContact$tbCompany" type="text" value=".incotech GmbH" maxlength="50" id="Main_CustomerEditContact_tbCompany" style="width:300px;" />
+            <span id="Main_CustomerEditContact_vldCompany" class="validator" style="display:none;">Company required</span>
+        </td>
+    </tr>
+    <tr>
+        <td class="s">Contact First Name<span class="required">*</span></td>
+        <td>
+            <input name="ctl00$Main$CustomerEditContact$tbContactFirstName" type="text" value="Jens" maxlength="24" id="Main_CustomerEditContact_tbContactFirstName" style="width:300px;" />
+            <span id="Main_CustomerEditContact_vldFirstName" class="validator" style="display:none;">Contact First Name required.</span>
+        </td>
+    </tr>
+    <tr>
+        <td class="s">Contact Last Name<span class="required">*</span></td>
+        <td>
+            <input name="ctl00$Main$CustomerEditContact$tbContactLastName" type="text" value="Burgath" maxlength="25" id="Main_CustomerEditContact_tbContactLastName" style="width:300px;" />
+            <span id="Main_CustomerEditContact_vldLastName" class="validator" style="display:none;">Contact Last Name required.</span>
+        </td>
+    </tr>
+    <tr>
+        <td class="s">Email Address<span class="required">*</span></td>
+        <td>
+            <input name="ctl00$Main$CustomerEditContact$tbEmail" type="text" value="service@incotech.de" maxlength="50" id="Main_CustomerEditContact_tbEmail" autocomplete="off" style="width:300px;" />
+            <span id="Main_CustomerEditContact_vldEmail" class="validator" style="display:none;">Email required</span>
+            <span id="Main_CustomerEditContact_vldEmail2" class="validator" style="display:none;">Malformed email address.</span>
+            <span id="Main_CustomerEditContact_EmailDomainValidator" class="validator" style="display:none;">Email cannot be in @3cx.com domain.</span>
+        </td>
+    </tr>
+    <tr>
+        <td class="s">Telephone
+        </td>
+        <td>
+            <input name="ctl00$Main$CustomerEditContact$tbPhone" type="text" value="+49 5601 961990" maxlength="20" id="Main_CustomerEditContact_tbPhone" style="width:300px;" />
+            <span id="Main_CustomerEditContact_vldTelephone" class="validator" style="display:none;">Telephone required.</span>
+        </td>
+    </tr>
+    <tr>
+        <td class="s">Fax</td>
+        <td>
+            <input name="ctl00$Main$CustomerEditContact$tbFax" type="text" value="+49 5601 9619925" maxlength="20" id="Main_CustomerEditContact_tbFax" style="width:300px;" />
+        </td>
+    </tr>
+    <tr>
+        <td class="s">Website URL</td>
+        <td>
+            <input name="ctl00$Main$CustomerEditContact$tbURL" type="text" value="http://www.incotech.de" maxlength="200" id="Main_CustomerEditContact_tbURL" style="width:280px;" /><input type="image" name="ctl00$Main$CustomerEditContact$btnWebsite" id="Main_CustomerEditContact_btnWebsite" src="/content/shared/images/play.gif" align="top" onclick="return VisitWebsite();" /><br />
+            <span id="Main_CustomerEditContact_vldURL" class="validator" style="display:none;">Malformed Website URL</span></td>
+    </tr>
+    <tr>
+        <td class="s">Click To Call URL</td>
+        <td>
+            <input name="ctl00$Main$CustomerEditContact$tbClickToCall" type="text" maxlength="200" id="Main_CustomerEditContact_tbClickToCall" placeholder="https://{FQDN}:{PORT}/{NAME}" style="width:280px;" /><input type="image" name="ctl00$Main$CustomerEditContact$ImageButton1" id="Main_CustomerEditContact_ImageButton1" src="/content/shared/images/play.gif" align="top" onclick="return VisitClickToCall();" /><br />
+            <span id="Main_CustomerEditContact_vldClickToCall" class="validator" style="display:none;">Malformed Click To Call URL</span>
+        </td>
+    </tr>
+</table>
+
+                                        <div id="Main_CustomerEditBanner_ComponentContainer">
+				
+   
+    <h3>Company Profile</h3>
+
+    <textarea name="ctl00$Main$CustomerEditBanner$tbProfileDescription" rows="10" cols="20" id="Main_CustomerEditBanner_tbProfileDescription" style="width:440px;font-family: Arial; resize: none">
+.incotech - Ihr freundliches Systemhaus aus Nordhessen ||
+
+Unsere modernen und hochsicheren Client-Server- und Firewallsysteme sorgen daf&#252;r, dass Sie zuverl&#228;ssig und sicher Arbeiten k&#246;nnen. || Telekommunikation - f&#252;hrender 3CX-Partner der Region. || Vom einzelnen Telefon bis hin zur komplexen Telefonanlage mit mehreren hundert Nebenstellen und weltumspannender Vernetzung. Bei uns erhalten Sie die Beratung, Service und Betreuung, um moderne Technik effizient und sicher zu nutzen. || Platin zertifiziert, T&#220;V-gepr&#252;ft und &#252;ber 20 Jahre Erfahrung: Unser Anspruch f&#252;r Ihre Sicherheit.</textarea>
+
+    <h3>Company Banner</h3>
+    
+
+    <div id="Main_CustomerEditBanner_ImageUpdatePanel">
+					
+            <p><img id="Main_CustomerEditBanner_LogoImg" src="data:image/jpeg;base64,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" /></p>
+            <p id="Main_CustomerEditBanner_RemoveLogoPnl"><a onclick="return ConfirmRemoveBanner();" id="Main_CustomerEditBanner_RemoveLogoBtn" href="javascript:__doPostBack(&#39;ctl00$Main$CustomerEditBanner$RemoveLogoBtn&#39;,&#39;&#39;)">Remove Banner</a></p>
+                
+
+<div class="messagebox">
+    <div id="Main_CustomerEditBanner_MessageBox_pnlMessage">
+						
+        <div class="btn"></div>
+        <span id="Main_CustomerEditBanner_MessageBox_lblText"></span>
+    
+					</div>
+</div>
+                <div id="Main_CustomerEditBanner_LogoFileUpload">
+						<input type="hidden" name="ctl00$Main$CustomerEditBanner$LogoFileUpload$ctl00" id="Main_CustomerEditBanner_LogoFileUpload_ctl00" /><div id="Main_CustomerEditBanner_LogoFileUpload_ctl01"><input name="ctl00$Main$CustomerEditBanner$LogoFileUpload$ctl02" type="file" id="ctl00_Main_CustomerEditBanner_LogoFileUpload_ctl02" style="width:400px;" /></div>
+					</div>
+        
+				</div>
+
+
+			</div>
+
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div style="margin-right: 50px">
+                                        
+
+<h3>
+    Billing Information</h3>
+<div id="Main_CustomerEditBilling_BillingDetailsUpdatePanel">
+				
+        <table class="c">
+            
+                <tr>
+                    <td class="s">Billing Address
+                    </td>
+                    <td>
+                        <input name="ctl00$Main$CustomerEditBilling$tbAddressLine1" type="text" value="Ehlener Str. 41, Schauenburg, Germany" maxlength="300" id="Main_CustomerEditBilling_tbAddressLine1" placesapi="PlacesApiAutocomplete" style="width:300px;" /><span id="Main_CustomerEditBilling_vldAddressLine1" class="validator" style="display:none;">Address is required.</span>
+                        <div style="display: none">
+                            <input name="ctl00$Main$CustomerEditBilling$tbAdministrativeArea1" type="text" id="Main_CustomerEditBilling_tbAdministrativeArea1" placesapi="administrative_area_level_1" /><input name="ctl00$Main$CustomerEditBilling$tbAdministrativeArea2" type="text" id="Main_CustomerEditBilling_tbAdministrativeArea2" placesapi="administrative_area_level_2" /><input name="ctl00$Main$CustomerEditBilling$tbPlaceID" type="text" value="ChIJs3I2aOlqu0cRffqwWVFER7U" id="Main_CustomerEditBilling_tbPlaceID" placesapi="place_id" />
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="s">Address Line 2</td>
+                    <td>
+                        <input name="ctl00$Main$CustomerEditBilling$tbAddressLine2" type="text" maxlength="300" id="Main_CustomerEditBilling_tbAddressLine2" style="width:300px;" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="s">Address Line 3</td>
+                    <td>
+                        <input name="ctl00$Main$CustomerEditBilling$tbAddressLine3" type="text" maxlength="300" id="Main_CustomerEditBilling_tbAddressLine3" style="width:300px;" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="s">City
+                    </td>
+                    <td>
+                        <input name="ctl00$Main$CustomerEditBilling$tbCity" type="text" value="Schauenburg" maxlength="50" id="Main_CustomerEditBilling_tbCity" placesapi="locality" style="width:300px;" /><span id="Main_CustomerEditBilling_vldCity" class="validator" style="display:none;">City is required.</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="s">State/Province
+                    </td>
+                    <td>
+                        <input name="ctl00$Main$CustomerEditBilling$tbState" type="text" maxlength="20" id="Main_CustomerEditBilling_tbState" placesapi="administrative_area_level_1" style="width:300px;" />
+                    </td>
+                </tr>
+            
+            <tr>
+                <td class="s">Zip Code<span class="required">*</span>
+                </td>
+                <td>
+                    <input name="ctl00$Main$CustomerEditBilling$tbZipCode" type="text" value="34270" maxlength="20" id="Main_CustomerEditBilling_tbZipCode" placesapi="postal_code" style="width:300px;" />
+                    <span id="Main_CustomerEditBilling_vldZipCode" class="validator" style="display:none;">Zip code is required.</span>
+                </td>
+            </tr>
+            <tr>
+                <td class="s">Country<span class="required">*</span>
+                </td>
+                <td>
+                    <select name="ctl00$Main$CustomerEditBilling$ddlCountry" onchange="javascript:setTimeout(&#39;__doPostBack(\&#39;ctl00$Main$CustomerEditBilling$ddlCountry\&#39;,\&#39;\&#39;)&#39;, 0)" id="Main_CustomerEditBilling_ddlCountry" placesapi="country" style="width:300px;">
+					<option value="">-- Select country -- </option>
+					<option value="AF">Afghanistan</option>
+					<option value="AX">&#197;land Islands</option>
+					<option value="AL">Albania</option>
+					<option value="DZ">Algeria</option>
+					<option value="AS">American Samoa</option>
+					<option value="AD">Andorra</option>
+					<option value="AO">Angola</option>
+					<option value="AI">Anguilla</option>
+					<option value="AQ">Antarctica</option>
+					<option value="AG">Antigua and Barbuda</option>
+					<option value="AR">Argentina</option>
+					<option value="AM">Armenia</option>
+					<option value="AW">Aruba</option>
+					<option value="AU">Australia</option>
+					<option value="AT">Austria</option>
+					<option value="AZ">Azerbaijan</option>
+					<option value="BS">Bahamas</option>
+					<option value="BH">Bahrain</option>
+					<option value="BD">Bangladesh</option>
+					<option value="BB">Barbados</option>
+					<option value="BY">Belarus</option>
+					<option value="BE">Belgium</option>
+					<option value="BZ">Belize</option>
+					<option value="BJ">Benin</option>
+					<option value="BM">Bermuda</option>
+					<option value="BT">Bhutan</option>
+					<option value="BO">Bolivia</option>
+					<option value="BQ">Bonaire, Sint Eustatius and Saba</option>
+					<option value="BA">Bosnia and Herzegowina</option>
+					<option value="BW">Botswana</option>
+					<option value="BV">Bouvet Island</option>
+					<option value="BR">Brazil</option>
+					<option value="IO">British Indian Ocean Territory</option>
+					<option value="BN">Brunei Darussalam</option>
+					<option value="BG">Bulgaria</option>
+					<option value="BF">Burkina Faso</option>
+					<option value="BI">Burundi</option>
+					<option value="KH">Cambodia</option>
+					<option value="CM">Cameroon</option>
+					<option value="CA">Canada</option>
+					<option value="IC">Canary Islands</option>
+					<option value="CV">Cape Verde</option>
+					<option value="KY">Cayman Islands</option>
+					<option value="CF">Central African Republic</option>
+					<option value="TD">Chad</option>
+					<option value="CL">Chile</option>
+					<option value="CN">China</option>
+					<option value="CX">Christmas Island</option>
+					<option value="CC">Cocos (Keeling) Islands</option>
+					<option value="CO">Colombia</option>
+					<option value="KM">Comoros</option>
+					<option value="CD">Congo, Democratic Republic of</option>
+					<option value="CG">Congo, Republic of</option>
+					<option value="CK">Cook Islands</option>
+					<option value="CR">Costa Rica</option>
+					<option value="CI">C&#244;te d&#39;Ivoire</option>
+					<option value="HR">Croatia</option>
+					<option value="CU">Cuba</option>
+					<option value="CW">Cura&#231;ao</option>
+					<option value="CY">Cyprus</option>
+					<option value="CZ">Czech Republic</option>
+					<option value="DK">Denmark</option>
+					<option value="DJ">Djibouti</option>
+					<option value="DM">Dominica</option>
+					<option value="DO">Dominican Republic</option>
+					<option value="TL">East Timor</option>
+					<option value="EC">Ecuador</option>
+					<option value="EG">Egypt</option>
+					<option value="SV">El Salvador</option>
+					<option value="GQ">Equatorial Guinea</option>
+					<option value="ER">Eritrea</option>
+					<option value="EE">Estonia</option>
+					<option value="SZ">Eswatini</option>
+					<option value="ET">Ethiopia</option>
+					<option value="FK">Falkland Islands (Malvinas)</option>
+					<option value="FO">Faroe Islands</option>
+					<option value="FJ">Fiji</option>
+					<option value="FI">Finland</option>
+					<option value="FR">France</option>
+					<option value="GF">French Guiana</option>
+					<option value="PF">French Polynesia</option>
+					<option value="TF">French Southern Territories</option>
+					<option value="GA">Gabon</option>
+					<option value="GM">Gambia</option>
+					<option value="GE">Georgia</option>
+					<option selected="selected" value="DE">Germany</option>
+					<option value="GH">Ghana</option>
+					<option value="GI">Gibraltar</option>
+					<option value="GR">Greece</option>
+					<option value="GL">Greenland</option>
+					<option value="GD">Grenada</option>
+					<option value="GP">Guadeloupe</option>
+					<option value="GU">Guam</option>
+					<option value="GT">Guatemala</option>
+					<option value="GG">Guernsey</option>
+					<option value="GN">Guinea</option>
+					<option value="GW">Guinea-Bissau</option>
+					<option value="GY">Guyana</option>
+					<option value="HT">Haiti</option>
+					<option value="HM">Heard and Mc Donald Islands</option>
+					<option value="VA">Holy See (Vatican City State)</option>
+					<option value="HN">Honduras</option>
+					<option value="HK">Hong Kong</option>
+					<option value="HU">Hungary</option>
+					<option value="IS">Iceland</option>
+					<option value="IN">India</option>
+					<option value="ID">Indonesia</option>
+					<option value="IR">Iran</option>
+					<option value="IQ">Iraq</option>
+					<option value="IE">Ireland</option>
+					<option value="IM">Isle of Man</option>
+					<option value="IL">Israel</option>
+					<option value="IT">Italy</option>
+					<option value="JM">Jamaica</option>
+					<option value="JP">Japan</option>
+					<option value="JE">Jersey</option>
+					<option value="JO">Jordan</option>
+					<option value="KZ">Kazakhstan</option>
+					<option value="KE">Kenya</option>
+					<option value="KI">Kiribati</option>
+					<option value="KP">Korea, North</option>
+					<option value="KR">Korea, South</option>
+					<option value="XK">Kosovo</option>
+					<option value="KW">Kuwait</option>
+					<option value="KG">Kyrgyzstan</option>
+					<option value="LA">Lao People&#39;s Democratic Republic</option>
+					<option value="LV">Latvia</option>
+					<option value="LB">Lebanon</option>
+					<option value="LS">Lesotho</option>
+					<option value="LR">Liberia</option>
+					<option value="LY">Libya</option>
+					<option value="LI">Liechtenstein</option>
+					<option value="LT">Lithuania</option>
+					<option value="LU">Luxembourg</option>
+					<option value="MO">Macau</option>
+					<option value="MG">Madagascar</option>
+					<option value="MW">Malawi</option>
+					<option value="MY">Malaysia</option>
+					<option value="MV">Maldives</option>
+					<option value="ML">Mali</option>
+					<option value="MT">Malta</option>
+					<option value="MH">Marshall Islands</option>
+					<option value="MQ">Martinique</option>
+					<option value="MR">Mauritania</option>
+					<option value="MU">Mauritius</option>
+					<option value="YT">Mayotte</option>
+					<option value="MX">Mexico</option>
+					<option value="FM">Micronesia</option>
+					<option value="MD">Moldova</option>
+					<option value="MC">Monaco</option>
+					<option value="MN">Mongolia</option>
+					<option value="ME">Montenegro</option>
+					<option value="MS">Montserrat</option>
+					<option value="MA">Morocco</option>
+					<option value="MZ">Mozambique</option>
+					<option value="MM">Myanmar</option>
+					<option value="NA">Namibia</option>
+					<option value="NR">Nauru</option>
+					<option value="NP">Nepal</option>
+					<option value="NL">Netherlands</option>
+					<option value="NC">New Caledonia</option>
+					<option value="NZ">New Zealand</option>
+					<option value="NI">Nicaragua</option>
+					<option value="NE">Niger</option>
+					<option value="NG">Nigeria</option>
+					<option value="NU">Niue</option>
+					<option value="NF">Norfolk Island</option>
+					<option value="MK">North Macedonia</option>
+					<option value="MP">Northern Mariana Islands</option>
+					<option value="NO">Norway</option>
+					<option value="OM">Oman</option>
+					<option value="PK">Pakistan</option>
+					<option value="PW">Palau</option>
+					<option value="PS">Palestinian Territory</option>
+					<option value="PA">Panama</option>
+					<option value="PG">Papua New Guinea</option>
+					<option value="PY">Paraguay</option>
+					<option value="PE">Peru</option>
+					<option value="PH">Philippines</option>
+					<option value="PN">Pitcairn</option>
+					<option value="PL">Poland</option>
+					<option value="PT">Portugal</option>
+					<option value="PR">Puerto Rico</option>
+					<option value="QA">Qatar</option>
+					<option value="RE">Reunion</option>
+					<option value="RO">Romania</option>
+					<option value="RU">Russia</option>
+					<option value="RW">Rwanda</option>
+					<option value="BL">Saint Barth&#233;lemy</option>
+					<option value="KN">Saint Kitts and Nevis</option>
+					<option value="LC">Saint Lucia</option>
+					<option value="MF">Saint Martin</option>
+					<option value="VC">Saint Vincent and the Grenadines</option>
+					<option value="WS">Samoa</option>
+					<option value="SM">San Marino</option>
+					<option value="ST">Sao Tome and Principe</option>
+					<option value="SA">Saudi Arabia</option>
+					<option value="SN">Senegal</option>
+					<option value="RS">Serbia</option>
+					<option value="CS">Serbia and Montenegro</option>
+					<option value="SC">Seychelles</option>
+					<option value="SL">Sierra Leone</option>
+					<option value="SG">Singapore</option>
+					<option value="SX">Sint Maarten</option>
+					<option value="SK">Slovakia</option>
+					<option value="SI">Slovenia</option>
+					<option value="SB">Solomon Islands</option>
+					<option value="SO">Somalia</option>
+					<option value="ZA">South Africa</option>
+					<option value="GS">South Georgia and the South Sandwich Islands</option>
+					<option value="SS">South Sudan</option>
+					<option value="ES">Spain</option>
+					<option value="LK">Sri Lanka</option>
+					<option value="SH">St. Helena</option>
+					<option value="PM">St. Pierre and Miquelon</option>
+					<option value="SD">Sudan</option>
+					<option value="SR">Suriname</option>
+					<option value="SJ">Svalbard and Jan Mayen Islands</option>
+					<option value="SE">Sweden</option>
+					<option value="CH">Switzerland</option>
+					<option value="SY">Syrian Arab Republic</option>
+					<option value="TW">Taiwan</option>
+					<option value="TJ">Tajikistan</option>
+					<option value="TZ">Tanzania</option>
+					<option value="TH">Thailand</option>
+					<option value="TG">Togo</option>
+					<option value="TK">Tokelau</option>
+					<option value="TO">Tonga</option>
+					<option value="TT">Trinidad and Tobago</option>
+					<option value="TN">Tunisia</option>
+					<option value="TR">Turkey</option>
+					<option value="TM">Turkmenistan</option>
+					<option value="TC">Turks and Caicos Islands</option>
+					<option value="TV">Tuvalu</option>
+					<option value="UG">Uganda</option>
+					<option value="UA">Ukraine</option>
+					<option value="AE">United Arab Emirates</option>
+					<option value="GB">United Kingdom</option>
+					<option value="US">United States</option>
+					<option value="UM">United States Minor Outlying Islands</option>
+					<option value="UY">Uruguay</option>
+					<option value="UZ">Uzbekistan</option>
+					<option value="VU">Vanuatu</option>
+					<option value="VE">Venezuela</option>
+					<option value="VN">Viet Nam</option>
+					<option value="VG">Virgin Islands (British)</option>
+					<option value="VI">Virgin Islands (U.S.)</option>
+					<option value="WF">Wallis and Futuna Islands</option>
+					<option value="EH">Western Sahara</option>
+					<option value="YE">Yemen</option>
+					<option value="ZM">Zambia</option>
+					<option value="ZW">Zimbabwe</option>
+
+				</select>
+                    <span id="Main_CustomerEditBilling_vldCountry" class="validator" style="display:none;">Country is required.</span>
+                </td>
+            </tr>
+            <tr>
+                <td class="s">Latitude
+                </td>
+                <td>
+                    <input name="ctl00$Main$CustomerEditBilling$tbLatitude" type="text" value="51.286040100" maxlength="20" id="Main_CustomerEditBilling_tbLatitude" placesapi="latitude" style="width:300px;" />
+                </td>
+            </tr>
+            <tr>
+                <td class="s">Longitude
+                </td>
+                <td>
+                    <input name="ctl00$Main$CustomerEditBilling$tbLongitude" type="text" value="9.338098800" maxlength="20" id="Main_CustomerEditBilling_tbLongitude" placesapi="longitude" style="width:300px;" />
+                </td>
+            </tr>
+            
+        </table>
+    
+			</div>
+<table class="c">
+    
+        <tr>
+            <td class="s">Payment Method</td>
+            <td>
+                <select name="ctl00$Main$CustomerEditBilling$ddlPaymentMethod" id="Main_CustomerEditBilling_ddlPaymentMethod" disabled="disabled" class="aspNetDisabled" style="width:300px;">
+				<option selected="selected" value="">Free selection</option>
+				<option value="CK">Checkout</option>
+				<option value="GP">Google Pay</option>
+				<option value="CC">PayPal</option>
+				<option value="AD">Adyen</option>
+				<option value="WT">Wire Transfer</option>
+				<option value="MN">Monthly</option>
+
+			</select></td>
+        </tr>
+    
+    
+        <tr>
+            <td class="s">Currency</td>
+            <td>
+                <select name="ctl00$Main$CustomerEditBilling$ddlCurrency" id="Main_CustomerEditBilling_ddlCurrency" disabled="disabled" class="aspNetDisabled" style="width:300px;">
+				<option selected="selected" value="EUR">Euros</option>
+
+			</select></td>
+        </tr>
+    
+    
+        <tr>
+            <td class="s">Sage Account</td>
+            <td colspan="3">
+                <input name="ctl00$Main$CustomerEditBilling$tbSageID" type="text" value="INCGM1" maxlength="6" readonly="readonly" id="Main_CustomerEditBilling_tbSageID" style="width:100px;" /></td>
+        </tr>
+    
+    <tr>
+        <td class="s">Overwrite Sales Region for Sales Reports</td>
+        <td colspan="3">
+            <select name="ctl00$Main$CustomerEditBilling$ddlOverwritSalesRegion" id="Main_CustomerEditBilling_ddlOverwritSalesRegion" style="width:300px;">
+				<option selected="selected" value=""></option>
+				<option value="7">Africa</option>
+				<option value="26">Asia</option>
+				<option value="10">Australasia</option>
+				<option value="20">BeNeLux</option>
+				<option value="25">Canada</option>
+				<option value="5">Central Europe</option>
+				<option value="6">Eastern Europe</option>
+				<option value="18">France</option>
+				<option value="21">Iberia</option>
+				<option value="9">Italy</option>
+				<option value="15">Middle East North Africa</option>
+				<option value="29">Russia</option>
+				<option value="2">Scandinavia</option>
+				<option value="1">South &amp; Central America</option>
+				<option value="4">UK &amp; Ireland</option>
+				<option value="8">United States</option>
+
+			</select>
+        </td>
+    </tr>
+</table>
+
+
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        
+<h3><span id="Main_CustomerEditCreditLimit_lblTitle">Credit Terms (Optional)</span></h3>
+<table>
+        <tr>
+            <td>Credit Limit</td>
+            <td>
+                <input name="ctl00$Main$CustomerEditCreditLimit$tbCreditLimit" type="text" readonly="readonly" id="Main_CustomerEditCreditLimit_tbCreditLimit" />
+                <span id="Main_CustomerEditCreditLimit_vldCreditLimit" class="validator" style="display:none;">Enter a valid credit limit amount.</span>
+            </td>
+        </tr>
+        <tr>
+            <td>Current Credit</td>
+            <td>
+                <b>0.00</b>
+            </td>
+        </tr>
+</table>
+<p id="Main_CustomerEditCreditLimit_DownloadStatementSection">
+    <input type="submit" name="ctl00$Main$CustomerEditCreditLimit$DownloadStatementBtn" value="Download Statement" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$Main$CustomerEditCreditLimit$DownloadStatementBtn&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="Main_CustomerEditCreditLimit_DownloadStatementBtn" />
+</p>
+
+                                        
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    
+		</div>
+
+                    
+
+                    
+
+                    
+                    
+                    
+                    
+
+                    <div style="clear: both"></div>
+                    
+                    <br />
+                
+	</div>
+
+                <div class="buttons">
+                    <input type="submit" name="ctl00$Main$btnSaveExit" value="OK" onclick="return true;WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(&quot;ctl00$Main$btnSaveExit&quot;, &quot;&quot;, true, &quot;&quot;, &quot;&quot;, false, false))" id="Main_btnSaveExit" />
+                    <input type="submit" name="ctl00$Main$btnCancel" value="Cancel" id="Main_btnCancel" />
+                </div>
+
+            
+</div>
+    </div>
+
+    <div id="Main_ConcurrencyWarningUpdatePanel">
+	
+            
+
+        
+</div>
+
+    <div id="Main_ConcurrencyWarningUpdatePanel2">
+	
+            
+
+        
+</div>
+
+    <div id="Main_ConcurrencyWarningUpdatePanel3">
+	
+            
+
+        
+</div>
+
+    <div id="Main_ConcurrencyWarningUpdatePanel4">
+	
+            
+
+        
+</div>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB-0L3fIqvAMMRZuPgWrnE1x0gQL5Ole_k&libraries=places&language=en&callback=initAutocomplete" async defer></script>
+
+        </div>
+    
+<script type="text/javascript">
+//<![CDATA[
+var Page_Validators =  new Array(document.getElementById("Main_CustomerEditGeneral_vldCustomerType"), document.getElementById("Main_CustomerEditGeneral_vldProductDiscount"), document.getElementById("Main_CustomerEditGeneral_vldProductDiscount2"), document.getElementById("Main_CustomerEditGeneral_vldHostingDiscount"), document.getElementById("Main_CustomerEditGeneral_vldHostingDiscount2"), document.getElementById("Main_CustomerEditGeneral_vldMaintenanceDiscount"), document.getElementById("Main_CustomerEditGeneral_vldMaintenanceDiscount2"), document.getElementById("Main_CustomerEditContact_vldCompany"), document.getElementById("Main_CustomerEditContact_vldFirstName"), document.getElementById("Main_CustomerEditContact_vldLastName"), document.getElementById("Main_CustomerEditContact_vldEmail"), document.getElementById("Main_CustomerEditContact_vldEmail2"), document.getElementById("Main_CustomerEditContact_EmailDomainValidator"), document.getElementById("Main_CustomerEditContact_vldTelephone"), document.getElementById("Main_CustomerEditContact_vldURL"), document.getElementById("Main_CustomerEditContact_vldClickToCall"), document.getElementById("Main_CustomerEditBilling_vldAddressLine1"), document.getElementById("Main_CustomerEditBilling_vldCity"), document.getElementById("Main_CustomerEditBilling_vldZipCode"), document.getElementById("Main_CustomerEditBilling_vldCountry"), document.getElementById("Main_CustomerEditCreditLimit_vldCreditLimit"));
+//]]>
+</script>
+
+<script type="text/javascript">
+//<![CDATA[
+var Main_CustomerEditGeneral_vldCustomerType = document.all ? document.all["Main_CustomerEditGeneral_vldCustomerType"] : document.getElementById("Main_CustomerEditGeneral_vldCustomerType");
+Main_CustomerEditGeneral_vldCustomerType.controltovalidate = "Main_CustomerEditGeneral_ddlCustomerType";
+Main_CustomerEditGeneral_vldCustomerType.errormessage = "Customer type is required";
+Main_CustomerEditGeneral_vldCustomerType.display = "Dynamic";
+Main_CustomerEditGeneral_vldCustomerType.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+Main_CustomerEditGeneral_vldCustomerType.initialvalue = "";
+var Main_CustomerEditGeneral_vldProductDiscount = document.all ? document.all["Main_CustomerEditGeneral_vldProductDiscount"] : document.getElementById("Main_CustomerEditGeneral_vldProductDiscount");
+Main_CustomerEditGeneral_vldProductDiscount.controltovalidate = "Main_CustomerEditGeneral_tbProductDiscount";
+Main_CustomerEditGeneral_vldProductDiscount.errormessage = "Product discount is required.";
+Main_CustomerEditGeneral_vldProductDiscount.display = "Dynamic";
+Main_CustomerEditGeneral_vldProductDiscount.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+Main_CustomerEditGeneral_vldProductDiscount.initialvalue = "";
+var Main_CustomerEditGeneral_vldProductDiscount2 = document.all ? document.all["Main_CustomerEditGeneral_vldProductDiscount2"] : document.getElementById("Main_CustomerEditGeneral_vldProductDiscount2");
+Main_CustomerEditGeneral_vldProductDiscount2.controltovalidate = "Main_CustomerEditGeneral_tbProductDiscount";
+Main_CustomerEditGeneral_vldProductDiscount2.errormessage = "Discount must be between 0 and 100.";
+Main_CustomerEditGeneral_vldProductDiscount2.display = "Dynamic";
+Main_CustomerEditGeneral_vldProductDiscount2.type = "Double";
+Main_CustomerEditGeneral_vldProductDiscount2.decimalchar = ".";
+Main_CustomerEditGeneral_vldProductDiscount2.evaluationfunction = "RangeValidatorEvaluateIsValid";
+Main_CustomerEditGeneral_vldProductDiscount2.maximumvalue = "100";
+Main_CustomerEditGeneral_vldProductDiscount2.minimumvalue = "0";
+var Main_CustomerEditGeneral_vldHostingDiscount = document.all ? document.all["Main_CustomerEditGeneral_vldHostingDiscount"] : document.getElementById("Main_CustomerEditGeneral_vldHostingDiscount");
+Main_CustomerEditGeneral_vldHostingDiscount.controltovalidate = "Main_CustomerEditGeneral_tbHostingDiscount";
+Main_CustomerEditGeneral_vldHostingDiscount.errormessage = "Hosting discount is required.";
+Main_CustomerEditGeneral_vldHostingDiscount.display = "Dynamic";
+Main_CustomerEditGeneral_vldHostingDiscount.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+Main_CustomerEditGeneral_vldHostingDiscount.initialvalue = "";
+var Main_CustomerEditGeneral_vldHostingDiscount2 = document.all ? document.all["Main_CustomerEditGeneral_vldHostingDiscount2"] : document.getElementById("Main_CustomerEditGeneral_vldHostingDiscount2");
+Main_CustomerEditGeneral_vldHostingDiscount2.controltovalidate = "Main_CustomerEditGeneral_tbHostingDiscount";
+Main_CustomerEditGeneral_vldHostingDiscount2.errormessage = "Hosting discount must be between 0 and 100.";
+Main_CustomerEditGeneral_vldHostingDiscount2.display = "Dynamic";
+Main_CustomerEditGeneral_vldHostingDiscount2.type = "Double";
+Main_CustomerEditGeneral_vldHostingDiscount2.decimalchar = ".";
+Main_CustomerEditGeneral_vldHostingDiscount2.evaluationfunction = "RangeValidatorEvaluateIsValid";
+Main_CustomerEditGeneral_vldHostingDiscount2.maximumvalue = "100";
+Main_CustomerEditGeneral_vldHostingDiscount2.minimumvalue = "0";
+var Main_CustomerEditGeneral_vldMaintenanceDiscount = document.all ? document.all["Main_CustomerEditGeneral_vldMaintenanceDiscount"] : document.getElementById("Main_CustomerEditGeneral_vldMaintenanceDiscount");
+Main_CustomerEditGeneral_vldMaintenanceDiscount.controltovalidate = "Main_CustomerEditGeneral_tbMaintenanceDiscount";
+Main_CustomerEditGeneral_vldMaintenanceDiscount.errormessage = "Maintenance discount is required.";
+Main_CustomerEditGeneral_vldMaintenanceDiscount.display = "Dynamic";
+Main_CustomerEditGeneral_vldMaintenanceDiscount.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+Main_CustomerEditGeneral_vldMaintenanceDiscount.initialvalue = "";
+var Main_CustomerEditGeneral_vldMaintenanceDiscount2 = document.all ? document.all["Main_CustomerEditGeneral_vldMaintenanceDiscount2"] : document.getElementById("Main_CustomerEditGeneral_vldMaintenanceDiscount2");
+Main_CustomerEditGeneral_vldMaintenanceDiscount2.controltovalidate = "Main_CustomerEditGeneral_tbMaintenanceDiscount";
+Main_CustomerEditGeneral_vldMaintenanceDiscount2.errormessage = "Discount must be between 0 and 100.";
+Main_CustomerEditGeneral_vldMaintenanceDiscount2.display = "Dynamic";
+Main_CustomerEditGeneral_vldMaintenanceDiscount2.type = "Double";
+Main_CustomerEditGeneral_vldMaintenanceDiscount2.decimalchar = ".";
+Main_CustomerEditGeneral_vldMaintenanceDiscount2.evaluationfunction = "RangeValidatorEvaluateIsValid";
+Main_CustomerEditGeneral_vldMaintenanceDiscount2.maximumvalue = "100";
+Main_CustomerEditGeneral_vldMaintenanceDiscount2.minimumvalue = "0";
+var Main_CustomerEditContact_vldCompany = document.all ? document.all["Main_CustomerEditContact_vldCompany"] : document.getElementById("Main_CustomerEditContact_vldCompany");
+Main_CustomerEditContact_vldCompany.controltovalidate = "Main_CustomerEditContact_tbCompany";
+Main_CustomerEditContact_vldCompany.errormessage = "Company required";
+Main_CustomerEditContact_vldCompany.display = "Dynamic";
+Main_CustomerEditContact_vldCompany.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+Main_CustomerEditContact_vldCompany.initialvalue = "";
+var Main_CustomerEditContact_vldFirstName = document.all ? document.all["Main_CustomerEditContact_vldFirstName"] : document.getElementById("Main_CustomerEditContact_vldFirstName");
+Main_CustomerEditContact_vldFirstName.controltovalidate = "Main_CustomerEditContact_tbContactFirstName";
+Main_CustomerEditContact_vldFirstName.errormessage = "Contact First Name required.";
+Main_CustomerEditContact_vldFirstName.display = "Dynamic";
+Main_CustomerEditContact_vldFirstName.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+Main_CustomerEditContact_vldFirstName.initialvalue = "";
+var Main_CustomerEditContact_vldLastName = document.all ? document.all["Main_CustomerEditContact_vldLastName"] : document.getElementById("Main_CustomerEditContact_vldLastName");
+Main_CustomerEditContact_vldLastName.controltovalidate = "Main_CustomerEditContact_tbContactLastName";
+Main_CustomerEditContact_vldLastName.errormessage = "Contact Last Name required.";
+Main_CustomerEditContact_vldLastName.display = "Dynamic";
+Main_CustomerEditContact_vldLastName.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+Main_CustomerEditContact_vldLastName.initialvalue = "";
+var Main_CustomerEditContact_vldEmail = document.all ? document.all["Main_CustomerEditContact_vldEmail"] : document.getElementById("Main_CustomerEditContact_vldEmail");
+Main_CustomerEditContact_vldEmail.controltovalidate = "Main_CustomerEditContact_tbEmail";
+Main_CustomerEditContact_vldEmail.errormessage = "Email required";
+Main_CustomerEditContact_vldEmail.display = "Dynamic";
+Main_CustomerEditContact_vldEmail.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+Main_CustomerEditContact_vldEmail.initialvalue = "";
+var Main_CustomerEditContact_vldEmail2 = document.all ? document.all["Main_CustomerEditContact_vldEmail2"] : document.getElementById("Main_CustomerEditContact_vldEmail2");
+Main_CustomerEditContact_vldEmail2.controltovalidate = "Main_CustomerEditContact_tbEmail";
+Main_CustomerEditContact_vldEmail2.errormessage = "Malformed email address.";
+Main_CustomerEditContact_vldEmail2.display = "Dynamic";
+Main_CustomerEditContact_vldEmail2.evaluationfunction = "RegularExpressionValidatorEvaluateIsValid";
+Main_CustomerEditContact_vldEmail2.validationexpression = "^\\s*((\\([a-zA-Z_0-9#\\-~!$&\'`(*+,;=:<>{}@[\\]\"\\.\\\\/?|%^]*\\))?((\"([a-zA-Z_0-9#\\-~!$&\'`()*+,;=:<>{}@[\\]\\./?|%^ ]|(%[0-9a-fA-F]{2})|(\\\\\")|(\\\\\\\\))+\")|([a-zA-Z_0-9#\\-~!$&\'`*+,;=:<>{}[\\]/?|%^]+))(\\.((\"([a-zA-Z_0-9#\\-~!$&\'`()*+,;=:<>{}@[\\]\\./?|%^ ]|(%[0-9a-fA-F]{2})|(\\\\\")|(\\\\\\\\))+\")|([a-zA-Z_0-9#\\-~!$&\'`*+,;=:<>{}[\\]/?|%^]+)))*(\\([a-zA-Z_0-9#\\-~!$&\'`(*+,;=:<>{}@[\\]\"\\.\\\\/?|%^]*\\))?)@((\\([a-zA-Z_0-9#\\-~!$&\'`(*+,;=:<>{}@[\\]\"\\.\\\\/?|%^]*\\))?((?=[a-zA-Z0-9\\-\\.]{1,253}([^a-zA-Z0-9\\-]|$))((?=[a-zA-Z0-9\\-]{1,64}([^a-zA-Z0-9\\-]|$))[a-zA-Z0-9]+[a-zA-Z0-9\\-]*)(\\.((?=[a-zA-Z0-9\\-]{1,64}([^a-zA-Z0-9\\-]|$))[a-zA-Z0-9]+[a-zA-Z0-9\\-]*)){1,126})(\\([a-zA-Z_0-9#\\-~!$&\'`(*+,;=:<>{}@[\\]\"\\.\\\\/?|%^]*\\))?)\\s*$";
+var Main_CustomerEditContact_EmailDomainValidator = document.all ? document.all["Main_CustomerEditContact_EmailDomainValidator"] : document.getElementById("Main_CustomerEditContact_EmailDomainValidator");
+Main_CustomerEditContact_EmailDomainValidator.controltovalidate = "Main_CustomerEditContact_tbEmail";
+Main_CustomerEditContact_EmailDomainValidator.errormessage = "Email cannot be in @3cx.com domain.";
+Main_CustomerEditContact_EmailDomainValidator.display = "Dynamic";
+Main_CustomerEditContact_EmailDomainValidator.evaluationfunction = "CustomValidatorEvaluateIsValid";
+var Main_CustomerEditContact_vldTelephone = document.all ? document.all["Main_CustomerEditContact_vldTelephone"] : document.getElementById("Main_CustomerEditContact_vldTelephone");
+Main_CustomerEditContact_vldTelephone.controltovalidate = "Main_CustomerEditContact_tbPhone";
+Main_CustomerEditContact_vldTelephone.errormessage = "Telephone required.";
+Main_CustomerEditContact_vldTelephone.display = "Dynamic";
+Main_CustomerEditContact_vldTelephone.enabled = "False";
+Main_CustomerEditContact_vldTelephone.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+Main_CustomerEditContact_vldTelephone.initialvalue = "";
+var Main_CustomerEditContact_vldURL = document.all ? document.all["Main_CustomerEditContact_vldURL"] : document.getElementById("Main_CustomerEditContact_vldURL");
+Main_CustomerEditContact_vldURL.controltovalidate = "Main_CustomerEditContact_tbURL";
+Main_CustomerEditContact_vldURL.errormessage = "Malformed Website URL";
+Main_CustomerEditContact_vldURL.display = "Dynamic";
+Main_CustomerEditContact_vldURL.evaluationfunction = "RegularExpressionValidatorEvaluateIsValid";
+Main_CustomerEditContact_vldURL.validationexpression = "\\s*http(s)?://([\\w-]+\\.)+[\\w-]+(/[\\w- ./?%&=]*)?\\s*";
+var Main_CustomerEditContact_vldClickToCall = document.all ? document.all["Main_CustomerEditContact_vldClickToCall"] : document.getElementById("Main_CustomerEditContact_vldClickToCall");
+Main_CustomerEditContact_vldClickToCall.controltovalidate = "Main_CustomerEditContact_tbClickToCall";
+Main_CustomerEditContact_vldClickToCall.errormessage = "Malformed Click To Call URL";
+Main_CustomerEditContact_vldClickToCall.display = "Dynamic";
+Main_CustomerEditContact_vldClickToCall.evaluationfunction = "RegularExpressionValidatorEvaluateIsValid";
+Main_CustomerEditContact_vldClickToCall.validationexpression = "\\s*https://([\\w-]+\\.)+[\\w-]+(?::\\d+)?/([\\#\\w- ./_-]*)?\\s*";
+var Main_CustomerEditBilling_vldAddressLine1 = document.all ? document.all["Main_CustomerEditBilling_vldAddressLine1"] : document.getElementById("Main_CustomerEditBilling_vldAddressLine1");
+Main_CustomerEditBilling_vldAddressLine1.controltovalidate = "Main_CustomerEditBilling_tbAddressLine1";
+Main_CustomerEditBilling_vldAddressLine1.errormessage = "Address is required.";
+Main_CustomerEditBilling_vldAddressLine1.display = "Dynamic";
+Main_CustomerEditBilling_vldAddressLine1.enabled = "False";
+Main_CustomerEditBilling_vldAddressLine1.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+Main_CustomerEditBilling_vldAddressLine1.initialvalue = "";
+var Main_CustomerEditBilling_vldCity = document.all ? document.all["Main_CustomerEditBilling_vldCity"] : document.getElementById("Main_CustomerEditBilling_vldCity");
+Main_CustomerEditBilling_vldCity.controltovalidate = "Main_CustomerEditBilling_tbCity";
+Main_CustomerEditBilling_vldCity.errormessage = "City is required.";
+Main_CustomerEditBilling_vldCity.display = "Dynamic";
+Main_CustomerEditBilling_vldCity.enabled = "False";
+Main_CustomerEditBilling_vldCity.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+Main_CustomerEditBilling_vldCity.initialvalue = "";
+var Main_CustomerEditBilling_vldZipCode = document.all ? document.all["Main_CustomerEditBilling_vldZipCode"] : document.getElementById("Main_CustomerEditBilling_vldZipCode");
+Main_CustomerEditBilling_vldZipCode.controltovalidate = "Main_CustomerEditBilling_tbZipCode";
+Main_CustomerEditBilling_vldZipCode.errormessage = "Zip code is required.";
+Main_CustomerEditBilling_vldZipCode.display = "Dynamic";
+Main_CustomerEditBilling_vldZipCode.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+Main_CustomerEditBilling_vldZipCode.initialvalue = "";
+var Main_CustomerEditBilling_vldCountry = document.all ? document.all["Main_CustomerEditBilling_vldCountry"] : document.getElementById("Main_CustomerEditBilling_vldCountry");
+Main_CustomerEditBilling_vldCountry.controltovalidate = "Main_CustomerEditBilling_ddlCountry";
+Main_CustomerEditBilling_vldCountry.errormessage = "Country is required.";
+Main_CustomerEditBilling_vldCountry.display = "Dynamic";
+Main_CustomerEditBilling_vldCountry.evaluationfunction = "RequiredFieldValidatorEvaluateIsValid";
+Main_CustomerEditBilling_vldCountry.initialvalue = "";
+var Main_CustomerEditCreditLimit_vldCreditLimit = document.all ? document.all["Main_CustomerEditCreditLimit_vldCreditLimit"] : document.getElementById("Main_CustomerEditCreditLimit_vldCreditLimit");
+Main_CustomerEditCreditLimit_vldCreditLimit.controltovalidate = "Main_CustomerEditCreditLimit_tbCreditLimit";
+Main_CustomerEditCreditLimit_vldCreditLimit.errormessage = "Enter a valid credit limit amount.";
+Main_CustomerEditCreditLimit_vldCreditLimit.display = "Dynamic";
+Main_CustomerEditCreditLimit_vldCreditLimit.evaluationfunction = "CustomValidatorEvaluateIsValid";
+//]]>
+</script>
+
+
+<script type="text/javascript">
+//<![CDATA[
+function ConfirmApproveApplication() { return confirm("Are you sure you want to approve the selected application(s) as Trainee?"); }
+function ConfirmRejectApplication() { return confirm("Are you sure you want to reject the selected application(s)?"); }
+var groups = {};
+$("select option[data-category]").each(function () {
+     groups[$.trim($(this).attr("data-category"))] = true;
+});
+$.each(groups, function (c) {
+     $("select option[data-category='"+c+"']").wrapAll('<optgroup label="' + c + '">');
+});
+function VisitWebsite() {
+    var tb = document.getElementById('Main_CustomerEditContact_tbURL');
+    if (tb) {
+        var url = tb.value;
+        if (url) window.open(url, '_blank', 'noopener');
+    }
+    return false;
+}
+
+
+function VisitClickToCall() {
+    var tb = document.getElementById('Main_CustomerEditContact_tbClickToCall');
+    if (tb) {
+        var url = tb.value;
+        if (url) window.open(url, '_blank', 'noopener');
+    }
+    return false;
+}
+function BannerFileUpload_OnClientUploadError(sender, args) {
+    alert(args.get_errorMessage());
+}
+function ConfirmRemoveBanner() {
+    return confirm("If you are a listed partner, this will delete your banner from our Resellers Page. Are you sure you want to remove it?");
+}var PlacesApiAutocomplete;
+var componentForm = {
+    locality: ['long_name', 'long_name'],
+    administrative_area_level_1: ['short_name', 'long_name'],
+    administrative_area_level_2: ['long_name', 'long_name'],
+    country: ['short_name', 'long_name'],
+    postal_code: ['short_name', 'short_name']
+};
+function getPlacesApiElement(name) {
+    return getPlacesApiElements(name)[0];
+}
+function getPlacesApiElements(name) {
+    return $("[placesapi='" + name + "']");
+}
+
+function initAutocomplete() {
+    if (typeof google === 'undefined' || !google)
+        return;
+    var elem = getPlacesApiElement('PlacesApiAutocomplete');
+    if (elem) {
+        PlacesApiAutocomplete = new google.maps.places.Autocomplete(elem, { types: ['geocode'] });
+        PlacesApiAutocomplete.addListener('place_changed', fillInAddress);
+        //PlacesApiAutocomplete.setComponentRestrictions({ 'country': [getPlacesApiElement('country').value] });
+    }
+}
+
+
+function SetSelectValue(elem, str) {
+    var val = '';
+    if (elem.tagName.toUpperCase() == "SELECT") {
+        for (var i = 0; i < elem.options.length; i++) {
+            var opt = elem.options[i];
+            if (opt.value == str) {
+                val = opt.value;
+                break;
+            }
+
+            if (opt.text == str) {
+                val = opt.value;
+                break;
+            }
+        }
+        if (val) elem.value = val;
+    }
+    return val;
+}
+
+function setAddressType(addressType, val1, val2) {
+    if (componentForm[addressType]) {
+        var elems = getPlacesApiElements(addressType);
+        for (var j = 0; j < elems.length; j++) {
+            var elem = elems[j];
+            var oldval = elem.value;
+            var selectVal = '';
+            if (elem.tagName.toUpperCase() == "SELECT") {
+                selectVal = SetSelectValue(elem, val1);
+                if (!selectVal)
+                    selectVal = SetSelectValue(elem, val2);
+            }
+            else elem.value = val1;
+
+            var hasVal = val1 && true;
+            if (elem.tagName.toUpperCase() == "SELECT")
+                hasVal = selectVal && true;
+
+            if (!hasVal) {
+                $(elem).removeAttr('disabled');
+                $(elem).removeClass('aspNetDisabled');
+            }
+            if (addressType === 'country' && oldval !== val1)
+                $(elem).trigger('change');
+        }
+    }
+}
+
+function fillInAddress() {
+    // Get the place details from the PlacesApiAutocomplete object.
+    var place = PlacesApiAutocomplete.getPlace();
+    if (typeof place === 'undefined' || !place)
+        return;
+
+    // Get each component of the address from the place details
+    // and fill the corresponding field on the form.
+    for (var addrType in componentForm) {
+        var changed = false;
+        for (var i = 0; i < place.address_components.length; i++) {
+            var addressType = place.address_components[i].types[0];
+            if (addrType !== addressType) continue;
+            var val1 = place.address_components[i][componentForm[addrType][0]];
+            var val2 = place.address_components[i][componentForm[addrType][1]];
+            setAddressType(addrType, val1, val2);
+            changed = true;
+        }
+        if (!changed)
+            setAddressType(addrType, '', '');
+    }
+
+    var elem = getPlacesApiElement('place_id');
+    elem.value = place.place_id;
+    elem = getPlacesApiElement('latitude');
+    elem.value = place.geometry.location.lat();
+    elem = getPlacesApiElement('longitude');
+    elem.value = place.geometry.location.lng();
+}
+
+
+$(function () {
+    initAutocomplete();
+    Sys.WebForms.PageRequestManager.getInstance().add_pageLoaded(function () { initAutocomplete(); });
+});
+var PlacesApiAutocomplete2;
+var componentForm = {
+    locality: ['long_name', 'long_name'],
+    administrative_area_level_1: ['short_name', 'long_name'],
+    administrative_area_level_2: ['long_name', 'long_name'],
+    country: ['short_name', 'long_name'],
+    postal_code: ['short_name', 'short_name']
+};
+function getPlacesApiElement2(name) {
+    return getPlacesApiElements2(name)[0];
+}
+function getPlacesApiElements2(name) {
+    return $("[placesapi='" + name + "2']");
+}
+
+function initAutocomplete2() {
+    if (typeof google === 'undefined' || !google)
+        return;
+    var elem = getPlacesApiElement2('PlacesApiAutocomplete');
+    if (elem) {
+        PlacesApiAutocomplete2 = new google.maps.places.Autocomplete(elem, { types: ['geocode'] });
+        PlacesApiAutocomplete2.addListener('place_changed', fillInAddress2);
+        PlacesApiAutocomplete2.setComponentRestrictions({ 'country': [getPlacesApiElement2('country').value] });
+    }
+}
+
+function ShowEditPopup(showCoordinates) {
+    initAutocomplete2();
+    if (showCoordinates) {
+        $('#trLatitude').show();
+        $('#trLongitude').show();
+    }
+    else {
+        $('#trLatitude').hide();
+        $('#trLongitude').hide();
+    }
+    bootstrap.Modal.getOrCreateInstance('#Main_CustomerAdditionalListings_EditAddressPopup').show();
+
+    $('#Main_CustomerAdditionalListings_tbCompanyName').focus();
+}
+
+function HideEditPopup() {
+    $('#Main_CustomerAdditionalListings_EditAddressPopup').modal('hide');
+}
+
+function OnCountryChanged2() {
+    PlacesApiAutocomplete2.setComponentRestrictions({ 'country': [getPlacesApiElement2('country').value] });
+
+    var elem = getPlacesApiElement2('place_id');
+    if (elem) elem.value = null;
+    elem = getPlacesApiElement2('latitude');
+
+    if (elem) elem.value = null;
+    elem = getPlacesApiElement2('longitude');
+
+    if (elem) elem.value = null;
+
+    elem = getPlacesApiElement2('PlacesApiAutocomplete');
+    if (elem) elem.value = null;
+
+    elem = getPlacesApiElement2('locality');
+    if (elem) elem.value = null;
+
+    elem = getPlacesApiElement2('administrative_area_level_1');
+    if (elem) elem.value = null;
+
+    elem = getPlacesApiElement2('postal_code');
+    if (elem) elem.value = null;
+}
+
+function SetSelectValue2(elem, str) {
+    var val = '';
+    if (elem.tagName.toUpperCase() == "SELECT") {
+        for (var i = 0; i < elem.options.length; i++) {
+            var opt = elem.options[i];
+            if (opt.value == str) {
+                val = opt.value;
+                break;
+            }
+
+            if (opt.text == str) {
+                val = opt.value;
+                break;
+            }
+        }
+        if (val) elem.value = val;
+    }
+    return val;
+}
+
+function setAddressType2(addressType, val1, val2) {
+    if (componentForm[addressType]) {
+        var elems = getPlacesApiElements2(addressType);
+        for (var j = 0; j < elems.length; j++) {
+            var elem = elems[j];
+            var oldval = elem.value;
+            var selectVal = '';
+            if (elem.tagName.toUpperCase() == "SELECT") {
+                selectVal = SetSelectValue2(elem, val1);
+                if (!selectVal)
+                    selectVal = SetSelectValue2(elem, val2);
+            }
+            else elem.value = val1;
+
+            var hasVal = val1 && true;
+            if (elem.tagName.toUpperCase() == "SELECT")
+                hasVal = selectVal && true;
+
+            if (!hasVal) {
+                $(elem).removeAttr('disabled');
+                $(elem).removeClass('aspNetDisabled');
+            }
+            if (addressType === 'country' && oldval !== val1)
+                $(elem).trigger('change');
+        }
+    }
+}
+
+function fillInAddress2() {
+    // Get the place details from the PlacesApiAutocomplete object.
+    var place = PlacesApiAutocomplete2.getPlace();
+    if (typeof place === 'undefined' || !place)
+        return;
+
+    // Get each component of the address from the place details
+    // and fill the corresponding field on the form.
+    for (var addrType in componentForm) {
+        var changed = false;
+        for (var i = 0; i < place.address_components.length; i++) {
+            var addressType = place.address_components[i].types[0];
+            if (addrType !== addressType) continue;
+            var val1 = place.address_components[i][componentForm[addrType][0]];
+            var val2 = place.address_components[i][componentForm[addrType][1]];
+            setAddressType2(addrType, val1, val2);
+            changed = true;
+        }
+        if (!changed)
+            setAddressType2(addrType, '', '');
+    }
+
+    var elem = getPlacesApiElement2('place_id');
+    elem.value = place.place_id;
+    elem = getPlacesApiElement2('latitude');
+    elem.value = place.geometry.location.lat();
+    elem = getPlacesApiElement2('longitude');
+    elem.value = place.geometry.location.lng();
+}
+
+
+$(function () {
+    initAutocomplete2();
+    Sys.WebForms.PageRequestManager.getInstance().add_pageLoaded(function () { initAutocomplete2(); });
+});
+
+var Page_ValidationActive = false;
+if (typeof(ValidatorOnLoad) == "function") {
+    ValidatorOnLoad();
+}
+
+function ValidatorOnSubmit() {
+    if (Page_ValidationActive) {
+        return ValidatorCommonOnSubmit();
+    }
+    else {
+        return true;
+    }
+}
+        WebForm_AutoFocus('Main_CustomerEditContact_tbCompany');
+document.getElementById('Main_CustomerEditGeneral_vldCustomerType').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditGeneral_vldCustomerType'));
+}
+
+document.getElementById('Main_CustomerEditGeneral_vldProductDiscount').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditGeneral_vldProductDiscount'));
+}
+
+document.getElementById('Main_CustomerEditGeneral_vldProductDiscount2').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditGeneral_vldProductDiscount2'));
+}
+
+document.getElementById('Main_CustomerEditGeneral_vldHostingDiscount').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditGeneral_vldHostingDiscount'));
+}
+
+document.getElementById('Main_CustomerEditGeneral_vldHostingDiscount2').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditGeneral_vldHostingDiscount2'));
+}
+
+document.getElementById('Main_CustomerEditGeneral_vldMaintenanceDiscount').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditGeneral_vldMaintenanceDiscount'));
+}
+
+document.getElementById('Main_CustomerEditGeneral_vldMaintenanceDiscount2').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditGeneral_vldMaintenanceDiscount2'));
+}
+
+document.getElementById('Main_CustomerEditContact_vldCompany').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditContact_vldCompany'));
+}
+
+document.getElementById('Main_CustomerEditContact_vldFirstName').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditContact_vldFirstName'));
+}
+
+document.getElementById('Main_CustomerEditContact_vldLastName').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditContact_vldLastName'));
+}
+
+document.getElementById('Main_CustomerEditContact_vldEmail').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditContact_vldEmail'));
+}
+
+document.getElementById('Main_CustomerEditContact_vldEmail2').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditContact_vldEmail2'));
+}
+
+document.getElementById('Main_CustomerEditContact_EmailDomainValidator').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditContact_EmailDomainValidator'));
+}
+
+document.getElementById('Main_CustomerEditContact_vldTelephone').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditContact_vldTelephone'));
+}
+
+document.getElementById('Main_CustomerEditContact_vldURL').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditContact_vldURL'));
+}
+
+document.getElementById('Main_CustomerEditContact_vldClickToCall').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditContact_vldClickToCall'));
+}
+Sys.Application.add_init(function() {
+    $create(Sys.Extended.UI.AsyncFileUpload, {"clientStateField":$get("Main_CustomerEditBanner_LogoFileUpload_ClientState"),"completeBackColor":"Lime","errorBackColor":"Red","formName":"Form1","hiddenField":$get("Main_CustomerEditBanner_LogoFileUpload_ctl00"),"inputFile":$get("ctl00_Main_CustomerEditBanner_LogoFileUpload_ctl02"),"postBackUrl":"/partner/edit.aspx?i=35424","uploadingBackColor":"White"}, null, null, $get("Main_CustomerEditBanner_LogoFileUpload"));
+});
+
+document.getElementById('Main_CustomerEditBilling_vldAddressLine1').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditBilling_vldAddressLine1'));
+}
+
+document.getElementById('Main_CustomerEditBilling_vldCity').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditBilling_vldCity'));
+}
+
+document.getElementById('Main_CustomerEditBilling_vldZipCode').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditBilling_vldZipCode'));
+}
+
+document.getElementById('Main_CustomerEditBilling_vldCountry').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditBilling_vldCountry'));
+}
+
+document.getElementById('Main_CustomerEditCreditLimit_vldCreditLimit').dispose = function() {
+    Array.remove(Page_Validators, document.getElementById('Main_CustomerEditCreditLimit_vldCreditLimit'));
+}
+//]]>
+</script>
+</form>
+</body>
+</html>
