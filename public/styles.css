@@ -919,3 +919,263 @@ a:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* Home Partner Dashboard */
+.home-partners-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 1rem;
+  min-height: 100%;
+}
+
+.home-partners-sidebar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-filters {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.level-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.65rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chip:hover {
+  border-color: var(--accent);
+  background: rgba(61, 139, 253, 0.12);
+}
+
+.chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.chip .count {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  margin-left: 0.2rem;
+}
+
+.sidebar-search {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.search-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.sidebar-list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.partners-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+}
+
+.pitem {
+  padding: 0.75rem 0.75rem;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all 0.15s;
+}
+
+.pitem:hover {
+  background: var(--surface-2);
+}
+
+.pitem.active {
+  background: var(--accent-dim);
+  border-left-color: var(--accent);
+}
+
+.pitem-name {
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.pitem-meta {
+  font-size: 0.7rem;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+.list-info {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.home-partners-main {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.p-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1rem;
+  align-items: start;
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.p-avatar {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.p-info {
+  min-width: 0;
+}
+
+.p-name {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.p-sub {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.tier-badge {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tier-badge.titanium {
+  background: rgba(196, 181, 253, 0.2);
+  color: #c4b5fd;
+}
+
+.tier-badge.platinum {
+  background: rgba(244, 114, 182, 0.2);
+  color: #f472b6;
+}
+
+.tier-badge.gold {
+  background: rgba(250, 204, 21, 0.2);
+  color: #facc15;
+}
+
+.tier-badge.silver {
+  background: rgba(209, 213, 219, 0.2);
+  color: #e5e7eb;
+}
+
+.tier-badge.bronze {
+  background: rgba(251, 146, 60, 0.2);
+  color: #fb923c;
+}
+
+.badge-tier {
+  display: inline-block;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-tier.titanium {
+  background: rgba(196, 181, 253, 0.3);
+  color: #c4b5fd;
+}
+
+.badge-tier.platinum {
+  background: rgba(244, 114, 182, 0.3);
+  color: #f472b6;
+}
+
+.badge-tier.gold {
+  background: rgba(250, 204, 21, 0.3);
+  color: #facc15;
+}
+
+.badge-tier.silver {
+  background: rgba(209, 213, 219, 0.3);
+  color: #e5e7eb;
+}
+
+.badge-tier.bronze {
+  background: rgba(251, 146, 60, 0.3);
+  color: #fb923c;
+}
+
+.pills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.spill {
+  background: var(--surface-2);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.spill strong {
+  color: var(--text);
+  font-weight: 600;
+}
