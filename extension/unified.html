@@ -5,13 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ONYX — ERP Partner Dashboard</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/design-system.css">
 <style>
 :root {
-  --bg:#f5f6f8; --s:#ffffff; --s2:#f0f2f5; --b:#e1e4e8; --b2:#cdd0d6;
-  --a:#0077b6; --a2:#0096c7; --t:#1a1d23; --m:#5a6270; --dim:#9ba3ae;
-  --r:8px; --r2:12px;
-  --green:#2d9e5f; --red:#dc3545; --amber:#e67e00; --blue:#0077b6; --purple:#6f42c1;
-  --font:'Segoe UI',system-ui,sans-serif;
+  /* Design system tokens */
+  --bg: #0b0f14;
+  --s: #141c28;
+  --s2: #1a2332;
+  --b: #2a2d36;
+  --b2: #1f2229;
+  --a: #3d8bfd;
+  --a2: #5c9dff;
+  --t: #e8eaee;
+  --m: #8b909a;
+  --dim: #5a5f6b;
+  --r: 6px;
+  --r2: 8px;
+  --green: #4caf82;
+  --red: #e05c5c;
+  --amber: #f0a500;
+  --blue: #3d8bfd;
+  --purple: #7c5cff;
+  --font: 'Segoe UI', -apple-system, system-ui, sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--t);font:13px var(--font);}
@@ -352,7 +367,13 @@ header .sub { font-size:10px; color:var(--m); display:block; margin-top:2px; fon
 .pitem:hover{background:var(--s2);}
 .pitem.active{background:var(--s2);border-left:2px solid var(--a);padding-left:12px;}
 .pitem-name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.pitem-meta{font-size:10px;color:var(--dim);margin-top:2px;}
+.pitem-meta{font-size:10px;color:var(--dim);margin-top:2px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.pitem-meta .badge-tier{margin:0;padding:2px 6px;font-size:9px;border-radius:3px;font-weight:600;display:inline-block;}
+.pitem-meta .badge-tier.titanium{background:#a8d5ff;color:#000;}
+.pitem-meta .badge-tier.platinum{background:#d4af37;color:#000;}
+.pitem-meta .badge-tier.silver{background:#c0c0c0;color:#000;}
+.pitem-meta .badge-tier.gold{background:#ffd700;color:#000;}
+.pitem-meta .badge-tier.bronze{background:#cd7f32;color:#fff;}
 
 .section { padding:12px 14px; border-bottom:1px solid var(--b); }
 .section:last-of-type { border-bottom:none; }

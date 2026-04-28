@@ -32,7 +32,7 @@
   }
 
   function getPartnerLevel(p) {
-    return p.cert || p["Cert"] || p["Partner Category"] || p.category || "—";
+    return p.distributorLevel || p.cert || p["Cert"] || p.category || p["Partner Category"] || "—";
   }
 
   function getPartnerCountry(p) {
@@ -49,6 +49,22 @@
 
   function getPartnerRevenue(p) {
     return p.revenue || p["Annual Revenue"] || "—";
+  }
+
+  function getTierClass(level) {
+    if (!level || level === "—") return "";
+    const normalized = (level || "").toLowerCase().trim();
+    if (normalized.includes("titanium")) return "badge-tier titanium";
+    if (normalized.includes("platinum")) return "badge-tier platinum";
+    if (normalized.includes("silver")) return "badge-tier silver";
+    if (normalized.includes("gold")) return "badge-tier gold";
+    if (normalized.includes("bronze")) return "badge-tier bronze";
+    return "";
+  }
+
+  function renderTierBadge(level) {
+    const tierClass = getTierClass(level);
+    return tierClass ? `<span class="${tierClass}">${escapeHtml(level)}</span>` : escapeHtml(level);
   }
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -140,23 +156,12 @@
   // ── Snapshot load ──────────────────────────────────────────────────────────
 
   async function pickSnapshot() {
-    const repEmail = params.get("repEmail");
     const slug = params.get("slug");
     if (slug) {
       const r = await fetch(`/api/snapshots/${encodeURIComponent(slug)}`);
       if (r.ok) return r.json();
     }
-    if (repEmail) {
-      const summary = await fetch(
-        `/api/sellers/me?email=${encodeURIComponent(repEmail)}`,
-      );
-      if (summary.ok) {
-        const s = await summary.json();
-        const r = await fetch(`/api/snapshots/${encodeURIComponent(s.rep.slug)}`);
-        if (r.ok) return r.json();
-      }
-    }
-    // Fall back to most recently updated snapshot
+    // Load most recently updated snapshot
     const list = await fetch("/api/snapshots").then((r) => r.json());
     if (!list.snapshots?.length) return null;
     list.snapshots.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
@@ -216,7 +221,7 @@
         <div class="pitem ${p.id === state.activePartnerId ? "active" : ""}" data-id="${escapeHtml(p.id)}">
           <div class="pitem-name">${escapeHtml(p.company || "—")}</div>
           <div class="pitem-meta">
-            ID: ${escapeHtml(p.id)} · ${escapeHtml(getPartnerRegion(p))} · ${escapeHtml(getPartnerLevel(p))} · Owner: ${escapeHtml(getPartnerAgent(p))}
+            ID: ${escapeHtml(p.id)} · ${escapeHtml(getPartnerRegion(p))} · ${renderTierBadge(getPartnerLevel(p))} · Owner: ${escapeHtml(getPartnerAgent(p))}
           </div>
         </div>`,
       )
