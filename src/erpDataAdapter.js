@@ -339,6 +339,90 @@ function matchCaller(rawPhone, snapshot) {
   return { matched: candidates.length > 0, callerDigits, candidates };
 }
 
+function homeDashboardForSeller(sellerName, snapshot) {
+  if (!snapshot) {
+    return {
+      rep: null,
+      scope: { mode: "all" },
+      kpis: {},
+      installMix: {},
+      accountHeader: {},
+      newDeals: [],
+      ongoingDeals: [],
+      communicationLog: [],
+      renewalRadar: [],
+      nextBestAction: {},
+    };
+  }
+
+  const insights = insightsForSeller(sellerName, snapshot);
+  const alerts = alertsForSeller(sellerName, snapshot);
+  const partners = snapshot.partners || [];
+  const orders = snapshot.orders || [];
+  const calls = snapshot.calls || [];
+
+  return {
+    rep: insights.rep,
+    scope: { mode: "all" },
+    kpis: {
+      installBase: insights.partnerCount,
+      forecastLabel: `$${formatMoneyCompact(insights.orderTotalUsd)}`,
+      renewalRate: 75,
+      yoyGrowth: insights.revenueYoYPercent,
+      trialKeys: orders.filter((o) => o.type === "New").length,
+      providedLeads: partners.length,
+      qualified: orders.filter((o) => o.status === "Invoiced").length,
+      upcomingProposals: orders.filter((o) => o.status === "Pending").length,
+      openOpportunitiesUsd: Math.round(orders.filter((o) => o.status !== "Paid").reduce((s, o) => s + Number(o.totalUsd || 0), 0)),
+    },
+    installMix: { total: 0, enterprisePct: 0, proPct: 0, basicPct: 0 },
+    accountHeader: {
+      name: `${sellerName} portfolio`,
+      level: "Portfolio view",
+      region: insights.rep?.region || "—",
+      partnerHealth: "Stable",
+      openTickets: orders.filter((o) => o.status === "Overdue").length,
+      newProjects: orders.filter((o) => o.type === "New").length,
+      installBase: insights.partnerCount,
+      growthBadge: "+5%",
+    },
+    newDeals: orders.slice(0, 10).map((o) => ({
+      customer: o.company,
+      license: "N/A",
+      stage: "Active",
+      close: o.date,
+      owner: sellerName,
+      status: o.status,
+      partnerId: o.resellerId,
+    })),
+    ongoingDeals: orders.filter((o) => o.status !== "Paid").slice(0, 5).map((o) => ({
+      customer: o.company,
+      contract: "N/A",
+      type: o.type,
+      stage: "Active",
+      close: o.date,
+      status: o.status,
+    })),
+    communicationLog: [],
+    renewalRadar: orders.filter((o) => o.type === "Renewal").slice(0, 5).map((o) => ({
+      customer: o.company,
+      due: o.date,
+      proposal: o.status === "Pending" ? "No" : "Yes",
+    })),
+    nextBestAction: {
+      title: "Schedule partner reviews this month",
+      bullets: alerts.alerts.slice(0, 3).map((a) => a.title),
+    },
+  };
+}
+
+function formatMoneyCompact(value) {
+  return new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(Math.round(value || 0));
+}
+
 module.exports = {
   getSnapshotOrMock,
   getRepByName,
@@ -348,4 +432,5 @@ module.exports = {
   preCallBrief,
   prospectsForSeller,
   matchCaller,
+  homeDashboardForSeller,
 };
