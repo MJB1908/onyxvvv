@@ -214,8 +214,10 @@
       .map(
         (p) => `
         <div class="pitem ${p.id === state.activePartnerId ? "active" : ""}" data-id="${escapeHtml(p.id)}">
-          <div class="pitem-name">${escapeHtml(p.company)}</div>
-          <div class="pitem-meta">${escapeHtml(getPartnerCountry(p))} · ${escapeHtml(getPartnerLevel(p))}</div>
+          <div class="pitem-name">${escapeHtml(p.company || "—")}</div>
+          <div class="pitem-meta">
+            ID: ${escapeHtml(p.id)} · ${escapeHtml(getPartnerRegion(p))} · ${escapeHtml(getPartnerLevel(p))} · Owner: ${escapeHtml(getPartnerAgent(p))}
+          </div>
         </div>`,
       )
       .join("");
