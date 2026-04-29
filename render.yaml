@@ -7,11 +7,26 @@ services:
     startCommand: node src/server.js
     healthCheckPath: /health
     envVars:
-      - key: ONYX_SNAPSHOT_DIR
-        value: /var/onyx/snapshots
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: OPENAI_MODEL
-        value: gpt-4.1-mini
       - key: NODE_VERSION
         value: "20"
+      - key: ONYX_SNAPSHOT_DIR
+        value: /var/onyx/snapshots
+      - key: ONYX_SECRETS_FILE
+        value: /var/onyx/secrets.json
+      - key: ONYX_SETTINGS_FILE
+        value: /var/onyx/settings.json
+      # Required for runtime API key storage (Settings UI). Generate with:
+      #   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+      - key: ONYX_SECRET_KEY
+        sync: false
+      # API keys — either set them here OR via the Settings UI (which uses
+      # ONYX_SECRET_KEY to encrypt). Both work; UI overrides env when both set.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      # Default models — UI overrides these via Settings → Default models
+      - key: ANTHROPIC_MODEL
+        value: claude-opus-4-5
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
