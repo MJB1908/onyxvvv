@@ -39,13 +39,31 @@ function findSnapshot(sellerName) {
 }
 
 /**
- * Resolve the authenticated user from request headers / env.
- * Used by /api/me and any other handler that needs "who is this".
+ * Resolve the authenticated user.
+ *
+ * Lookup order (most explicit wins):
+ *   1. X-Onyx-User header — for production setups where a reverse proxy
+ *      (Cloudflare Access, Caddy forward_auth, or any auth proxy) injects the
+ *      user's email after validating their session.
+ *   2. ONYX_DEV_USER env var — for explicit dev overrides.
+ *   3. Most recent snapshot's rep email — the "ERP already told us who you are"
+ *      signal. The Chrome extension scrapes staff.3cx.com using your live
+ *      session cookies, so the rep email it pushes IS authenticated by 3CX.
+ *      For a single-tenant deploy (you talk to your own ONYX, you scrape your
+ *      own data) this is sufficient.
+ *
+ * The only case where this returns null is when no snapshot exists yet — i.e.
+ * a brand-new install where you haven't run the extension refresh. The UI then
+ * shows the "no data, run a refresh" empty state, which is the right message.
  */
 function authUser(req) {
   const fromHeader = req.get("X-Onyx-User");
-  const fromEnv = process.env.ONYX_DEV_USER;
-  return fromHeader || fromEnv || null;
+  if (fromHeader) return fromHeader;
+  if (process.env.ONYX_DEV_USER) return process.env.ONYX_DEV_USER;
+  const snapshots = snapshotStore.listSnapshots();
+  if (!snapshots.length) return null;
+  snapshots.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
+  return snapshots[0].email || null;
 }
 
 const ALLOWED_ORIGINS = new Set([
@@ -79,24 +97,46 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 
 /**
  * GET /api/me
- * Returns the authenticated user, hydrated from their snapshot if one exists.
- * Replaces the old /api/sellers dropdown — there is exactly one user per session.
+ *
+ * Returns the authenticated user. Three states:
+ *
+ *   200 OK + { hasSnapshot: true, ... }
+ *     Normal case. Auto-detected from the latest snapshot's rep email
+ *     (or from X-Onyx-User / ONYX_DEV_USER if set).
+ *
+ *   200 OK + { hasSnapshot: false, needsRefresh: true, email: null }
+ *     No snapshot yet. The user needs to run an ERP refresh from the
+ *     Chrome extension — that single action authenticates them AND
+ *     populates ONYX in one step.
+ *
+ *   401 Unauthorized
+ *     Reserved for future production setups where a reverse proxy is
+ *     expected to inject X-Onyx-User but didn't. Today, with the
+ *     snapshot-based fallback, this only fires if explicitly configured.
  */
 app.get("/api/me", (req, res) => {
   const email = authUser(req);
+
   if (!email) {
-    return res.status(401).json({
-      error:
-        "Not authenticated. For local dev: set ONYX_DEV_USER. " +
-        "For production: configure your reverse proxy to inject X-Onyx-User.",
+    // No header, no env, no snapshot — first run. Be helpful, not 401.
+    return res.json({
+      email: null,
+      name: null,
+      region: null,
+      hasSnapshot: false,
+      needsRefresh: true,
+      message:
+        "No reseller data loaded yet. Open the ONYX Chrome extension on staff.3cx.com and run a refresh — that loads your data and signs you in.",
     });
   }
+
   const snap = snapshotStore.loadSnapshot(email);
   res.json({
     email,
     name: snap?.rep?.name || email.split("@")[0],
     region: snap?.rep?.region || null,
     hasSnapshot: !!snap,
+    needsRefresh: !snap,
     snapshotUpdatedAt: snap?.updatedAt || null,
     partnerCount: Array.isArray(snap?.partners) ? snap.partners.length : 0,
   });
@@ -367,7 +407,6 @@ app.get("/", (_req, res) => {
   res.sendFile(path.join(__dirname, "..", "public", "unified.html"));
 });
 app.get("/erp", (_req, res) => res.redirect("/"));
-// Legacy admin page → redirect to settings hash route
 app.get("/admin", (_req, res) => res.redirect("/#/settings"));
 app.get("/admin.html", (_req, res) => res.redirect("/#/settings"));
 
