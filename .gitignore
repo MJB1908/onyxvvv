@@ -44,6 +44,10 @@ jspm_packages/
 # ONYX runtime snapshots (per-rep ERP data, written by /api/ingest/erp)
 data/snapshots/
 
+# ONYX encrypted secrets store (contains AES-256-GCM-encrypted API keys)
+data/secrets.json
+data/secrets.json.tmp
+
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
 
