@@ -21,7 +21,11 @@ const MAX_CONTENT_LENGTH = 8000;
 
 const app = express();
 app.disable("x-powered-by");
-app.use(express.json({ limit: "256kb" }));
+// Body limit 8mb — Real reseller portfolios can ship 2,000+ partner records
+// in one ingest payload (around 2MB). 256kb was the old default for the
+// mock-data prototype. Header still kept tight so we don't accept absurd
+// uploads, but enough room for a full DACH region scrape with margin.
+app.use(express.json({ limit: "8mb" }));
 
 /**
  * Find the most recent snapshot for a seller name, or fall back to the most
