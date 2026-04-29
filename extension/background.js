@@ -353,6 +353,7 @@ async function fetchPartnerList() {
         const resp = await fetch(`${ERP_BASE}/customers.aspx?m=1`, {
           method: "POST",
           credentials: "include",
+          redirect: "manual",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
             Accept: "*/*",
@@ -362,6 +363,9 @@ async function fetchPartnerList() {
           },
           body: new URLSearchParams(postFields).toString(),
         });
+        if (resp.type === "opaqueredirect" || (resp.status >= 300 && resp.status < 400)) {
+          throw Object.assign(new Error("Cloudflare session expired"), { code: "CF_EXPIRED" });
+        }
         const text = await resp.text();
         const sections = parseUpdatePanel(text);
         if (sections["__VIEWSTATE"]?.content) {
@@ -655,8 +659,15 @@ async function runFullScrape() {
 async function fetchPage(url) {
   const r = await fetch(url, {
     credentials: "include",
+    redirect: "manual",
     headers: { Accept: "text/html,application/xhtml+xml", Referer: ERP_BASE },
   });
+  // A redirect (opaque response) means the session has expired and the server
+  // is sending the browser to login.3cx.com — which blocks on CORS. Catch it
+  // here before the browser ever attempts the cross-origin redirect.
+  if (r.type === "opaqueredirect" || (r.status >= 300 && r.status < 400)) {
+    throw Object.assign(new Error("Cloudflare session expired — open staff.3cx.com to re-authenticate"), { code: "CF_EXPIRED" });
+  }
   if (!r.ok) throw new Error(`GET ${url} → ${r.status}`);
   const html = await r.text();
   const fail = detectAuthFailure(html);
