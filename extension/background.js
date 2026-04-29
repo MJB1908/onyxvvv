@@ -350,20 +350,21 @@ async function fetchPartnerList() {
           ctl00$ScriptManager1:
             "ctl00$Main$CustomersUpdatePanel|ctl00$Main$NavigatorControl$NextButton",
         };
-        const resp = await fetch(`${ERP_BASE}/customers.aspx`, {
-          method: "POST",
-          credentials: "include",
-          redirect: "manual",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            Accept: "*/*",
-            Origin: ERP_BASE,
-            "X-MicrosoftAjax": "Delta=true",
-            "X-Requested-With": "XMLHttpRequest",
-          },
-          body: new URLSearchParams(postFields).toString(),
-        });
-        if (resp.type === "opaqueredirect" || (resp.status >= 300 && resp.status < 400)) {
+        let resp;
+        try {
+          resp = await fetch(`${ERP_BASE}/customers.aspx`, {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+              Accept: "*/*",
+              Origin: ERP_BASE,
+              "X-MicrosoftAjax": "Delta=true",
+              "X-Requested-With": "XMLHttpRequest",
+            },
+            body: new URLSearchParams(postFields).toString(),
+          });
+        } catch {
           throw Object.assign(new Error("Cloudflare session expired"), { code: "CF_EXPIRED" });
         }
         const text = await resp.text();
@@ -657,16 +658,21 @@ async function runFullScrape() {
 }
 
 async function fetchPage(url) {
-  const r = await fetch(url, {
-    credentials: "include",
-    redirect: "manual",
-    headers: { Accept: "text/html,application/xhtml+xml", Referer: ERP_BASE },
-  });
-  // A redirect (opaque response) means the session has expired and the server
-  // is sending the browser to login.3cx.com — which blocks on CORS. Catch it
-  // here before the browser ever attempts the cross-origin redirect.
-  if (r.type === "opaqueredirect" || (r.status >= 300 && r.status < 400)) {
-    throw Object.assign(new Error("Cloudflare session expired — open staff.3cx.com to re-authenticate"), { code: "CF_EXPIRED" });
+  let r;
+  try {
+    r = await fetch(url, {
+      credentials: "include",
+      headers: { Accept: "text/html,application/xhtml+xml", Referer: ERP_BASE },
+    });
+  } catch (err) {
+    // A cross-origin redirect (staff.3cx.com → login.3cx.com) is blocked by
+    // CORS and surfaces as a TypeError("Failed to fetch"). Same-origin
+    // redirects (CF token refresh) succeed transparently, so this only fires
+    // when the session has truly expired.
+    throw Object.assign(
+      new Error("Cloudflare session expired — open staff.3cx.com to re-authenticate"),
+      { code: "CF_EXPIRED" }
+    );
   }
   if (!r.ok) throw new Error(`GET ${url} → ${r.status}`);
   const html = await r.text();
