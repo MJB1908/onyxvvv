@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ONYX — AI Sales Force Assistant</title>
+    <title>ONYX</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/prm-app.css" />
@@ -12,60 +12,34 @@
     <div class="shell">
       <aside class="sidebar" aria-label="Main navigation">
         <div class="brand">
-          <a href="#/home" class="brand-link">ONYX</a>
-          <span class="brand-sub">AI Sales Force Assistant</span>
+          <a href="#/" class="brand-link">ONYX</a>
         </div>
         <nav class="nav">
-          <a href="#/home" class="nav-item" data-match="home">Home</a>
-
-          <div class="nav-group">
-            <div class="nav-group-title">Partner dashboard</div>
-            <a href="#/dashboard/insights" class="nav-item nav-item-sub" data-match="dashboard/insights">Intelligence</a>
-            <a href="#/dashboard/pre-call" class="nav-item nav-item-sub" data-match="dashboard/pre-call">Pre-call brief</a>
-            <a href="#/dashboard/next-caller" class="nav-item nav-item-sub" data-match="dashboard/next-caller">Call queue</a>
-            <a href="#/dashboard/prospects" class="nav-item nav-item-sub" data-match="dashboard/prospects">Prospects</a>
-          </div>
-
-          <div class="nav-group">
-            <div class="nav-group-title">AI workspace</div>
-            <a href="#/dashboard/post-call" class="nav-item nav-item-sub" data-match="dashboard/post-call">Post-call</a>
-            <a href="#/chat" class="nav-item nav-item-sub nav-item-chat-lite" data-match="chat">During-call assist</a>
-          </div>
+          <a href="#/" class="nav-item" data-match="prm">Reseller dashboard</a>
+          <a href="#/actions" class="nav-item" data-match="actions">Actions</a>
+          <a href="#/pre-call" class="nav-item" data-match="pre-call">Pre-call brief</a>
+          <a href="#/post-call" class="nav-item" data-match="post-call">Post-call</a>
+          <a href="#/chat" class="nav-item" data-match="chat">During-call assist</a>
 
           <div class="nav-group">
             <div class="nav-group-title">Data</div>
             <a href="#/data/partners" class="nav-item nav-item-sub" data-match="data/partners">Partners</a>
             <a href="#/data/orders" class="nav-item nav-item-sub" data-match="data/orders">Orders</a>
-            <a href="#/data/keys" class="nav-item nav-item-sub" data-match="data/keys">Keys</a>
-            <a href="#/data/license-types" class="nav-item nav-item-sub" data-match="data/license-types">License types</a>
+            <a href="#/data/keys" class="nav-item nav-item-sub" data-match="data/keys">License keys</a>
             <a href="#/data/emails" class="nav-item nav-item-sub" data-match="data/emails">Emails</a>
-            <a href="#/data/users" class="nav-item nav-item-sub" data-match="data/users">Internal users</a>
-            <a href="#/data/products" class="nav-item nav-item-sub" data-match="data/products">Products</a>
           </div>
 
-          <div class="nav-group">
-            <div class="nav-group-title">Reseller PRM</div>
-            <a href="#/prm" class="nav-item nav-item-sub" data-match="prm">Reseller dashboard</a>
-          </div>
+          <a href="#/settings" class="nav-item nav-item--bottom" data-match="settings" aria-label="Settings">
+            <span class="nav-icon" aria-hidden="true">⚙</span> Settings
+          </a>
         </nav>
       </aside>
 
       <div class="main-column">
         <header class="topbar">
-          <h1 class="topbar-title" id="page-title">Home</h1>
+          <h1 class="topbar-title" id="page-title">Reseller dashboard</h1>
           <div class="topbar-actions">
-            <div id="partner-select-wrap" class="partner-select-wrap" hidden>
-              <label class="seller-label" for="partner-select">Partner</label>
-              <select id="partner-select" class="seller-select" aria-label="Selected partner"></select>
-            </div>
-            <label class="seller-label" for="seller-select">Seller</label>
-            <select id="seller-select" class="seller-select" aria-label="Selected sales rep"></select>
-            <label class="seller-label" for="ai-provider-select">AI</label>
-            <select id="ai-provider-select" class="seller-select" aria-label="AI provider">
-              <option value="">Auto</option>
-              <option value="anthropic">Claude</option>
-              <option value="openai">ChatGPT</option>
-            </select>
+            <span class="topbar-user muted" id="topbar-user"></span>
           </div>
         </header>
 

@@ -1,15 +1,13 @@
 (function () {
-  const STORAGE_KEY = "onyx-seller-id";
-  const PARTNER_STORAGE_PREFIX = "onyx-home-partner";
+  "use strict";
+
   const CHAT_PREFILL_KEY = "onyx-chat-prefill";
   const viewEl = document.getElementById("view");
   const pageTitleEl = document.getElementById("page-title");
-  const sellerSelect = document.getElementById("seller-select");
-  const partnerSelect = document.getElementById("partner-select");
-  const partnerSelectWrap = document.getElementById("partner-select-wrap");
+  const topbarUserEl = document.getElementById("topbar-user");
 
-  /** @type {{ id: string, name: string, region: string }[]} */
-  let reps = [];
+  /** @type {{ email: string, name: string, region: string|null, hasSnapshot: boolean, partnerCount: number, snapshotUpdatedAt: string|null } | null} */
+  let me = null;
 
   /** @type {{ role: 'user'|'assistant', content: string }[]} */
   const chatMessages = [];
@@ -23,82 +21,49 @@
   }
 
   function currentSeller() {
-    const id = sellerSelect.value;
-    return reps.find((r) => r.id === id) || reps[0] || null;
+    if (!me) return null;
+    return { id: me.email, name: me.name, region: me.region };
   }
 
-  function partnerStorageKey(sellerId) {
-    return `${PARTNER_STORAGE_PREFIX}:${sellerId || "unknown"}`;
-  }
-
-  function setPartnerSelectorVisibility(isHome) {
-    if (!partnerSelectWrap || !partnerSelect) return;
-    partnerSelectWrap.hidden = !isHome;
-    partnerSelect.disabled = !isHome;
-  }
-
-  async function loadHomePartnerOptions(seller) {
-    if (!partnerSelect || !seller) return;
-    const res = await fetch("/api/partners");
-    const data = await res.json().catch(() => ({}));
-    const allPartners = (data.partners || []).filter((p) => p.accountOwnerName === seller.name);
-    partnerSelect.innerHTML =
-      `<option value="all">All partners</option>` +
-      allPartners
-        .map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.companyName)} (${escapeHtml(p.distributorLevel)})</option>`)
-        .join("");
-    const saved = localStorage.getItem(partnerStorageKey(seller.id));
-    if (saved && (saved === "all" || allPartners.some((p) => p.id === saved))) {
-      partnerSelect.value = saved;
-    } else {
-      partnerSelect.value = "all";
-      localStorage.setItem(partnerStorageKey(seller.id), "all");
-    }
-  }
-
+  // ── Routing ────────────────────────────────────────────────────────────────
   function parseRoute() {
-    const rawFull = location.hash.replace(/^#/, "").replace(/^\/+/, "") || "home";
+    const rawFull = location.hash.replace(/^#/, "").replace(/^\/+/, "");
     const raw = rawFull.split("?")[0];
     const parts = raw.split("/").filter(Boolean);
-    if (parts[0] === "chat") return { view: "chat", title: "During-call assist (AI)" };
-    if (parts[0] === "home") return { view: "home", title: "Home" };
-    if (parts[0] === "dashboard" && parts[1]) {
-      const sub = parts[1];
-      const titles = {
-        insights: "Partner intelligence",
-        "pre-call": "Pre-call brief",
-        "post-call": "Post-call workspace",
-        "next-caller": "Call queue",
-        prospects: "Prospects",
-      };
-      return { view: "dashboard", sub, title: titles[sub] || "Dashboard" };
+
+    // Empty hash → reseller dashboard (PRM)
+    if (parts.length === 0) return { view: "prm", title: "Reseller dashboard" };
+
+    // Legacy redirect: /home → /actions
+    if (parts[0] === "home") {
+      location.hash = "#/actions";
+      return { view: "actions", title: "Actions" };
     }
+
+    if (parts[0] === "prm") return { view: "prm", title: "Reseller dashboard" };
+    if (parts[0] === "actions") return { view: "actions", title: "Actions" };
+    if (parts[0] === "pre-call") return { view: "pre-call", title: "Pre-call brief" };
+    if (parts[0] === "post-call") return { view: "post-call", title: "Post-call" };
+    if (parts[0] === "chat") return { view: "chat", title: "During-call assist" };
+    if (parts[0] === "settings") return { view: "settings", title: "Settings" };
     if (parts[0] === "data" && parts[1]) {
       const sub = parts[1];
-      const titles = {
-        partners: "Partners",
-        orders: "Orders",
-        keys: "License keys",
-        "license-types": "License types",
-        emails: "Emails",
-        users: "Internal users",
-        products: "Products",
-      };
-      return { view: "data", sub, title: titles[sub] || "Data" };
+      const titles = { partners: "Partners", orders: "Orders", keys: "License keys", emails: "Emails" };
+      if (!titles[sub]) return { view: "prm", title: "Reseller dashboard" }; // unknown data sub → home
+      return { view: "data", sub, title: titles[sub] };
     }
-    if (parts[0] === "prm") {
-      return { view: "prm", title: "Reseller PRM" };
-    }
-    return { view: "home", title: "Home" };
+    return { view: "prm", title: "Reseller dashboard" };
   }
 
   function setNavActive() {
     const r = parseRoute();
     let match = "";
-    if (r.view === "home") match = "home";
+    if (r.view === "prm") match = "prm";
+    else if (r.view === "actions") match = "actions";
+    else if (r.view === "pre-call") match = "pre-call";
+    else if (r.view === "post-call") match = "post-call";
     else if (r.view === "chat") match = "chat";
-    else if (r.view === "prm") match = "prm";
-    else if (r.view === "dashboard") match = `dashboard/${r.sub}`;
+    else if (r.view === "settings") match = "settings";
     else if (r.view === "data") match = `data/${r.sub}`;
 
     document.querySelectorAll(".nav-item[data-match]").forEach((el) => {
@@ -113,24 +78,37 @@
   async function render() {
     const route = parseRoute();
     chatRouteActive = route.view === "chat";
-    pageTitleEl.textContent = route.title;
-    setNavActive();
-    setPartnerSelectorVisibility(route.view === "home");
 
-    const seller = currentSeller();
-    if (!seller) {
-      viewEl.innerHTML = "<p class=\"empty\">Loading sellers…</p>";
+    // Hide topbar title on the root reseller dashboard — PRM owns its own header
+    if (route.view === "prm") {
+      pageTitleEl.style.visibility = "hidden";
+    } else {
+      pageTitleEl.style.visibility = "";
+      pageTitleEl.textContent = route.title;
+    }
+
+    setNavActive();
+
+    if (!me && route.view !== "settings") {
+      viewEl.innerHTML = `
+        <div class="panel">
+          <h2 class="h2">Not signed in</h2>
+          <p class="muted">ONYX needs to know who you are. For local development set the <code>ONYX_DEV_USER</code> environment variable. For production, configure your reverse proxy to inject the <code>X-Onyx-User</code> header.</p>
+        </div>`;
       return;
     }
 
     try {
-      if (route.view === "home") await renderHome();
-      else if (route.view === "dashboard") await renderDashboard(route.sub, seller);
-      else if (route.view === "data") await renderData(route.sub);
+      if (route.view === "prm") await renderPrm();
+      else if (route.view === "actions") await renderActions();
+      else if (route.view === "pre-call") await renderPreCall();
+      else if (route.view === "post-call") renderPostCall();
       else if (route.view === "chat") renderChatShell();
-      else if (route.view === "prm") await renderPrm(seller);
+      else if (route.view === "settings") await renderSettings();
+      else if (route.view === "data") await renderData(route.sub);
     } catch (err) {
-      viewEl.innerHTML = `<p class="error">${escapeHtml(err.message || "Failed to load.")}</p>`;
+      console.error(err);
+      viewEl.innerHTML = `<div class="panel"><p class="error">${escapeHtml(err.message || "Failed to load.")}</p></div>`;
     }
 
     if (route.view === "chat") {
@@ -139,673 +117,277 @@
     }
   }
 
-  function getPartnerLevel(p) {
-    return p.distributorLevel || p.cert || p["Cert"] || p.category || p["Partner Category"] || "—";
-  }
-
-  function getPartnerCountry(p) {
-    return p.country || p["Country"] || "—";
-  }
-
-  function getPartnerRegion(p) {
-    return p.region || p["Sales Region"] || "—";
-  }
-
-  function getPartnerAgent(p) {
-    return p.agent || p["Team Agent"] || "—";
-  }
-
-  function getTierClass(level) {
-    if (!level || level === "—") return "";
-    const normalized = (level || "").toLowerCase().trim();
-    if (normalized.includes("titanium")) return "badge-tier titanium";
-    if (normalized.includes("platinum")) return "badge-tier platinum";
-    if (normalized.includes("silver")) return "badge-tier silver";
-    if (normalized.includes("gold")) return "badge-tier gold";
-    if (normalized.includes("bronze")) return "badge-tier bronze";
-    return "";
-  }
-
-  function renderTierBadge(level) {
-    const cls = getTierClass(level);
-    return cls ? `<span class="${cls}">${escapeHtml(level)}</span>` : escapeHtml(level);
-  }
-
-  async function renderHome() {
-    const seller = currentSeller();
-    const res = await fetch("/api/partners");
-    const data = await res.json().catch(() => ({}));
-    const allPartners = (data.partners || []).filter((p) => !seller || p.accountOwnerName === seller.name);
-
-    const levels = new Map();
-    levels.set("", allPartners.length);
-    for (const p of allPartners) {
-      const lvl = getPartnerLevel(p);
-      if (lvl && lvl !== "—") levels.set(lvl, (levels.get(lvl) || 0) + 1);
+  // ── Reseller dashboard (PRM) — root ────────────────────────────────────────
+  async function renderPrm() {
+    if (!window.prmApp) {
+      viewEl.innerHTML = '<div class="panel"><p class="empty">PRM module failed to load — check that prm-app.js is present.</p></div>';
+      return;
     }
-    const levelNames = [...levels.keys()].filter((l) => l && l !== "—");
-    levelNames.sort();
+    const list = await fetch("/api/snapshots").then((r) => r.json()).catch(() => ({ snapshots: [] }));
+    if (!list.snapshots?.length) {
+      viewEl.innerHTML = `
+        <div class="panel">
+          <h2 class="h2">No reseller data yet</h2>
+          <p class="muted">Open the ONYX Chrome extension on staff.3cx.com and run a refresh to load your resellers.</p>
+        </div>`;
+      return;
+    }
+    list.snapshots.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
+    // Prefer the snapshot tied to the authenticated user; else most-recent
+    const target = list.snapshots.find((s) => s.email === me.email) || list.snapshots[0];
+    const snapshot = await fetch(`/api/snapshots/${encodeURIComponent(target.slug)}`).then((r) => r.json());
+    viewEl.innerHTML = "";
+    await window.prmApp.mount(viewEl, { snapshot, seller: currentSeller() });
+  }
 
-    const levelChipsHtml = [
-      `<div class="chip active" data-level="">All<span class="count">${levels.get("")}</span></div>`,
-      ...levelNames.map(
-        (l) => `<div class="chip" data-level="${escapeHtml(l)}">${escapeHtml(l)}<span class="count">${levels.get(l)}</span></div>`,
-      ),
-    ].join("");
+  // ── Actions — was Home; reseller-aware action queue ────────────────────────
+  async function renderActions() {
+    const seller = currentSeller();
+    if (!seller || !me.hasSnapshot) {
+      viewEl.innerHTML = `
+        <div class="panel">
+          <h2 class="h2">Welcome${me ? `, ${escapeHtml(me.name)}` : ""}</h2>
+          <p class="muted">No snapshot loaded yet. Run a refresh from the ONYX Chrome extension on staff.3cx.com to populate your action queue.</p>
+        </div>`;
+      return;
+    }
 
-    const partnersHtml = allPartners
-      .map(
-        (p) => `
-        <div class="pitem" data-id="${escapeHtml(p.id)}">
-          <div class="pitem-name">${escapeHtml(p.companyName || p.company || "—")}</div>
-          <div class="pitem-meta">
-            ID: ${escapeHtml(p.id)} · ${escapeHtml(getPartnerRegion(p))} · ${renderTierBadge(getPartnerLevel(p))} · Owner: ${escapeHtml(getPartnerAgent(p))}
-          </div>
-        </div>`,
-      )
-      .join("");
+    // Pull the snapshot to compute action items
+    const list = await fetch("/api/snapshots").then((r) => r.json()).catch(() => ({ snapshots: [] }));
+    const target = list.snapshots?.find((s) => s.email === me.email) || list.snapshots?.[0];
+    if (!target) {
+      viewEl.innerHTML = '<div class="panel"><p class="empty">No snapshot available.</p></div>';
+      return;
+    }
+    const snapshot = await fetch(`/api/snapshots/${encodeURIComponent(target.slug)}`).then((r) => r.json());
+
+    const partners = snapshot.partners || [];
+    const keys = snapshot.licenseKeys || [];
+    const orders = snapshot.orders || [];
+    const calls = snapshot.calls || [];
+    const today = new Date();
+
+    // Top of mind: keys expiring in next 30 days
+    const expiringSoon = keys
+      .filter((k) => k.licenseExpires && !k.flags?.licenseExpired)
+      .map((k) => {
+        const d = parseLicenseDate(k.licenseExpires);
+        return { ...k, daysLeft: d ? Math.round((d - today) / 86400000) : null };
+      })
+      .filter((k) => k.daysLeft !== null && k.daysLeft >= 0 && k.daysLeft <= 30)
+      .sort((a, b) => a.daysLeft - b.daysLeft);
+
+    // Already overdue
+    const overdue = keys
+      .filter((k) => k.licenseExpires && !k.flags?.licenseExpired)
+      .map((k) => {
+        const d = parseLicenseDate(k.licenseExpires);
+        return { ...k, daysLeft: d ? Math.round((d - today) / 86400000) : null };
+      })
+      .filter((k) => k.daysLeft !== null && k.daysLeft < 0)
+      .sort((a, b) => a.daysLeft - b.daysLeft);
+
+    // Stale partners — no calls and no recent notes
+    const partnerCallMap = new Map();
+    calls.forEach((c) => {
+      if (!c.partnerId) return;
+      const prev = partnerCallMap.get(c.partnerId);
+      if (!prev || (c.date || "") > (prev.date || "")) partnerCallMap.set(c.partnerId, c);
+    });
+    const stalePartners = partners
+      .filter((p) => {
+        const last = partnerCallMap.get(p.id);
+        if (!last || !last.date) return true;
+        const d = parseLicenseDate(last.date);
+        return !d || (today - d) / 86400000 > 90;
+      })
+      .slice(0, 8);
+
+    // Upcoming calls
+    const upcomingCalls = calls
+      .filter((c) => c.status === "scheduled" || c.status === "planned")
+      .sort((a, b) => (a.date || "").localeCompare(b.date || ""))
+      .slice(0, 6);
 
     viewEl.innerHTML = `
-      <div class="home-partners-layout">
-        <aside class="home-partners-sidebar">
-          <div class="sidebar-filters">
-            <div id="levelChips" class="level-chips">${levelChipsHtml}</div>
+      <div class="actions-grid">
+        <div class="actions-summary">
+          <div class="metric metric--actions">
+            <span class="metric-label">Partners</span>
+            <span class="metric-value">${partners.length}</span>
           </div>
-          <div class="sidebar-search">
-            <input type="text" id="partnerSearch" placeholder="Search partners…" class="search-input" />
+          <div class="metric metric--actions ${overdue.length ? "metric--alert" : ""}">
+            <span class="metric-label">Overdue renewals</span>
+            <span class="metric-value">${overdue.length}</span>
           </div>
-          <div class="sidebar-list">
-            <div id="partnersList" class="partners-list">${partnersHtml}</div>
-            <div id="partnerCount" class="list-info"><span id="partnerCountValue">${allPartners.length}</span> partners</div>
+          <div class="metric metric--actions ${expiringSoon.length ? "metric--warn" : ""}">
+            <span class="metric-label">Expiring (30d)</span>
+            <span class="metric-value">${expiringSoon.length}</span>
           </div>
-        </aside>
-        <main class="home-partners-main" id="partnersMain">
-          <div class="empty">Pick a partner from the left</div>
-        </main>
-      </div>
-    `;
-
-    let filteredPartners = allPartners;
-    let activeLevel = "";
-    let searchQuery = "";
-
-    function applyFilters() {
-      const q = searchQuery.trim().toLowerCase();
-      filteredPartners = allPartners.filter((p) => {
-        if (activeLevel && getPartnerLevel(p) !== activeLevel) return false;
-        if (q && !String(p.companyName || p.company || "").toLowerCase().includes(q)) return false;
-        return true;
-      });
-      document.getElementById("partnerCountValue").textContent = filteredPartners.length;
-      renderPartnersList();
-    }
-
-    function renderPartnersList() {
-      const list = filteredPartners;
-      const html = list.length
-        ? list
-            .map(
-              (p) => `
-              <div class="pitem" data-id="${escapeHtml(p.id)}">
-                <div class="pitem-name">${escapeHtml(p.companyName || p.company || "—")}</div>
-                <div class="pitem-meta">
-                  ID: ${escapeHtml(p.id)} · ${escapeHtml(getPartnerRegion(p))} · ${renderTierBadge(getPartnerLevel(p))} · Owner: ${escapeHtml(getPartnerAgent(p))}
-                </div>
-              </div>`,
-            )
-            .join("")
-        : `<div class="empty">No matches</div>`;
-      document.getElementById("partnersList").innerHTML = html;
-      document.querySelectorAll(".pitem").forEach((el) => {
-        el.addEventListener("click", () => selectPartner(el.dataset.id));
-      });
-    }
-
-    function selectPartner(id) {
-      const partner = allPartners.find((p) => p.id === id);
-      if (!partner) return;
-      document.querySelectorAll(".pitem").forEach((el) => el.classList.remove("active"));
-      document.querySelector(`[data-id="${escapeHtml(id)}"]`)?.classList.add("active");
-
-      const level = getPartnerLevel(partner);
-      const initials = partner.companyName
-        ? partner.companyName.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase()
-        : "?";
-
-      document.getElementById("partnersMain").innerHTML = `
-        <div class="p-header">
-          <div class="p-avatar">${escapeHtml(initials)}</div>
-          <div class="p-info">
-            <div class="p-name">${escapeHtml(partner.companyName || partner.company || "—")}</div>
-            <div class="p-sub">ID ${escapeHtml(partner.id)} · ${escapeHtml(getPartnerCountry(partner))}</div>
+          <div class="metric metric--actions">
+            <span class="metric-label">Upcoming calls</span>
+            <span class="metric-value">${upcomingCalls.length}</span>
           </div>
-          <div class="tier-badge ${getTierClass(level)}">${escapeHtml(level)}</div>
         </div>
 
-        <div class="pills-row">
-          <div class="spill">Region <strong>${escapeHtml(getPartnerRegion(partner))}</strong></div>
-          <div class="spill">Team agent <strong>${escapeHtml(getPartnerAgent(partner))}</strong></div>
-          ${partner.category ? `<div class="spill">Category <strong>${escapeHtml(partner.category)}</strong></div>` : ""}
-        </div>
-
-        <section class="card">
-          <h3 class="h3">Partner info</h3>
-          <table class="data-table"><tbody>
-            <tr><td><strong>Company</strong></td><td>${escapeHtml(partner.companyName || partner.company || "—")}</td></tr>
-            <tr><td><strong>ID</strong></td><td>${escapeHtml(partner.id)}</td></tr>
-            <tr><td><strong>Level</strong></td><td>${renderTierBadge(level)}</td></tr>
-            <tr><td><strong>Region</strong></td><td>${escapeHtml(getPartnerRegion(partner))}</td></tr>
-            <tr><td><strong>Country</strong></td><td>${escapeHtml(getPartnerCountry(partner))}</td></tr>
-            <tr><td><strong>Account owner</strong></td><td>${escapeHtml(partner.accountOwnerName || "—")}</td></tr>
-          </tbody></table>
+        <section class="card actions-card">
+          <h3 class="h3">⚠ Renewal radar</h3>
+          ${overdue.length || expiringSoon.length ? `
+            <table class="data-table data-table--compact">
+              <thead><tr><th>Customer</th><th>Reseller</th><th>Edition</th><th>Expires</th></tr></thead>
+              <tbody>
+                ${overdue.slice(0, 5).map((k) => `
+                  <tr>
+                    <td>${escapeHtml(k.company || "—")}</td>
+                    <td>${escapeHtml(k.assignedResellerName || "—")}</td>
+                    <td>${escapeHtml(k.productEdition)}</td>
+                    <td class="cell-danger">${escapeHtml(k.licenseExpires)} <small>(${Math.abs(k.daysLeft)}d overdue)</small></td>
+                  </tr>`).join("")}
+                ${expiringSoon.slice(0, 5).map((k) => `
+                  <tr>
+                    <td>${escapeHtml(k.company || "—")}</td>
+                    <td>${escapeHtml(k.assignedResellerName || "—")}</td>
+                    <td>${escapeHtml(k.productEdition)}</td>
+                    <td class="cell-warn">${escapeHtml(k.licenseExpires)} <small>(${k.daysLeft}d)</small></td>
+                  </tr>`).join("")}
+              </tbody>
+            </table>` : '<p class="muted">No renewals due in the next 30 days.</p>'}
         </section>
-      `;
-    }
 
-    document.getElementById("levelChips").addEventListener("click", (e) => {
-      const chip = e.target.closest(".chip");
-      if (!chip) return;
-      activeLevel = chip.dataset.level;
-      document.querySelectorAll(".chip").forEach((c) => c.classList.remove("active"));
-      chip.classList.add("active");
-      applyFilters();
-    });
-
-    document.getElementById("partnerSearch").addEventListener("input", (e) => {
-      searchQuery = e.target.value;
-      applyFilters();
-    });
-  }
-
-  async function renderDashboard(sub, seller) {
-    if (sub === "insights") {
-      const [insRes, alRes] = await Promise.all([
-        fetch(`/api/insights?seller=${encodeURIComponent(seller.name)}`),
-        fetch(`/api/alerts?seller=${encodeURIComponent(seller.name)}`),
-      ]);
-      const data = await insRes.json().catch(() => ({}));
-      const alData = await alRes.json().catch(() => ({}));
-      if (!insRes.ok) throw new Error(data.error || "Could not load insights.");
-      const alerts = alData.alerts || [];
-      const sf = data.salesForceReality || {};
-      const alertHtml = alerts
-        .slice(0, 6)
-        .map(
-          (a) =>
-            `<li class="alert-item alert-item--${escapeHtml(a.severity)}"><span class="alert-title">${escapeHtml(a.title)}</span><span class="alert-detail">${escapeHtml(a.detail)}</span></li>`,
-        )
-        .join("");
-      viewEl.innerHTML = `
-        <div class="panel">
-          <p class="panel-intro"><strong>Intelligence at a glance</strong> — one picture for <strong>${escapeHtml(seller.name)}</strong> (${escapeHtml(seller.region)}). Combines ERP signals with call cadence (demo).</p>
-          <div class="metric-grid metric-grid--dense">
-            <div class="metric"><span class="metric-label">Partners owned</span><span class="metric-value">${data.partnerCount}</span></div>
-            <div class="metric"><span class="metric-label">Book revenue (USD)</span><span class="metric-value">$${data.orderTotalUsd.toLocaleString("en-US")}</span></div>
-            <div class="metric"><span class="metric-label">Revenue YoY</span><span class="metric-value">${data.revenueYoYPercent >= 0 ? "+" : ""}${data.revenueYoYPercent}%</span></div>
-            <div class="metric"><span class="metric-label">Renewals (90d)</span><span class="metric-value">${data.renewalsIn90Days}</span></div>
-            <div class="metric"><span class="metric-label">Upgrade signals</span><span class="metric-value">${data.upgradeSignals}</span></div>
-            <div class="metric"><span class="metric-label">16+ SC orders</span><span class="metric-value">${data.largeScOrders16Plus}</span></div>
-            <div class="metric"><span class="metric-label">Stalled (heuristic)</span><span class="metric-value">${data.stalledPartnerCount}</span></div>
-            <div class="metric"><span class="metric-label">Your calls</span><span class="metric-value">${data.callCount}</span></div>
-            <div class="metric"><span class="metric-label">Scheduled</span><span class="metric-value">${data.scheduledCalls}</span></div>
-            <div class="metric"><span class="metric-label">Pending orders</span><span class="metric-value">${data.openOrdersPending}</span></div>
-          </div>
-          <div class="intel-split">
-            <div>
-              <h3 class="h3">Time on communication (benchmark)</h3>
-              <div class="pdf-bars pdf-bars--compact">
-                <div class="pdf-bar"><span class="pdf-bar-label">Live comms</span><div class="pdf-bar-track"><div class="pdf-bar-fill" style="width:${sf.pctYearlyTimeOnLiveComms || 15}%"></div></div><span class="pdf-bar-pct">${sf.pctYearlyTimeOnLiveComms || 15}%</span></div>
-                <div class="pdf-bar"><span class="pdf-bar-label">Pre/post meeting</span><div class="pdf-bar-track"><div class="pdf-bar-fill pdf-bar-fill--2" style="width:${sf.pctYearlyTimePrePostMeeting || 35}%"></div></div><span class="pdf-bar-pct">${sf.pctYearlyTimePrePostMeeting || 35}%</span></div>
-              </div>
-            </div>
-            <div>
-              <h3 class="h3">Proactive alerts</h3>
-              ${alerts.length ? `<ul class="alert-list">${alertHtml}</ul>` : "<p class=\"muted\">No alerts.</p>"}
-            </div>
-          </div>
-          <p class="muted small panel-foot">Full production vision: bi-directional Odoo/ERP, helpdesk, Meet transcriptions, and live whispers — see roadmap with stakeholders.</p>
-        </div>
-      `;
-      return;
-    }
-
-    if (sub === "pre-call") {
-      const q = new URLSearchParams(location.hash.includes("?") ? location.hash.split("?")[1] : "");
-      const partnerId = q.get("partnerId");
-      const res = await fetch(
-        `/api/pre-call-brief?seller=${encodeURIComponent(seller.name)}${partnerId ? `&partnerId=${encodeURIComponent(partnerId)}` : ""}`,
-      );
-      const pack = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(pack.error || "Could not load brief.");
-      if (!pack.ok || !pack.brief) {
-        viewEl.innerHTML = `
-          <div class="panel">
-            <p class="panel-intro">Pre-call intelligence needs a partner context.</p>
-            <p class="muted">${escapeHtml(pack.message || "Schedule a call in the demo data, or open from Call queue.")}</p>
-            <p><a href="#/dashboard/next-caller">Go to Call queue</a></p>
-          </div>`;
-        return;
-      }
-      const b = pack.brief;
-      const agenda = b.suggestedAgenda.map((x) => `<li>${escapeHtml(x)}</li>`).join("");
-      const objections = b.predictedObjections.map((x) => `<li>${escapeHtml(x)}</li>`).join("");
-      const lastCalls = (b.lastCalls || [])
-        .map(
-          (c) =>
-            `<tr><td>${escapeHtml(c.date)}</td><td>${escapeHtml(c.status)}</td><td>${escapeHtml(c.durationDisplay || "—")}</td><td>${escapeHtml(c.sentiment || "—")}</td><td>${escapeHtml(c.notes || "—")}</td></tr>`,
-        )
-        .join("");
-      const orders = (b.recentOrders || [])
-        .map(
-          (o) =>
-            `<tr><td>${escapeHtml(o.orderId)}</td><td>${escapeHtml(o.date)}</td><td>${escapeHtml(o.type)}</td><td>$${escapeHtml(String(o.totalUsd))}</td><td>${escapeHtml(o.status)}</td></tr>`,
-        )
-        .join("");
-      viewEl.innerHTML = `
-        <div class="panel">
-          <p class="panel-intro"><strong>AI pre-call brief</strong> — agenda prep, pipeline signals, and last-touch context (demo).</p>
-          <div class="brief-header card-highlight">
-            <h2>${escapeHtml(b.partner.companyName)}</h2>
-            <p class="muted">${escapeHtml(b.partner.id)} · ${escapeHtml(b.partner.salesRegion)} · ${escapeHtml(b.partner.country)} · ${escapeHtml(b.partner.distributorLevel)} · ${escapeHtml(b.partner.contactName)}</p>
-            <p>Order book (mock): <strong>$${b.orderBookUsd.toLocaleString("en-US")}</strong> · <a href="${b.dashboardLink}">Partner data</a></p>
-            ${b.nextCall ? `<p>Next call: <strong>${escapeHtml(b.nextCall.date)}</strong> — ${escapeHtml(b.nextCall.notes || "")}</p>` : ""}
-          </div>
-          <div class="brief-grid">
-            <section class="card brief-card">
-              <h3 class="h3">Revenue &amp; trend</h3>
-              <p>${escapeHtml(b.revenueTrendNarrative)}</p>
-            </section>
-            <section class="card brief-card">
-              <h3 class="h3">Suggested agenda</h3>
-              <ol class="brief-ol">${agenda}</ol>
-            </section>
-            <section class="card brief-card">
-              <h3 class="h3">Predicted objections</h3>
-              <ul class="brief-ul">${objections}</ul>
-            </section>
-          </div>
-          <h3 class="h3">Recent orders (partner)</h3>
-          <div class="table-wrap"><table class="data-table"><thead><tr><th>Order</th><th>Date</th><th>Type</th><th>Total</th><th>Status</th></tr></thead><tbody>${orders || "<tr><td colspan=\"5\">—</td></tr>"}</tbody></table></div>
-          <h3 class="h3">Your last calls with this partner</h3>
-          <div class="table-wrap"><table class="data-table"><thead><tr><th>Date</th><th>Status</th><th>Duration</th><th>Sentiment</th><th>Notes</th></tr></thead><tbody>${lastCalls || "<tr><td colspan=\"5\">—</td></tr>"}</tbody></table></div>
-        </div>`;
-      return;
-    }
-
-    if (sub === "post-call") {
-      const seller = currentSeller();
-      const preFollow = `Summarize my last partner call and draft a concise follow-up email. Seller: ${seller.name}. Include action items and owners.`;
-      const preNote = `Produce structured meeting notes from the context we have in the demo CRM for my accounts. Seller: ${seller.name}.`;
-      const prePlan = `List next-step action items and a 2-week plan for follow-ups for seller ${seller.name} (demo data).`;
-      viewEl.innerHTML = `
-        <div class="panel">
-          <p class="panel-intro"><strong>Post-call workspace</strong> — turn conversations into summaries, drafts, and CRM-ready outcomes. Production: Odoo immersion with bi-directional sync (blueprint).</p>
-          <div class="post-grid">
-            <section class="card post-card">
-              <h3>Call summary &amp; notes</h3>
-              <p class="muted">Automatic summary / structured notes from transcript + CRM (when integrated).</p>
-              <button type="button" class="btn-secondary post-open-chat" data-prefill="${escapeHtml(preNote)}">Open in AI assistant</button>
-            </section>
-            <section class="card post-card">
-              <h3>Follow-up email draft</h3>
-              <p class="muted">Draft ready to edit and send.</p>
-              <button type="button" class="btn-secondary post-open-chat" data-prefill="${escapeHtml(preFollow)}">Open in AI assistant</button>
-            </section>
-            <section class="card post-card">
-              <h3>Action plan &amp; reminders</h3>
-              <p class="muted">Next steps, calendar hooks, and ERP updates (demo: use chat prompts).</p>
-              <button type="button" class="btn-secondary post-open-chat" data-prefill="${escapeHtml(prePlan)}">Open in AI assistant</button>
-            </section>
-          </div>
-          <ul class="muted small checklist">
-            <li>Automatic CRM update (bi-directional)</li>
-            <li>Calendar events for follow-up meetings</li>
-            <li>Alerts to account managers on stalled partners / large SC / PoC</li>
-          </ul>
-        </div>`;
-      viewEl.querySelectorAll(".post-open-chat").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          sessionStorage.setItem(CHAT_PREFILL_KEY, btn.getAttribute("data-prefill") || "");
-          window.location.hash = "#/chat";
-        });
-      });
-      return;
-    }
-
-    if (sub === "next-caller") {
-      const res = await fetch(`/api/next-caller?seller=${encodeURIComponent(seller.name)}`);
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Could not load calls.");
-      const next = data.next;
-      const queue = data.queue || [];
-      viewEl.innerHTML = `
-        <div class="panel">
-          <p class="panel-intro">Upcoming scheduled calls for <strong>${escapeHtml(seller.name)}</strong>. Use <strong>Pre-call brief</strong> for agenda, renewals, and objections before you dial.</p>
-          ${
-            next
-              ? `<div class="next-call card-highlight">
-            <h2>Next call</h2>
-            <p><strong>${escapeHtml(next.partnerName)}</strong> · ${escapeHtml(next.date)} · ${escapeHtml(next.notes || "")}</p>
-            <p class="muted">Call id ${escapeHtml(next.id)} · Partner ${escapeHtml(next.partnerId)}</p>
-            <p class="next-actions"><a href="#/dashboard/pre-call?partnerId=${encodeURIComponent(next.partnerId)}">Pre-call brief (this partner)</a> · <a href="#/dashboard/post-call">Post-call workspace</a> · <a href="#/chat">During-call assist</a></p>
-          </div>`
-              : "<p class=\"muted\">No upcoming scheduled calls for this seller in the demo dataset.</p>"
-          }
-          <h3 class="h3">Queue</h3>
-          <div class="table-wrap">
-            <table class="data-table">
+        <section class="card actions-card">
+          <h3 class="h3">📅 Upcoming calls</h3>
+          ${upcomingCalls.length ? `
+            <table class="data-table data-table--compact">
               <thead><tr><th>Date</th><th>Partner</th><th>Notes</th></tr></thead>
               <tbody>
-                ${queue
-                  .map(
-                    (c) =>
-                      `<tr><td>${escapeHtml(c.date)}</td><td>${escapeHtml(c.partnerName)}</td><td>${escapeHtml(c.notes || "—")}</td></tr>`,
-                  )
-                  .join("")}
-                ${queue.length ? "" : "<tr><td colspan=\"3\">No rows</td></tr>"}
+                ${upcomingCalls.map((c) => {
+                  const partner = partners.find((p) => p.id === c.partnerId);
+                  return `<tr>
+                    <td>${escapeHtml(c.date)}</td>
+                    <td>${escapeHtml(partner?.companyName || c.partnerId || "—")}</td>
+                    <td class="muted">${escapeHtml(c.notes || "—")}</td>
+                  </tr>`;
+                }).join("")}
               </tbody>
             </table>
-          </div>
-        </div>
-      `;
+            <p class="card-foot"><a href="#/pre-call">Open a pre-call brief →</a></p>
+            ` : '<p class="muted">No scheduled calls.</p>'}
+        </section>
+
+        <section class="card actions-card">
+          <h3 class="h3">💤 Stale partners (>90 days)</h3>
+          ${stalePartners.length ? `
+            <ul class="bare-list">
+              ${stalePartners.map((p) => `
+                <li>
+                  <a href="#/?partnerId=${encodeURIComponent(p.id)}">${escapeHtml(p.companyName)}</a>
+                  <span class="muted">· ${escapeHtml(p.distributorLevel || "—")} · ${escapeHtml(p.country || "—")}</span>
+                </li>`).join("")}
+            </ul>` : '<p class="muted">All partners contacted recently.</p>'}
+        </section>
+      </div>`;
+  }
+
+  function parseLicenseDate(s) {
+    if (!s) return null;
+    const m = String(s).match(/(\d{2})\/(\d{2})\/(\d{2,4})/);
+    if (m) {
+      const yr = m[3].length === 2 ? "20" + m[3] : m[3];
+      return new Date(`${yr}-${m[2]}-${m[1]}`);
+    }
+    const d = new Date(s);
+    return isNaN(d) ? null : d;
+  }
+
+  // ── Pre-call brief — direct to /api/sales/call-prep ────────────────────────
+  async function renderPreCall() {
+    const q = new URLSearchParams(location.hash.includes("?") ? location.hash.split("?")[1] : "");
+    const partnerId = q.get("partnerId");
+    if (!partnerId) {
+      viewEl.innerHTML = `
+        <div class="panel">
+          <h2 class="h2">Pre-call brief</h2>
+          <p class="muted">Open this from a partner row in the Reseller dashboard, or paste a partner ID:</p>
+          <form id="precall-form" class="inline-form">
+            <input type="text" id="precall-id" placeholder="partner ID (e.g. prt-024)" />
+            <button type="submit" class="btn-primary">Generate brief</button>
+          </form>
+          <p class="muted small"><a href="#/">← Reseller dashboard</a></p>
+        </div>`;
+      document.getElementById("precall-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const id = document.getElementById("precall-id").value.trim();
+        if (id) location.hash = `#/pre-call?partnerId=${encodeURIComponent(id)}`;
+      });
       return;
     }
 
-    if (sub === "prospects") {
-      const res = await fetch(`/api/prospects?seller=${encodeURIComponent(seller.name)}`);
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Could not load prospects.");
-      const rows = data.prospects || [];
-      viewEl.innerHTML = `
-        <div class="panel">
-          <p class="panel-intro">Partners in your region <strong>${escapeHtml(data.region)}</strong> (sample list for outreach prioritization).</p>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead>
-                <tr><th>Partner</th><th>Region</th><th>Country</th><th>Level</th><th>Contact</th><th>Account owner</th></tr>
-              </thead>
-              <tbody>
-                ${rows
-                  .map(
-                    (p) =>
-                      `<tr>
-                    <td>${escapeHtml(p.partnerId)} · ${escapeHtml(p.companyName)}</td>
-                    <td>${escapeHtml(p.salesRegion)}</td>
-                    <td>${escapeHtml(p.country)}</td>
-                    <td>${escapeHtml(p.distributorLevel)}</td>
-                    <td>${escapeHtml(p.contactName)}</td>
-                    <td>${escapeHtml(p.accountOwnerName)}</td>
-                  </tr>`,
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
+    viewEl.innerHTML = `
+      <div class="panel">
+        <h2 class="h2">Pre-call brief — ${escapeHtml(partnerId)}</h2>
+        <p class="muted" id="brief-status"><span class="spinner-inline"></span>Generating…</p>
+        <pre class="ai-output" id="brief-output" hidden></pre>
+      </div>`;
+
+    try {
+      const r = await fetch("/api/sales/call-prep", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Onyx-User": me.email },
+        body: JSON.stringify({ partnerId, seller: me.name }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+      document.getElementById("brief-status").innerHTML = `Generated by <strong>${escapeHtml(data.provider)}</strong> · ${escapeHtml(data.model)}`;
+      const out = document.getElementById("brief-output");
+      out.hidden = false;
+      out.textContent = data.text || JSON.stringify(data, null, 2);
+    } catch (e) {
+      document.getElementById("brief-status").innerHTML = `<span class="error">Failed: ${escapeHtml(e.message)}</span>`;
     }
   }
 
-  async function renderData(sub) {
-    if (sub === "partners") {
-      const res = await fetch("/api/partners");
-      const data = await res.json();
-      const rows = data.partners || [];
-      viewEl.innerHTML = `
-        <div class="panel">
-          <p class="panel-intro">${rows.length} distributors in the demo.</p>
-          <div class="table-wrap table-wrap--tall">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th><th>Company</th><th>Region</th><th>Country</th><th>Level</th><th>Owner</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rows
-                  .map(
-                    (p) =>
-                      `<tr>
-                  <td>${escapeHtml(p.id)}</td>
-                  <td>${escapeHtml(p.companyName)}</td>
-                  <td>${escapeHtml(p.salesRegion)}</td>
-                  <td>${escapeHtml(p.country)}</td>
-                  <td>${escapeHtml(p.distributorLevel)}</td>
-                  <td>${escapeHtml(p.accountOwnerName)}</td>
-                </tr>`,
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          </div>
+  // ── Post-call workspace ────────────────────────────────────────────────────
+  function renderPostCall() {
+    const seller = currentSeller();
+    const preFollow = `Summarize my last partner call and draft a concise follow-up email. Seller: ${seller.name}. Include action items and owners.`;
+    const preNote = `Produce structured meeting notes from the context we have for my accounts. Seller: ${seller.name}.`;
+    const prePlan = `List next-step action items and a 2-week plan for follow-ups for seller ${seller.name}.`;
+    viewEl.innerHTML = `
+      <div class="panel">
+        <p class="panel-intro"><strong>Post-call workspace</strong> — turn conversations into summaries, drafts, and CRM-ready outcomes.</p>
+        <div class="post-grid">
+          <section class="card post-card">
+            <h3>Call summary &amp; notes</h3>
+            <p class="muted">Structured summary from your transcript or rough notes.</p>
+            <button type="button" class="btn-secondary post-open-chat" data-prefill="${escapeHtml(preNote)}">Open in AI assistant</button>
+          </section>
+          <section class="card post-card">
+            <h3>Follow-up email draft</h3>
+            <p class="muted">Draft ready to edit and send.</p>
+            <button type="button" class="btn-secondary post-open-chat" data-prefill="${escapeHtml(preFollow)}">Open in AI assistant</button>
+          </section>
+          <section class="card post-card">
+            <h3>Action plan &amp; reminders</h3>
+            <p class="muted">Next steps and a 2-week plan.</p>
+            <button type="button" class="btn-secondary post-open-chat" data-prefill="${escapeHtml(prePlan)}">Open in AI assistant</button>
+          </section>
         </div>
-      `;
-      return;
-    }
-
-    if (sub === "orders") {
-      const res = await fetch("/api/orders");
-      const data = await res.json();
-      const rows = data.orders || [];
-      viewEl.innerHTML = `
-        <div class="panel">
-          <p class="panel-intro">${rows.length} orders.</p>
-          <div class="table-wrap table-wrap--tall">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Order</th><th>Date</th><th>Status</th><th>Type</th><th>Reseller</th><th>Customer</th><th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rows
-                  .map(
-                    (o) =>
-                      `<tr>
-                  <td>${escapeHtml(o.orderId)}</td>
-                  <td>${escapeHtml(o.date)}</td>
-                  <td>${escapeHtml(o.status)}</td>
-                  <td>${escapeHtml(o.type)}</td>
-                  <td>${escapeHtml(o.resellerId)}</td>
-                  <td>${escapeHtml(o.company)}</td>
-                  <td>$${escapeHtml(String(o.totalUsd))}</td>
-                </tr>`,
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    if (sub === "keys") {
-      const res = await fetch("/api/license-keys");
-      const data = await res.json();
-      const rows = data.licenseKeys || [];
-      viewEl.innerHTML = `
-        <div class="panel">
-          <p class="panel-intro">${rows.length} license keys.</p>
-          <div class="table-wrap table-wrap--tall">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Key</th><th>Deployed</th><th>Company</th><th>Edition</th><th>SC</th><th>Expires</th><th>Reseller</th><th>Flags</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rows
-                  .map((k) => {
-                    const flags = [];
-                    if (k.flags?.licenseExpired) flags.push("expired");
-                    if (k.flags?.notAssignedToReseller) flags.push("unassigned");
-                    return `<tr>
-                  <td class="mono">${escapeHtml(k.licenseKey)}</td>
-                  <td>${escapeHtml(k.deployedAs)}</td>
-                  <td>${escapeHtml(k.company)}</td>
-                  <td>${escapeHtml(k.productEdition)}</td>
-                  <td>${escapeHtml(String(k.primaryLicenseSc))}</td>
-                  <td>${escapeHtml(k.licenseExpires)}</td>
-                  <td>${escapeHtml(k.assignedResellerName || "—")}</td>
-                  <td>${escapeHtml(flags.join(", ") || "—")}</td>
-                </tr>`;
-                  })
-                  .join("")}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    if (sub === "license-types") {
-      const res = await fetch("/api/license-types");
-      const data = await res.json();
-      const rows = data.types || [];
-      viewEl.innerHTML = `
-        <div class="panel">
-          <p class="panel-intro">Primary License SC tiers (2<sup>2</sup>…2<sup>10</sup>) and product editions for the demo.</p>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead>
-                <tr><th>2<sup>n</sup></th><th>Primary SC</th><th>Product edition</th></tr>
-              </thead>
-              <tbody>
-                ${rows
-                  .map(
-                    (t) =>
-                      `<tr>
-                  <td>2^${escapeHtml(String(t.power))}</td>
-                  <td>${escapeHtml(String(t.primaryLicenseSc))}</td>
-                  <td>${escapeHtml(t.productEdition)}</td>
-                </tr>`,
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    if (sub === "emails") {
-      const res = await fetch("/api/emails");
-      const data = await res.json();
-      const rows = data.emails || [];
-      viewEl.innerHTML = `
-        <div class="panel">
-          <p class="panel-intro">${rows.length} messages.</p>
-          <div class="table-wrap table-wrap--tall">
-            <table class="data-table">
-              <thead>
-                <tr><th>Date</th><th>Partner</th><th>Subject</th><th>From → To</th><th>Sentiment</th></tr>
-              </thead>
-              <tbody>
-                ${rows
-                  .map(
-                    (e) =>
-                      `<tr>
-                  <td>${escapeHtml(e.date)}</td>
-                  <td>${escapeHtml(e.partnerName)}</td>
-                  <td>${escapeHtml(e.subject)}</td>
-                  <td>${escapeHtml(e.from)} → ${escapeHtml(e.to)}</td>
-                  <td>${escapeHtml(e.sentiment)}</td>
-                </tr>`,
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    if (sub === "users") {
-      const res = await fetch("/api/internal-users");
-      const data = await res.json();
-      const rows = data.internalUsers || [];
-      viewEl.innerHTML = `
-        <div class="panel">
-          <p class="panel-intro">Customer-side assignees (sample).</p>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead>
-                <tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th></tr>
-              </thead>
-              <tbody>
-                ${rows
-                  .map(
-                    (u) =>
-                      `<tr>
-                  <td>${escapeHtml(u.id)}</td>
-                  <td>${escapeHtml(u.fullName)}</td>
-                  <td>${escapeHtml(u.email)}</td>
-                  <td>${escapeHtml(u.role)}</td>
-                </tr>`,
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    if (sub === "products") {
-      const res = await fetch("/api/products");
-      const data = await res.json();
-      const rows = data.products || [];
-      viewEl.innerHTML = `
-        <div class="panel">
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead>
-                <tr><th>SKU</th><th>Name</th><th>Price USD</th><th>Billing</th><th>Highlights</th></tr>
-              </thead>
-              <tbody>
-                ${rows
-                  .map(
-                    (p) =>
-                      `<tr>
-                  <td>${escapeHtml(p.sku)}</td>
-                  <td>${escapeHtml(p.name)}</td>
-                  <td>${escapeHtml(String(p.priceUsd))}</td>
-                  <td>${escapeHtml(p.billing)}</td>
-                  <td>${escapeHtml(p.highlights.join("; "))}</td>
-                </tr>`,
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
+      </div>`;
+    viewEl.querySelectorAll(".post-open-chat").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        sessionStorage.setItem(CHAT_PREFILL_KEY, btn.getAttribute("data-prefill") || "");
+        location.hash = "#/chat";
+      });
+    });
   }
 
+  // ── Chat ────────────────────────────────────────────────────────────────────
   function renderChatShell() {
     const prefill = sessionStorage.getItem(CHAT_PREFILL_KEY);
     if (prefill) sessionStorage.removeItem(CHAT_PREFILL_KEY);
-
     viewEl.innerHTML = `
       <div class="panel chat-panel">
-        <p class="panel-intro">
-          <strong>During-call assist</strong> — Selected seller: <strong id="chat-seller-label"></strong>. Mock CRM context is sent with each message. Production adds live transcription whispers, objection prompts, and next-best-action.
-        </p>
-        <div class="whisper-hints card">
-          <span class="whisper-title">In-call intelligence (target)</span>
-          <ul class="whisper-list">
-            <li>Objection handling &amp; suggested responses</li>
-            <li>Next best action / upsell &amp; cross-sell</li>
-            <li>Agenda &amp; time management</li>
-            <li>Instant partner performance &amp; product value points</li>
-          </ul>
-        </div>
+        <p class="panel-intro"><strong>During-call assist</strong> — Selected seller: <strong>${escapeHtml(me.name)}</strong>${me.region ? ` (${escapeHtml(me.region)})` : ""}. Snapshot context is sent with each message.</p>
         <div id="log" class="log" aria-live="polite"></div>
         <form id="form" class="form">
           <label class="sr-only" for="input">Message</label>
@@ -815,17 +397,11 @@
           </div>
         </form>
         <p id="error" class="error" role="alert" hidden></p>
-      </div>
-    `;
-    const seller = currentSeller();
-    const label = document.getElementById("chat-seller-label");
-    if (label && seller) label.textContent = `${seller.name} (${seller.region})`;
+      </div>`;
 
     const input = document.getElementById("input");
     if (input && prefill) input.value = prefill;
-
     const logEl = document.getElementById("log");
-    logEl.innerHTML = "";
     chatMessages.forEach((m) => appendMessageNode(logEl, m.role, m.content));
   }
 
@@ -865,22 +441,17 @@
         errorEl.textContent = t || "";
       }
     };
-
     showError("");
     input.value = "";
     chatMessages.push({ role: "user", content: text });
     appendMessageNode(logEl, "user", text);
 
-    const seller = currentSeller();
     sendBtn.disabled = true;
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: chatMessages,
-          seller: seller ? { id: seller.id, name: seller.name, region: seller.region } : null,
-        }),
+        headers: { "Content-Type": "application/json", "X-Onyx-User": me.email },
+        body: JSON.stringify({ messages: chatMessages }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || res.statusText || "Request failed");
@@ -897,120 +468,277 @@
     }
   });
 
-  async function applyUrlParams() {
-    const params = new URLSearchParams(location.search);
-    if (![...params.keys()].length) return;
+  // ── Settings ────────────────────────────────────────────────────────────────
+  async function renderSettings() {
+    const s = await fetch("/api/settings").then((r) => r.json());
+    const settings = s.settings;
+    const secrets = s.secrets;
+    const masterReady = s.masterKeyAvailable;
+    const models = s.availableModels;
 
-    let targetSeller = null;
-    const sellerName = params.get("seller");
-    if (sellerName) {
-      targetSeller = reps.find(
-        (r) => r.name.toLowerCase() === sellerName.toLowerCase(),
-      );
+    function radioCard(value, label, sub, checked) {
+      return `
+        <label class="radio-card ${checked ? "radio-card--active" : ""}">
+          <input type="radio" name="ai-pref" value="${value}" ${checked ? "checked" : ""}>
+          <div class="radio-card-label">${escapeHtml(label)}</div>
+          <div class="radio-card-sub">${escapeHtml(sub)}</div>
+        </label>`;
     }
 
-    const partnerId = params.get("partnerId");
-    if (partnerId && !targetSeller) {
-      try {
-        const res = await fetch("/api/partners");
-        const data = await res.json();
-        const partner = (data.partners || []).find((p) => p.id === partnerId);
-        if (partner) {
-          targetSeller = reps.find((r) => r.name === partner.accountOwnerName);
-        }
-      } catch {
-        /* ignore */
-      }
+    function secretRow(provider, label) {
+      const st = secrets[provider];
+      const isStore = st.source === "store";
+      const isEnv = st.source === "env";
+      const statusPill = st.source === "none"
+        ? `<span class="pill pill--muted">Not configured</span>`
+        : isEnv
+        ? `<span class="pill pill--ok">Configured via env · …${escapeHtml(st.last4)}</span>`
+        : `<span class="pill pill--ok">Configured via UI · …${escapeHtml(st.last4)}</span>`;
+      return `
+        <div class="secret-row">
+          <div>
+            <div class="secret-label">${escapeHtml(label)}</div>
+            <div class="secret-status">${statusPill}<code class="muted small">${escapeHtml(st.envVar)}</code></div>
+          </div>
+          <div class="secret-actions">
+            <button type="button" class="btn-secondary" data-secret-edit="${provider}" ${!masterReady && !isEnv ? "disabled title='ONYX_SECRET_KEY is not set'" : ""}>${isStore || isEnv ? "Replace" : "Set"}</button>
+            ${isStore ? `<button type="button" class="btn-link" data-secret-remove="${provider}">Remove</button>` : ""}
+          </div>
+        </div>
+        <div class="secret-edit" data-secret-form="${provider}" hidden>
+          <input type="password" data-secret-input="${provider}" placeholder="${provider === "anthropic" ? "sk-ant-..." : "sk-..."}" autocomplete="off" />
+          <button type="button" class="btn-primary" data-secret-save="${provider}">Save &amp; validate</button>
+          <button type="button" class="btn-link" data-secret-cancel="${provider}">Cancel</button>
+          <span class="secret-msg" data-secret-msg="${provider}"></span>
+        </div>`;
     }
 
-    if (targetSeller) {
-      localStorage.setItem(STORAGE_KEY, targetSeller.id);
-      if (partnerId) {
-        localStorage.setItem(partnerStorageKey(targetSeller.id), partnerId);
-      }
-    }
+    viewEl.innerHTML = `
+      <div class="settings-page">
+        <section class="card">
+          <h3 class="h3">Account</h3>
+          <div class="kv-grid">
+            <div><span class="kv-label">Email</span><span class="kv-value">${escapeHtml(me.email)}</span></div>
+            <div><span class="kv-label">Name</span><span class="kv-value">${escapeHtml(me.name)}</span></div>
+            <div><span class="kv-label">Region</span><span class="kv-value">${escapeHtml(me.region || "—")}</span></div>
+            <div><span class="kv-label">Snapshot</span><span class="kv-value">${me.hasSnapshot ? `${me.partnerCount} partners · ${escapeHtml(me.snapshotUpdatedAt || "")}` : "<em>none</em>"}</span></div>
+          </div>
+        </section>
 
-    const prefill = params.get("prefill");
-    if (prefill) sessionStorage.setItem(CHAT_PREFILL_KEY, prefill);
+        <section class="card">
+          <h3 class="h3">AI provider preference</h3>
+          <p class="muted small">Used when the request doesn't specify one. Validated against keys actually configured.</p>
+          <div class="radio-group" id="ai-pref-group">
+            ${radioCard("auto", "Auto", "Pick whichever is configured", settings.aiProviderPreference === "auto")}
+            ${radioCard("anthropic", "Claude", "Anthropic — recommended for analysis", settings.aiProviderPreference === "anthropic")}
+            ${radioCard("openai", "ChatGPT", "OpenAI — broader knowledge cutoff", settings.aiProviderPreference === "openai")}
+          </div>
+          <p id="ai-pref-status" class="muted small"></p>
+        </section>
 
-    const route = params.get("route");
-    if (route) {
-      location.hash = route.startsWith("#")
-        ? route
-        : "#/" + route.replace(/^\/+/, "");
-    }
+        <section class="card">
+          <h3 class="h3">API keys</h3>
+          <p class="muted small">Keys set here override <code>process.env</code>. Stored encrypted with AES-256-GCM, key derived from <code>ONYX_SECRET_KEY</code>. ${masterReady ? "" : '<strong class="error">ONYX_SECRET_KEY is not set — UI saves disabled.</strong>'}</p>
+          ${secretRow("anthropic", "Anthropic (Claude)")}
+          ${secretRow("openai", "OpenAI (ChatGPT)")}
+        </section>
 
-    history.replaceState({}, "", location.pathname + location.hash);
-  }
+        <section class="card">
+          <h3 class="h3">Default models</h3>
+          <div class="form-row">
+            <label class="form-label">Anthropic</label>
+            <select id="anthropic-model">
+              ${models.anthropic.map((m) => `<option value="${escapeHtml(m.id)}" ${m.id === settings.anthropicModel ? "selected" : ""}>${escapeHtml(m.name)}</option>`).join("")}
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">OpenAI</label>
+            <select id="openai-model">
+              ${models.openai.map((m) => `<option value="${escapeHtml(m.id)}" ${m.id === settings.openaiModel ? "selected" : ""}>${escapeHtml(m.name)}</option>`).join("")}
+            </select>
+          </div>
+          <p id="model-status" class="muted small"></p>
+        </section>
 
-  async function init() {
-    const res = await fetch("/api/sellers");
-    const data = await res.json();
-    reps = data.reps || [];
-    sellerSelect.innerHTML = reps
-      .map(
-        (r) =>
-          `<option value="${escapeHtml(r.id)}">${escapeHtml(r.name)} — ${escapeHtml(r.region)}</option>`,
-      )
-      .join("");
+        <section class="card">
+          <h3 class="h3">Reseller dashboard defaults</h3>
+          <div class="form-row">
+            <label class="form-label">Default tier filter</label>
+            <select id="prm-default-tier">
+              ${["all", "Titanium", "Platinum", "Gold", "Silver", "Bronze", "Affiliate", "Academy"]
+                .map((t) => `<option value="${t}" ${t === settings.prmDefaultTier ? "selected" : ""}>${t === "all" ? "All tiers" : t}</option>`).join("")}
+            </select>
+          </div>
+          <p id="prm-status" class="muted small"></p>
+        </section>
 
-    await applyUrlParams();
+        <section class="card card--muted">
+          <h3 class="h3">About</h3>
+          <p class="muted small">ONYX — AI Sales Force Assistant</p>
+          <p class="muted small"><a href="/health" target="_blank">/health</a></p>
+        </section>
+      </div>`;
 
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved && reps.some((r) => r.id === saved)) sellerSelect.value = saved;
-    else if (reps[0]) {
-      sellerSelect.value = reps[0].id;
-      localStorage.setItem(STORAGE_KEY, reps[0].id);
-    }
-
-    sellerSelect.addEventListener("change", () => {
-      localStorage.setItem(STORAGE_KEY, sellerSelect.value);
-      render();
-    });
-    if (partnerSelect) {
-      partnerSelect.addEventListener("change", () => {
-        const seller = currentSeller();
-        if (!seller) return;
-        localStorage.setItem(partnerStorageKey(seller.id), partnerSelect.value || "all");
-        if (parseRoute().view === "home") render();
+    // Wire AI preference
+    document.getElementById("ai-pref-group").addEventListener("change", async (e) => {
+      const v = e.target.value;
+      const r = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Onyx-User": me.email },
+        body: JSON.stringify({ aiProviderPreference: v }),
       });
-    }
-
-    window.addEventListener("hashchange", () => {
-      render();
+      const status = document.getElementById("ai-pref-status");
+      status.textContent = r.ok ? "✓ Saved" : "✗ Save failed";
+      document.querySelectorAll(".radio-card").forEach((el) => el.classList.toggle("radio-card--active", el.querySelector("input").checked));
     });
 
-    if (!location.hash || location.hash === "#") {
-      location.hash = "#/home";
+    // Wire model selectors
+    ["anthropic-model", "openai-model"].forEach((id) => {
+      const provider = id.split("-")[0];
+      document.getElementById(id).addEventListener("change", async (e) => {
+        const r = await fetch("/api/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Onyx-User": me.email },
+          body: JSON.stringify({ [`${provider}Model`]: e.target.value }),
+        });
+        const status = document.getElementById("model-status");
+        status.textContent = r.ok ? `✓ ${provider} model saved` : "✗ Save failed";
+      });
+    });
+
+    // Wire PRM tier
+    document.getElementById("prm-default-tier").addEventListener("change", async (e) => {
+      const r = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Onyx-User": me.email },
+        body: JSON.stringify({ prmDefaultTier: e.target.value }),
+      });
+      const status = document.getElementById("prm-status");
+      status.textContent = r.ok ? "✓ Saved" : "✗ Save failed";
+    });
+
+    // Wire secret rows
+    viewEl.querySelectorAll("[data-secret-edit]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const p = btn.getAttribute("data-secret-edit");
+        document.querySelector(`[data-secret-form="${p}"]`).hidden = false;
+        document.querySelector(`[data-secret-input="${p}"]`).focus();
+      });
+    });
+    viewEl.querySelectorAll("[data-secret-cancel]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const p = btn.getAttribute("data-secret-cancel");
+        document.querySelector(`[data-secret-form="${p}"]`).hidden = true;
+        document.querySelector(`[data-secret-input="${p}"]`).value = "";
+        document.querySelector(`[data-secret-msg="${p}"]`).textContent = "";
+      });
+    });
+    viewEl.querySelectorAll("[data-secret-save]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const p = btn.getAttribute("data-secret-save");
+        const inp = document.querySelector(`[data-secret-input="${p}"]`);
+        const msg = document.querySelector(`[data-secret-msg="${p}"]`);
+        if (!inp.value) { msg.textContent = "Empty"; return; }
+        msg.innerHTML = '<span class="spinner-inline"></span>Validating…';
+        try {
+          const r = await fetch(`/api/secrets/${p}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", "X-Onyx-User": me.email },
+            body: JSON.stringify({ apiKey: inp.value }),
+          });
+          const d = await r.json();
+          if (!r.ok) throw new Error(d.error || "Save failed");
+          msg.innerHTML = '<span style="color:var(--ok)">✓ Validated &amp; saved</span>';
+          setTimeout(() => renderSettings(), 800);
+        } catch (e) {
+          msg.innerHTML = `<span class="error">${escapeHtml(e.message)}</span>`;
+        }
+      });
+    });
+    viewEl.querySelectorAll("[data-secret-remove]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const p = btn.getAttribute("data-secret-remove");
+        if (!confirm(`Remove ${p} key from ONYX? (Env var, if set, will still apply.)`)) return;
+        await fetch(`/api/secrets/${p}`, { method: "DELETE", headers: { "X-Onyx-User": me.email } });
+        renderSettings();
+      });
+    });
+  }
+
+  // ── Data tables ────────────────────────────────────────────────────────────
+  async function renderData(sub) {
+    const config = {
+      partners: { url: "/api/partners", key: "partners", cols: [
+        { h: "ID", v: (p) => p.id },
+        { h: "Company", v: (p) => p.companyName },
+        { h: "Region", v: (p) => p.salesRegion },
+        { h: "Country", v: (p) => p.country },
+        { h: "Level", v: (p) => p.distributorLevel },
+        { h: "Owner", v: (p) => p.accountOwnerName },
+      ]},
+      orders: { url: "/api/orders", key: "orders", cols: [
+        { h: "Order", v: (o) => o.orderId },
+        { h: "Date", v: (o) => o.date },
+        { h: "Status", v: (o) => o.status },
+        { h: "Type", v: (o) => o.type },
+        { h: "Reseller", v: (o) => o.resellerId },
+        { h: "Customer", v: (o) => o.company },
+        { h: "Total", v: (o) => `$${o.totalUsd}` },
+      ]},
+      keys: { url: "/api/license-keys", key: "licenseKeys", cols: [
+        { h: "Key", v: (k) => k.licenseKey, cls: "mono" },
+        { h: "Customer", v: (k) => k.company },
+        { h: "Edition", v: (k) => k.productEdition },
+        { h: "SC", v: (k) => String(k.primaryLicenseSc) },
+        { h: "Expires", v: (k) => k.licenseExpires },
+        { h: "Reseller", v: (k) => k.assignedResellerName || "—" },
+      ]},
+      emails: { url: "/api/emails", key: "emails", cols: [
+        { h: "Date", v: (e) => e.date },
+        { h: "Partner", v: (e) => e.partnerName },
+        { h: "Subject", v: (e) => e.subject },
+        { h: "Sentiment", v: (e) => e.sentiment },
+      ]},
+    }[sub];
+
+    if (!config) {
+      viewEl.innerHTML = '<div class="panel"><p class="empty">Unknown data view.</p></div>';
+      return;
     }
+
+    const data = await fetch(config.url).then((r) => r.json());
+    const rows = data[config.key] || [];
+
+    viewEl.innerHTML = `
+      <div class="panel">
+        <p class="panel-intro">${rows.length} rows</p>
+        <div class="table-wrap table-wrap--tall">
+          <table class="data-table">
+            <thead><tr>${config.cols.map((c) => `<th>${escapeHtml(c.h)}</th>`).join("")}</tr></thead>
+            <tbody>
+              ${rows.map((r) => `<tr>${config.cols.map((c) => `<td class="${c.cls || ""}">${escapeHtml(c.v(r) ?? "")}</td>`).join("")}</tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  async function init() {
+    try {
+      const r = await fetch("/api/me");
+      if (r.ok) {
+        me = await r.json();
+        if (topbarUserEl) topbarUserEl.textContent = me.name + (me.region ? ` · ${me.region}` : "");
+      } else if (r.status === 401) {
+        // Render the not-signed-in panel via render()
+      }
+    } catch (e) {
+      console.warn("/api/me failed:", e);
+    }
+
+    window.addEventListener("hashchange", render);
     await render();
-  }
-
-  async function renderPrm(seller) {
-    if (!window.prmApp) {
-      viewEl.innerHTML = '<p class="empty">PRM module not loaded — check that prm-app.js is included.</p>';
-      return;
-    }
-    const list = await fetch("/api/snapshots").then((r) => r.json()).catch(() => ({ snapshots: [] }));
-    if (!list.snapshots?.length) {
-      viewEl.innerHTML = '<p class="empty">No snapshot loaded yet — run a refresh from the extension popup.</p>';
-      return;
-    }
-    list.snapshots.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
-    const target =
-      list.snapshots.find((s) => s.name === seller?.name) || list.snapshots[0];
-    const snapshot = await fetch(`/api/snapshots/${encodeURIComponent(target.slug)}`).then((r) => r.json());
-    viewEl.innerHTML = "";
-    await window.prmApp.mount(viewEl, { snapshot, seller });
-  }
-
-  const aiProviderSelect = document.getElementById("ai-provider-select");
-  if (aiProviderSelect) {
-    aiProviderSelect.value = localStorage.getItem("onyx-ai-provider") || "";
-    aiProviderSelect.addEventListener("change", (e) => {
-      if (e.target.value) localStorage.setItem("onyx-ai-provider", e.target.value);
-      else localStorage.removeItem("onyx-ai-provider");
-    });
   }
 
   init();

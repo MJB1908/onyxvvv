@@ -6,8 +6,10 @@ const rateLimit = require("express-rate-limit");
 const { chatCompletion, partnerInsight } = require("./openaiClient");
 const snapshotStore = require("./snapshotStore");
 const settingsStore = require("./settingsStore");
+const secretsStore = require("./secretsStore");
 const erpDataAdapter = require("./erpDataAdapter");
 const salesRoutes = require("./salesRoutes");
+const aiProvider = require("./aiProvider");
 
 // In-memory notes store (local to this server instance)
 const notes = [];
@@ -17,42 +19,33 @@ const PORT = Number.parseInt(process.env.PORT || "3000", 10);
 const MAX_MESSAGES = 40;
 const MAX_CONTENT_LENGTH = 8000;
 
-function validateSellerParam(sellerName) {
-  if (!sellerName || typeof sellerName !== "string") {
-    return { valid: false, error: "Query parameter seller (name) is required." };
-  }
-  return { valid: true };
-}
-
 const app = express();
 app.disable("x-powered-by");
 app.use(express.json({ limit: "256kb" }));
 
 /**
- * Find the most recent snapshot for a seller name.
- * If no seller specified, returns the most recent snapshot.
+ * Find the most recent snapshot for a seller name, or fall back to the most
+ * recent snapshot when no name is given. Used by /api/sales/* and /api/chat.
  */
 function findSnapshot(sellerName) {
   const snapshots = snapshotStore.listSnapshots();
   if (!snapshots.length) return null;
-
-  // Sort by most recent first
   snapshots.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
-
-  // If no seller specified, return most recent
-  if (!sellerName) {
-    return snapshotStore.loadSnapshotBySlug(snapshots[0].slug);
-  }
-
-  // Try exact name match
+  if (!sellerName) return snapshotStore.loadSnapshotBySlug(snapshots[0].slug);
   for (const s of snapshots) {
-    if (s.name === sellerName) {
-      return snapshotStore.loadSnapshotBySlug(s.slug);
-    }
+    if (s.name === sellerName) return snapshotStore.loadSnapshotBySlug(s.slug);
   }
-
-  // Return most recent as fallback
   return snapshotStore.loadSnapshotBySlug(snapshots[0].slug);
+}
+
+/**
+ * Resolve the authenticated user from request headers / env.
+ * Used by /api/me and any other handler that needs "who is this".
+ */
+function authUser(req) {
+  const fromHeader = req.get("X-Onyx-User");
+  const fromEnv = process.env.ONYX_DEV_USER;
+  return fromHeader || fromEnv || null;
 }
 
 const ALLOWED_ORIGINS = new Set([
@@ -65,8 +58,8 @@ app.use("/api", (req, res, next) => {
   if (origin && (ALLOWED_ORIGINS.has(origin) || origin.startsWith("chrome-extension://"))) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Vary", "Origin");
-    res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Onyx-User");
     res.setHeader("Access-Control-Max-Age", "600");
   }
   if (req.method === "OPTIONS") return res.sendStatus(204);
@@ -81,129 +74,144 @@ const chatLimiter = rateLimit({
   message: { error: "Too many requests, try again shortly." },
 });
 
-app.get("/health", (_req, res) => {
-  res.json({ ok: true });
-});
+// ── Health & Identity ────────────────────────────────────────────────────────
+app.get("/health", (_req, res) => res.json({ ok: true }));
 
-app.get("/api/sellers", (_req, res) => {
-  const snapshots = snapshotStore.listSnapshots();
-  const reps = snapshots
-    .map((s) => ({
-      id: s.email,
-      name: s.name || s.email.split("@")[0],
-      email: s.email,
-    }))
-    .filter((r) => r.name);
-  res.json({ reps });
-});
-
-app.get("/api/insights", (req, res) => {
-  const seller = req.query.seller;
-  const valid = validateSellerParam(seller);
-  if (!valid.valid) return res.status(400).json({ error: valid.error });
-
-  const snapshot = findSnapshot(seller);
-  if (!snapshot) {
-    return res.status(404).json({ error: "No snapshot found for seller. Refresh ERP data first." });
+/**
+ * GET /api/me
+ * Returns the authenticated user, hydrated from their snapshot if one exists.
+ * Replaces the old /api/sellers dropdown — there is exactly one user per session.
+ */
+app.get("/api/me", (req, res) => {
+  const email = authUser(req);
+  if (!email) {
+    return res.status(401).json({
+      error:
+        "Not authenticated. For local dev: set ONYX_DEV_USER. " +
+        "For production: configure your reverse proxy to inject X-Onyx-User.",
+    });
   }
-  res.json(erpDataAdapter.insightsForSeller(seller, snapshot));
+  const snap = snapshotStore.loadSnapshot(email);
+  res.json({
+    email,
+    name: snap?.rep?.name || email.split("@")[0],
+    region: snap?.rep?.region || null,
+    hasSnapshot: !!snap,
+    snapshotUpdatedAt: snap?.updatedAt || null,
+    partnerCount: Array.isArray(snap?.partners) ? snap.partners.length : 0,
+  });
 });
 
-app.get("/api/next-caller", (req, res) => {
-  const seller = req.query.seller;
-  const valid = validateSellerParam(seller);
-  if (!valid.valid) return res.status(400).json({ error: valid.error });
+// ── Settings ─────────────────────────────────────────────────────────────────
+app.get("/api/settings", (_req, res) => {
+  res.json({
+    settings: settingsStore.loadSettings(),
+    availableModels: aiProvider.AVAILABLE_MODELS,
+    providers: aiProvider.availableProviders(),
+    secrets: secretsStore.status(),
+    masterKeyAvailable: secretsStore.masterKeyAvailable(),
+  });
+});
 
-  const snapshot = findSnapshot(seller);
-  if (!snapshot) {
-    return res.json({ next: null, queue: [] });
+app.post("/api/settings", (req, res) => {
+  try {
+    const updated = settingsStore.saveSettings(req.body || {});
+    res.json({ ok: true, settings: updated });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
   }
-  res.json(erpDataAdapter.getNextCallsForSeller(seller, snapshot));
 });
 
-app.get("/api/prospects", (req, res) => {
-  const seller = req.query.seller;
-  const valid = validateSellerParam(seller);
-  if (!valid.valid) return res.status(400).json({ error: valid.error });
-
-  const snapshot = findSnapshot(seller);
-  if (!snapshot) {
-    return res.json({ region: "—", prospects: [] });
+// ── Secrets (UI-set API keys) ────────────────────────────────────────────────
+app.put("/api/secrets/:provider", async (req, res) => {
+  try {
+    const provider = String(req.params.provider || "").toLowerCase();
+    if (!["anthropic", "openai"].includes(provider)) {
+      return res.status(400).json({ error: "provider must be 'anthropic' or 'openai'" });
+    }
+    if (!secretsStore.masterKeyAvailable()) {
+      return res.status(503).json({
+        error:
+          "ONYX_SECRET_KEY env var not set. API keys cannot be persisted without it. " +
+          "Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
+      });
+    }
+    const apiKey = (req.body || {}).apiKey;
+    if (!apiKey || typeof apiKey !== "string") {
+      return res.status(400).json({ error: "apiKey is required" });
+    }
+    try {
+      await aiProvider.validateApiKey(provider, apiKey);
+    } catch (e) {
+      return res.status(400).json({ error: `Key validation failed: ${e.message}` });
+    }
+    const result = secretsStore.setSecret(provider + "ApiKey", apiKey);
+    res.json({ ok: true, ...result, status: secretsStore.status()[provider] });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
-  res.json(erpDataAdapter.prospectsForSeller(seller, snapshot));
 });
 
-app.get("/api/alerts", (req, res) => {
-  const seller = req.query.seller;
-  const valid = validateSellerParam(seller);
-  if (!valid.valid) return res.status(400).json({ error: valid.error });
-
-  const snapshot = findSnapshot(seller);
-  if (!snapshot) {
-    return res.json({ alerts: [] });
+app.delete("/api/secrets/:provider", (req, res) => {
+  try {
+    const provider = String(req.params.provider || "").toLowerCase();
+    if (!["anthropic", "openai"].includes(provider)) {
+      return res.status(400).json({ error: "provider must be 'anthropic' or 'openai'" });
+    }
+    const result = secretsStore.removeSecret(provider + "ApiKey");
+    res.json({ ok: true, ...result, status: secretsStore.status()[provider] });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
-  res.json(erpDataAdapter.alertsForSeller(seller, snapshot));
 });
 
-app.get("/api/home-dashboard", (req, res) => {
-  const seller = req.query.seller;
-  const valid = validateSellerParam(seller);
-  if (!valid.valid) return res.status(400).json({ error: valid.error });
-
-  const snapshot = findSnapshot(seller);
-  if (!snapshot) {
-    return res.json(erpDataAdapter.homeDashboardForSeller(seller, null));
-  }
-  res.json(erpDataAdapter.homeDashboardForSeller(seller, snapshot));
-});
-
-app.get("/api/pre-call-brief", (req, res) => {
-  const seller = req.query.seller;
-  const valid = validateSellerParam(seller);
-  if (!valid.valid) return res.status(400).json({ error: valid.error });
-
-  const partnerId = req.query.partnerId;
-  const snapshot = findSnapshot(seller);
-  if (!snapshot) {
-    return res.status(404).json({ ok: false, message: "No snapshot found. Refresh ERP data first.", brief: null });
-  }
-  res.json(erpDataAdapter.preCallBrief(seller, typeof partnerId === "string" ? partnerId : undefined, snapshot));
-});
-
+// ── Data endpoints (kept) ────────────────────────────────────────────────────
 app.get("/api/partners", (_req, res) => {
   const snapshot = findSnapshot("");
-  const partners = snapshot ? snapshot.partners || [] : [];
-  res.json({ partners });
+  res.json({ partners: snapshot ? snapshot.partners || [] : [] });
 });
-
 app.get("/api/orders", (_req, res) => {
   const snapshot = findSnapshot("");
-  const orders = snapshot ? snapshot.orders || [] : [];
-  res.json({ orders });
+  res.json({ orders: snapshot ? snapshot.orders || [] : [] });
 });
-
 app.get("/api/license-keys", (_req, res) => {
   const snapshot = findSnapshot("");
-  const licenseKeys = snapshot ? snapshot.licenseKeys || [] : [];
-  res.json({ licenseKeys });
+  res.json({ licenseKeys: snapshot ? snapshot.licenseKeys || [] : [] });
 });
-
 app.get("/api/calls", (_req, res) => {
   const snapshot = findSnapshot("");
-  const calls = snapshot ? snapshot.calls || [] : [];
-  res.json({ calls });
+  res.json({ calls: snapshot ? snapshot.calls || [] : [] });
 });
-
 app.get("/api/emails", (_req, res) => {
   const snapshot = findSnapshot("");
-  const emails = snapshot ? snapshot.emails || [] : [];
-  res.json({ emails });
+  res.json({ emails: snapshot ? snapshot.emails || [] : [] });
 });
 
+// ── Caller / phone match ─────────────────────────────────────────────────────
+app.get("/api/match-caller", (req, res) => {
+  const phone = req.query.phone;
+  if (!phone || typeof phone !== "string") {
+    return res.status(400).json({ error: "Query parameter phone is required." });
+  }
+  const snapshot = findSnapshot("");
+  if (!snapshot) return res.json({ matched: false, callerDigits: "", candidates: [] });
+  res.json(erpDataAdapter.matchCaller(phone, snapshot));
+});
+
+// ── Snapshots ────────────────────────────────────────────────────────────────
+app.get("/api/snapshots", (_req, res) => {
+  res.json({ snapshots: snapshotStore.listSnapshots() });
+});
+app.get("/api/snapshots/:slug", (req, res) => {
+  const snapshot = snapshotStore.loadSnapshotBySlug(req.params.slug);
+  if (!snapshot) return res.status(404).json({ error: "Snapshot not found" });
+  res.json(snapshot);
+});
+
+// ── Ingest (extension) ───────────────────────────────────────────────────────
 app.post("/api/ingest/erp", (req, res) => {
   try {
-    const { repEmail, repName, repRegion, partners, orders, licenseKeys, calls, notes } =
-      req.body || {};
+    const { repEmail, repName, repRegion, partners, orders, licenseKeys, calls } = req.body || {};
     if (!repEmail || typeof repEmail !== "string") {
       return res.status(400).json({ error: "repEmail is required" });
     }
@@ -217,7 +225,6 @@ app.post("/api/ingest/erp", (req, res) => {
       orders: Array.isArray(orders) ? orders : [],
       licenseKeys: Array.isArray(licenseKeys) ? licenseKeys : [],
       calls: Array.isArray(calls) ? calls : [],
-      notes: Array.isArray(notes) ? notes : [],
     });
     res.status(201).json({
       ok: true,
@@ -230,6 +237,19 @@ app.post("/api/ingest/erp", (req, res) => {
         calls: snapshot.calls.length,
       },
     });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+app.post("/api/ingest/erp/partner-detail", (req, res) => {
+  try {
+    const { repEmail, partnerId, detail } = req.body || {};
+    if (!repEmail || !partnerId || !detail) {
+      return res.status(400).json({ error: "repEmail, partnerId, detail are required" });
+    }
+    const stored = snapshotStore.savePartnerDetail(repEmail, String(partnerId), detail);
+    res.status(201).json({ ok: true, partnerId: String(partnerId), fetchedAt: stored.fetchedAt });
   } catch (err) {
     res.status(400).json({ ok: false, error: err.message });
   }
@@ -254,100 +274,11 @@ app.post("/api/calls/log", (req, res) => {
   }
 });
 
-app.post("/api/ingest/erp/partner-detail", (req, res) => {
-  try {
-    const { repEmail, partnerId, detail } = req.body || {};
-    if (!repEmail || !partnerId || !detail) {
-      return res.status(400).json({ error: "repEmail, partnerId, detail are required" });
-    }
-    const stored = snapshotStore.savePartnerDetail(repEmail, String(partnerId), detail);
-    res.status(201).json({ ok: true, partnerId: String(partnerId), fetchedAt: stored.fetchedAt });
-  } catch (err) {
-    res.status(400).json({ ok: false, error: err.message });
-  }
-});
-
-app.get("/api/sellers/me", (req, res) => {
-  const email = req.query.email;
-  if (!email || typeof email !== "string") {
-    return res.status(400).json({ error: "Query parameter email is required" });
-  }
-  const snapshot = snapshotStore.loadSnapshot(email);
-  if (!snapshot) {
-    return res
-      .status(404)
-      .json({ found: false, slug: snapshotStore.slugifyEmail(email) });
-  }
-  res.json({
-    found: true,
-    rep: snapshot.rep,
-    updatedAt: snapshot.updatedAt,
-    counts: {
-      partners: snapshot.partners?.length || 0,
-      orders: snapshot.orders?.length || 0,
-      licenseKeys: snapshot.licenseKeys?.length || 0,
-      calls: snapshot.calls?.length || 0,
-    },
-  });
-});
-
-app.get("/api/snapshots", (_req, res) => {
-  res.json({ snapshots: snapshotStore.listSnapshots() });
-});
-
-app.get("/api/snapshots/:slug", (req, res) => {
-  const snapshot = snapshotStore.loadSnapshotBySlug(req.params.slug);
-  if (!snapshot) return res.status(404).json({ error: "Snapshot not found" });
-  res.json(snapshot);
-});
-
-app.get("/api/admin/settings", (req, res) => {
-  res.json({
-    current: settingsStore.loadSettings(),
-    available: { models: settingsStore.AVAILABLE_MODELS },
-  });
-});
-
-app.post("/api/admin/settings", (req, res) => {
-  try {
-    const { openaiModel } = req.body || {};
-    if (!openaiModel || typeof openaiModel !== "string") {
-      return res.status(400).json({ error: "openaiModel is required" });
-    }
-    const validModels = settingsStore.AVAILABLE_MODELS.map((m) => m.id);
-    if (!validModels.includes(openaiModel)) {
-      return res.status(400).json({ error: `Invalid model. Valid options: ${validModels.join(", ")}` });
-    }
-    const updated = settingsStore.saveSettings({ openaiModel });
-    res.json({ ok: true, settings: updated });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
-
-app.get("/api/match-caller", (req, res) => {
-  const phone = req.query.phone;
-  if (!phone || typeof phone !== "string") {
-    return res.status(400).json({ error: "Query parameter phone is required." });
-  }
-  const snapshot = findSnapshot("");
-  if (!snapshot) {
-    return res.json({ matched: false, callerDigits: "", candidates: [] });
-  }
-  res.json(erpDataAdapter.matchCaller(phone, snapshot));
-});
-
-// Helper functions for notes management
+// ── Notes (in-memory) ────────────────────────────────────────────────────────
 function addNote({ partnerId, subject, body, noteType, seller, source }) {
-  if (!partnerId || typeof partnerId !== "string") {
-    throw new Error("partnerId is required");
-  }
-  if (!subject || typeof subject !== "string") {
-    throw new Error("subject is required");
-  }
-  if (!body || typeof body !== "string") {
-    throw new Error("body is required");
-  }
+  if (!partnerId || typeof partnerId !== "string") throw new Error("partnerId is required");
+  if (!subject || typeof subject !== "string") throw new Error("subject is required");
+  if (!body || typeof body !== "string") throw new Error("body is required");
   const note = {
     id: `note-${String(nextNoteId++).padStart(5, "0")}`,
     partnerId,
@@ -361,12 +292,8 @@ function addNote({ partnerId, subject, body, noteType, seller, source }) {
   notes.push(note);
   return note;
 }
-
 function listNotes(partnerId) {
-  if (partnerId) {
-    return notes.filter((n) => n.partnerId === partnerId).slice().reverse();
-  }
-  return notes.slice().reverse();
+  return partnerId ? notes.filter((n) => n.partnerId === partnerId).slice().reverse() : notes.slice().reverse();
 }
 
 app.get("/api/notes", (req, res) => {
@@ -391,23 +318,7 @@ app.post("/api/notes", (req, res) => {
   }
 });
 
-app.post("/api/insight", chatLimiter, async (req, res) => {
-  if (!process.env.OPENAI_API_KEY) {
-    return res.status(503).json({ error: "AI is not configured (missing OPENAI_API_KEY)." });
-  }
-  try {
-    const partner = req.body?.partner;
-    if (!partner || typeof partner !== "object") {
-      return res.status(400).json({ error: "body.partner is required" });
-    }
-    const insight = await partnerInsight(partner);
-    res.json({ insight });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err?.message || "Insight failed" });
-  }
-});
-
+// ── During-call chat ─────────────────────────────────────────────────────────
 app.post("/api/chat", chatLimiter, async (req, res) => {
   try {
     const messages = req.body?.messages;
@@ -426,48 +337,43 @@ app.post("/api/chat", chatLimiter, async (req, res) => {
       }
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      return res.status(503).json({ error: "AI is not configured (missing OPENAI_API_KEY)." });
-    }
-
-    const seller = req.body?.seller;
-    const sellerPayload =
-      seller &&
-      typeof seller === "object" &&
-      typeof seller.name === "string" &&
-      (seller.id === undefined || typeof seller.id === "string") &&
-      (seller.region === undefined || typeof seller.region === "string")
-        ? { id: seller.id, name: seller.name, region: seller.region }
-        : null;
-
+    // Resolve seller from /api/me-style auth instead of trusting client
+    const email = authUser(req);
     let snapshot = null;
-    if (sellerPayload?.name) {
-      snapshot = findSnapshot(sellerPayload.name);
+    let sellerPayload = null;
+    if (email) {
+      snapshot = snapshotStore.loadSnapshot(email);
+      if (snapshot?.rep) {
+        sellerPayload = {
+          id: snapshot.rep.email || email,
+          name: snapshot.rep.name || email.split("@")[0],
+          region: snapshot.rep.region || null,
+        };
+      }
     }
 
     const reply = await chatCompletion(messages, sellerPayload, snapshot);
     res.json({ reply });
   } catch (err) {
     console.error(err);
-    const msg = err?.message || "Chat failed.";
-    res.status(500).json({ error: msg });
+    res.status(500).json({ error: err?.message || "Chat failed." });
   }
 });
 
 app.use(salesRoutes);
 
-// Serve the unified dashboard
+// ── Static + SPA root ────────────────────────────────────────────────────────
 app.get("/", (_req, res) => {
   res.sendFile(path.join(__dirname, "..", "public", "unified.html"));
 });
-
-// Legacy /erp route - redirect to root
-app.get("/erp", (_req, res) => {
-  res.redirect("/");
-});
+app.get("/erp", (_req, res) => res.redirect("/"));
+// Legacy admin page → redirect to settings hash route
+app.get("/admin", (_req, res) => res.redirect("/#/settings"));
+app.get("/admin.html", (_req, res) => res.redirect("/#/settings"));
 
 app.use(express.static(path.join(__dirname, "..", "public")));
 
 app.listen(PORT, () => {
-  console.log(`Listening on ${PORT}`);
+  const provs = aiProvider.availableProviders().map((p) => p.id).join(", ") || "none";
+  console.log(`ONYX listening on ${PORT} — providers: ${provs} — secret store: ${secretsStore.masterKeyAvailable() ? "ready" : "DISABLED (set ONYX_SECRET_KEY)"}`);
 });

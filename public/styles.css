@@ -1179,3 +1179,285 @@ a:hover {
   color: var(--text);
   font-weight: 600;
 }
+
+/* ============================================================
+   ONYX v3 — additions to styles.css
+   Append to the bottom of public/styles.css.
+   New components: bottom-anchored Settings nav-item, Actions
+   page grid, Settings page cards, secret rows, radio cards.
+   ============================================================ */
+
+/* ── Top-level nav items (no sub-) ── */
+.nav-item--bottom {
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.nav-item .nav-icon {
+  display: inline-block;
+  width: 1.1rem;
+  margin-right: 0.4rem;
+  text-align: center;
+}
+
+/* ── Topbar user pill ── */
+.topbar-user {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* ── Actions page ── */
+.actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.actions-grid > .actions-summary {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+.metric--actions {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.metric--actions .metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.metric--actions .metric-value { font-size: 1.5rem; font-weight: 600; color: var(--text); }
+.metric--alert .metric-value { color: var(--error); }
+.metric--warn  .metric-value { color: #e67e00; }
+
+.actions-card { padding: 1rem 1.1rem; }
+.actions-card .h3 { margin-top: 0; margin-bottom: 0.6rem; }
+.actions-card .card-foot { margin-top: 0.6rem; font-size: 0.85rem; }
+
+.data-table--compact th,
+.data-table--compact td { padding: 0.35rem 0.5rem; font-size: 0.85rem; }
+.cell-danger { color: var(--error); font-weight: 600; }
+.cell-warn { color: #e67e00; font-weight: 600; }
+
+.bare-list {
+  list-style: none;
+  padding: 0; margin: 0;
+}
+.bare-list li {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+.bare-list li:last-child { border-bottom: none; }
+
+/* ── Settings page ── */
+.settings-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 760px;
+}
+.settings-page .card { padding: 1.25rem 1.4rem; }
+.card--muted { background: transparent; border: 1px dashed var(--border); }
+
+.kv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.6rem;
+}
+.kv-grid > div { display: flex; flex-direction: column; }
+.kv-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.kv-value { font-size: 0.95rem; color: var(--text); }
+
+/* AI provider radio cards */
+.radio-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+.radio-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.radio-card input { position: absolute; opacity: 0; pointer-events: none; }
+.radio-card:hover { border-color: var(--accent); }
+.radio-card--active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+.radio-card-label { font-weight: 600; font-size: 0.95rem; }
+.radio-card-sub { font-size: 0.8rem; color: var(--muted); }
+
+/* Secret rows */
+.secret-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--border);
+  gap: 1rem;
+}
+.secret-row:last-of-type { border-bottom: none; }
+.secret-label { font-weight: 600; font-size: 0.95rem; }
+.secret-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+}
+.secret-actions { display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0; }
+.secret-edit {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.6rem 0 0.8rem;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.secret-edit input {
+  flex: 1;
+  min-width: 240px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 0.45rem 0.6rem;
+  font: 0.9rem var(--font-mono, monospace);
+}
+.secret-edit input:focus { border-color: var(--accent); outline: none; }
+.secret-msg { font-size: 0.8rem; }
+
+/* Pills */
+.pill {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.pill--ok { background: rgba(45,158,95,0.18); color: #4ed18a; }
+.pill--muted { background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+
+/* Form rows in settings */
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.7rem;
+}
+.form-row .form-label {
+  flex: 0 0 110px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.form-row select {
+  flex: 1;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 0.45rem 0.6rem;
+  font: 0.9rem var(--font-sans, system-ui);
+}
+.form-row select:focus { border-color: var(--accent); outline: none; }
+
+/* Buttons */
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.45rem 0.9rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-secondary {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.45rem 0.9rem;
+  font-weight: 500;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  padding: 0.2rem 0.4rem;
+}
+.btn-link:hover { color: var(--error); }
+
+/* Inline forms */
+.inline-form {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.6rem 0;
+}
+.inline-form input {
+  flex: 1;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 0.5rem 0.7rem;
+}
+.inline-form input:focus { border-color: var(--accent); outline: none; }
+
+/* AI output */
+.ai-output {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  font: 0.9rem/1.55 var(--font-sans, system-ui);
+  white-space: pre-wrap;
+  color: var(--text);
+}
+
+/* Spinner inline */
+.spinner-inline {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: onyx-spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+@keyframes onyx-spin { to { transform: rotate(360deg); } }
+
+/* OK color variable */
+:root { --ok: #4ed18a; }
