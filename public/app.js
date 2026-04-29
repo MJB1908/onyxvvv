@@ -6,7 +6,7 @@
   const pageTitleEl = document.getElementById("page-title");
   const topbarUserEl = document.getElementById("topbar-user");
 
-  /** @type {{ email: string, name: string, region: string|null, hasSnapshot: boolean, partnerCount: number, snapshotUpdatedAt: string|null } | null} */
+  /** @type {{ email: string|null, name: string|null, region: string|null, hasSnapshot: boolean, needsRefresh: boolean, partnerCount?: number, snapshotUpdatedAt?: string|null, message?: string } | null} */
   let me = null;
 
   /** @type {{ role: 'user'|'assistant', content: string }[]} */
@@ -21,8 +21,17 @@
   }
 
   function currentSeller() {
-    if (!me) return null;
+    if (!me || !me.email) return null;
     return { id: me.email, name: me.name, region: me.region };
+  }
+
+  // Build fetch headers with X-Onyx-User only if we know who the user is.
+  // The server falls back to the latest snapshot's rep if the header is
+  // absent, so this is purely additive — safe to call before me is loaded.
+  function authHeaders(extra) {
+    const h = { ...(extra || {}) };
+    if (me?.email) h["X-Onyx-User"] = me.email;
+    return h;
   }
 
   // ── Routing ────────────────────────────────────────────────────────────────
@@ -89,11 +98,17 @@
 
     setNavActive();
 
-    if (!me && route.view !== "settings") {
+    // No snapshot loaded yet — no data, nothing to render. The Chrome
+    // extension is the way in: it scrapes staff.3cx.com under the user's
+    // live session, so running a refresh BOTH loads the data AND identifies
+    // the user. Settings is the only route that works with no snapshot
+    // (the user can configure API keys before scraping anything).
+    if ((!me || me.needsRefresh) && route.view !== "settings") {
       viewEl.innerHTML = `
         <div class="panel">
-          <h2 class="h2">Not signed in</h2>
-          <p class="muted">ONYX needs to know who you are. For local development set the <code>ONYX_DEV_USER</code> environment variable. For production, configure your reverse proxy to inject the <code>X-Onyx-User</code> header.</p>
+          <h2 class="h2">No reseller data yet</h2>
+          <p>Open the ONYX Chrome extension on <a href="https://staff.3cx.com" target="_blank" rel="noopener">staff.3cx.com</a> and run a refresh. That single action loads your resellers, orders, and license keys — and tells ONYX who you are.</p>
+          <p class="muted small">If you're already running the extension and seeing this, check the extension popup for errors (Cloudflare session expired, etc.).</p>
         </div>`;
       return;
     }
@@ -325,14 +340,14 @@
     viewEl.innerHTML = `
       <div class="panel">
         <h2 class="h2">Pre-call brief — ${escapeHtml(partnerId)}</h2>
-        <p class="muted" id="brief-status"><span class="spinner-inline"></span>Generating…</p>
+        <p class="muted" id="brief-status"><span class="spinner-inline"></span>Generating with ${escapeHtml(localStorage.getItem("onyx-ai-provider") || "auto")}…</p>
         <pre class="ai-output" id="brief-output" hidden></pre>
       </div>`;
 
     try {
       const r = await fetch("/api/sales/call-prep", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-Onyx-User": me.email },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ partnerId, seller: me.name }),
       });
       const data = await r.json();
@@ -450,7 +465,7 @@
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-Onyx-User": me.email },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ messages: chatMessages }),
       });
       const data = await res.json().catch(() => ({}));
@@ -517,12 +532,14 @@
       <div class="settings-page">
         <section class="card">
           <h3 class="h3">Account</h3>
+          ${me?.email ? `
           <div class="kv-grid">
             <div><span class="kv-label">Email</span><span class="kv-value">${escapeHtml(me.email)}</span></div>
-            <div><span class="kv-label">Name</span><span class="kv-value">${escapeHtml(me.name)}</span></div>
+            <div><span class="kv-label">Name</span><span class="kv-value">${escapeHtml(me.name || "—")}</span></div>
             <div><span class="kv-label">Region</span><span class="kv-value">${escapeHtml(me.region || "—")}</span></div>
             <div><span class="kv-label">Snapshot</span><span class="kv-value">${me.hasSnapshot ? `${me.partnerCount} partners · ${escapeHtml(me.snapshotUpdatedAt || "")}` : "<em>none</em>"}</span></div>
-          </div>
+          </div>` : `
+          <p class="muted">No account detected yet. Run an ERP refresh from the Chrome extension to populate this — your reseller email becomes your ONYX identity automatically.</p>`}
         </section>
 
         <section class="card">
@@ -584,7 +601,7 @@
       const v = e.target.value;
       const r = await fetch("/api/settings", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-Onyx-User": me.email },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ aiProviderPreference: v }),
       });
       const status = document.getElementById("ai-pref-status");
@@ -598,7 +615,7 @@
       document.getElementById(id).addEventListener("change", async (e) => {
         const r = await fetch("/api/settings", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "X-Onyx-User": me.email },
+          headers: authHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ [`${provider}Model`]: e.target.value }),
         });
         const status = document.getElementById("model-status");
@@ -610,7 +627,7 @@
     document.getElementById("prm-default-tier").addEventListener("change", async (e) => {
       const r = await fetch("/api/settings", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-Onyx-User": me.email },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ prmDefaultTier: e.target.value }),
       });
       const status = document.getElementById("prm-status");
@@ -643,7 +660,7 @@
         try {
           const r = await fetch(`/api/secrets/${p}`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json", "X-Onyx-User": me.email },
+            headers: authHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({ apiKey: inp.value }),
           });
           const d = await r.json();
@@ -659,7 +676,7 @@
       btn.addEventListener("click", async () => {
         const p = btn.getAttribute("data-secret-remove");
         if (!confirm(`Remove ${p} key from ONYX? (Env var, if set, will still apply.)`)) return;
-        await fetch(`/api/secrets/${p}`, { method: "DELETE", headers: { "X-Onyx-User": me.email } });
+        await fetch(`/api/secrets/${p}`, { method: "DELETE", headers: authHeaders() });
         renderSettings();
       });
     });
@@ -727,11 +744,16 @@
   async function init() {
     try {
       const r = await fetch("/api/me");
+      // /api/me always returns 200 in the snapshot-aware model — even with no
+      // snapshot it returns { needsRefresh: true } so we can render a sensible
+      // empty state.
       if (r.ok) {
         me = await r.json();
-        if (topbarUserEl) topbarUserEl.textContent = me.name + (me.region ? ` · ${me.region}` : "");
-      } else if (r.status === 401) {
-        // Render the not-signed-in panel via render()
+        if (topbarUserEl) {
+          topbarUserEl.textContent = me?.name
+            ? me.name + (me.region ? ` · ${me.region}` : "")
+            : "";
+        }
       }
     } catch (e) {
       console.warn("/api/me failed:", e);
