@@ -297,7 +297,7 @@ function parsePartnersFromHtml(html) {
 }
 
 async function fetchPartnerList() {
-  const html1 = await fetchPage(`${ERP_BASE}/customers.aspx`);
+  const html1 = await fetchPage(`${ERP_BASE}/customers.aspx?m=1`);
   const page1 = parsePartnersFromHtml(html1);
   if (!page1.length) {
     throw new Error(`No partner data on customers.aspx (${html1.length} chars)`);
@@ -352,7 +352,7 @@ async function fetchPartnerList() {
         };
         let resp;
         try {
-          resp = await fetch(`${ERP_BASE}/customers.aspx`, {
+          resp = await fetch(`${ERP_BASE}/customers.aspx?m=1`, {
             method: "POST",
             credentials: "include",
             headers: {
