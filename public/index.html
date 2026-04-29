@@ -6,6 +6,7 @@
     <title>ONYX — AI Sales Force Assistant</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/prm-app.css" />
   </head>
   <body>
     <div class="shell">
@@ -41,6 +42,11 @@
             <a href="#/data/users" class="nav-item nav-item-sub" data-match="data/users">Internal users</a>
             <a href="#/data/products" class="nav-item nav-item-sub" data-match="data/products">Products</a>
           </div>
+
+          <div class="nav-group">
+            <div class="nav-group-title">Reseller PRM</div>
+            <a href="#/prm" class="nav-item nav-item-sub" data-match="prm">Reseller dashboard</a>
+          </div>
         </nav>
       </aside>
 
@@ -54,6 +60,12 @@
             </div>
             <label class="seller-label" for="seller-select">Seller</label>
             <select id="seller-select" class="seller-select" aria-label="Selected sales rep"></select>
+            <label class="seller-label" for="ai-provider-select">AI</label>
+            <select id="ai-provider-select" class="seller-select" aria-label="AI provider">
+              <option value="">Auto</option>
+              <option value="anthropic">Claude</option>
+              <option value="openai">ChatGPT</option>
+            </select>
           </div>
         </header>
 
@@ -62,5 +74,6 @@
     </div>
 
     <script src="/app.js" defer></script>
+    <script src="/prm-app.js" defer></script>
   </body>
 </html>
