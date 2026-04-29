@@ -19,7 +19,7 @@
 const ERP_BASE = "https://staff.3cx.com";
 const ERP_EDIT_PATH = "/partner/edit.aspx";
 const CF_DOMAIN = "staff.3cx.com";
-const DEFAULT_ONYX_URL = "http://localhost:3000";
+const DEFAULT_ONYX_URL = "https://onyx-ew82.onrender.com";
 
 // ── ONYX URL config ──────────────────────────────────────────────────────────
 
@@ -303,44 +303,39 @@ async function fetchPartnerList() {
     throw new Error(`No partner data on customers.aspx (${html1.length} chars)`);
   }
 
-  // Try multiple patterns to detect total pages
-  let totalPages = 1;
-  const patterns = [
-    /Page 1 of (\d+)/i,
-    /of (\d+)(?:\s*pages?)?/i,
-    /Pages?:\s*1\s*-\s*\d+\s*of\s*(\d+)/i,
-    /Total Pages?:?\s*(\d+)/i
-  ];
-
-  for (const pattern of patterns) {
-    const match = html1.match(pattern);
-    if (match && match[1]) {
-      totalPages = parseInt(match[1], 10);
-      console.log(`[ONYX] Detected ${totalPages} pages of partners`);
-      break;
-    }
-  }
-
-  // If still only 1 page detected but we have 45+ partners (page size), likely multiple pages exist
-  if (totalPages === 1 && page1.length >= 45) {
-    // Try to fetch next page to confirm pagination exists
-    console.warn(`[ONYX] Detected only 1 page but have ${page1.length} partners (suspicious). Will attempt pagination.`);
-    totalPages = 999; // Sentinel value - keep fetching until no more data
-  }
+  // Detect total pages from the navigator region only — searching the whole
+  // HTML matched random "of N" text elsewhere on the page (footer copy,
+  // unrelated labels) and produced wrong counts like "of 2" when the real
+  // total was 43.
+  const totalPages = detectTotalPages(html1, page1.length);
+  console.log(`[ONYX] Detected ${totalPages} pages of partners (page1 has ${page1.length})`);
 
   let all = [...page1];
+
+  // Dedup-on-id safety net. If staff.3cx.com's NextButton on the last page
+  // wraps back to the first (common ASP.NET DataPager behaviour), the loop
+  // would otherwise repeat forever because parsePartnersFromHtml keeps
+  // returning the same rows. Tracking seen IDs lets us short-circuit.
+  const seenIds = new Set(
+    page1.map((p) => p.id || p.partnerId || p.companyName).filter(Boolean),
+  );
 
   if (totalPages > 1) {
     const fields = extractFormFields(html1);
     let currentFields = { ...fields };
     let pageNum = 2;
 
-    while (pageNum <= Math.max(totalPages, 999)) {
+    // Hard cap on iterations. Even if detection were way off, MAX_PAGES * 45
+    // (the staff portal's page size) = 9,000 partners — vastly exceeds any
+    // realistic reseller portfolio, so this cap is safe in practice.
+    const MAX_PAGES = 200;
+    const cap = Math.min(totalPages, MAX_PAGES);
+
+    while (pageNum <= cap) {
       try {
-        const pageLabel = totalPages === 999 ? pageNum : `${pageNum}/${totalPages}`;
         broadcast(
           "refresh_progress",
-          `Loading partners page ${pageLabel}…`,
+          `Loading partners page ${pageNum}/${cap}…`,
         );
         const postFields = {
           ...currentFields,
@@ -374,12 +369,28 @@ async function fetchPartnerList() {
         }
         const combined = Object.values(sections).map((s) => s.content).join("\n");
         const pageData = parsePartnersFromHtml(combined);
+
         if (!pageData.length) {
           console.log(`[ONYX] Page ${pageNum} returned no data, stopping pagination`);
           break;
         }
-        all = all.concat(pageData);
-        console.log(`[ONYX] Page ${pageNum}: ${pageData.length} partners (total: ${all.length})`);
+
+        // Filter out partners we've already seen. If a page returns 0 NEW
+        // partners (i.e. NextButton wrapped or stuck), stop.
+        const fresh = pageData.filter((p) => {
+          const id = p.id || p.partnerId || p.companyName;
+          if (!id || seenIds.has(id)) return false;
+          seenIds.add(id);
+          return true;
+        });
+
+        if (fresh.length === 0) {
+          console.log(`[ONYX] Page ${pageNum}: all ${pageData.length} partners already seen — pager wrapped, stopping`);
+          break;
+        }
+
+        all = all.concat(fresh);
+        console.log(`[ONYX] Page ${pageNum}: +${fresh.length} new partners (total: ${all.length})`);
         pageNum++;
       } catch (e) {
         console.warn(`[ONYX] Partner list page ${pageNum} failed:`, e.message);
@@ -389,6 +400,84 @@ async function fetchPartnerList() {
   }
   console.log(`[ONYX] Finished fetching partners: ${all.length} total`);
   return all;
+}
+
+/**
+ * Detect total pages from the customers.aspx HTML.
+ *
+ * Strategy, in order:
+ *   1. Find the NavigatorControl region (where pagination lives) and look
+ *      for explicit "Page X of Y" text inside it.
+ *   2. Look for "X-Y of Z" record-count text inside the navigator and divide
+ *      by page size. ASP.NET DataPagers commonly render this.
+ *   3. Whole-HTML fallback, but stricter than before — must include
+ *      "Page 1" prefix so we don't match unrelated "of N" text.
+ *   4. If detection fails and page 1 is full (>= 45 rows), return a sentinel
+ *      that the dedup safety net will short-circuit safely.
+ */
+function detectTotalPages(html, firstPageSize) {
+  // Strategy 1: scope to navigator region. The NavigatorControl is the
+  // ASP.NET pager element near the data grid.
+  const navIdx = html.search(/id="[^"]*NavigatorControl[^"]*"/i);
+  let navRegion = "";
+  if (navIdx >= 0) {
+    // Take a 4KB window around the navigator id — enough to capture the
+    // surrounding pager markup without scanning the whole document.
+    navRegion = html.slice(Math.max(0, navIdx - 200), navIdx + 4000);
+  }
+
+  // "Page 12 of 47" — most reliable. staff.3cx.com renders exactly this.
+  let m = navRegion.match(/Page\s+\d+\s+of\s+(\d+)/i);
+  if (m) {
+    const n = parseInt(m[1], 10);
+    if (n >= 1 && n <= 500) return n;
+  }
+
+  // "1-45 of 522" or "1 - 45 of 522 records" — divide by page size
+  m = navRegion.match(/\d+\s*-\s*(\d+)\s+of\s+(\d+)/i);
+  if (m) {
+    const pageSize = parseInt(m[1], 10);
+    const total = parseInt(m[2], 10);
+    if (pageSize > 0 && total > 0 && total <= 100000) {
+      return Math.ceil(total / pageSize);
+    }
+  }
+
+  // "13 of 2,113 record(s)" — staff.3cx.com format. Uses comma thousand
+  // separator. Divide total records by observed first-page size.
+  m = navRegion.match(/\d+\s+of\s+([\d,]+)\s+records?/i);
+  if (m && firstPageSize > 0) {
+    const total = parseInt(m[1].replace(/,/g, ""), 10);
+    if (total > firstPageSize && total <= 100000) {
+      return Math.ceil(total / firstPageSize);
+    }
+  }
+
+  // "Total: 522" or "522 partners" near the navigator — divide by observed page size
+  m = navRegion.match(/(?:Total|Records|Partners?|Customers?):?\s*([\d,]+)\b/i);
+  if (m && firstPageSize > 0) {
+    const total = parseInt(m[1].replace(/,/g, ""), 10);
+    if (total > firstPageSize && total <= 100000) {
+      return Math.ceil(total / firstPageSize);
+    }
+  }
+
+  // Strategy 2: stricter whole-HTML fallback — must say literal "Page 1 of N"
+  m = html.match(/Page\s+1\s+of\s+(\d+)/i);
+  if (m) {
+    const n = parseInt(m[1], 10);
+    if (n >= 1 && n <= 500) return n;
+  }
+
+  // Strategy 3: page is full → almost certainly more pages exist. Return a
+  // generous upper bound; the dedup-on-id safety net in fetchPartnerList
+  // will short-circuit when staff.3cx.com starts returning duplicate rows.
+  if (firstPageSize >= 45) {
+    console.warn(`[ONYX] Could not detect total page count from HTML; using sentinel (50). Dedup will stop early.`);
+    return 50;
+  }
+
+  return 1;
 }
 
 // ── Deep-fetch helpers (per-partner keys/orders/notes) ──────────────────────
@@ -631,7 +720,13 @@ async function runFullScrape() {
   const partners = await fetchPartnerList();
 
   const onyxBase = await getOnyxUrl();
-  broadcast("refresh_progress", `Sending ${partners.length} partners to ONYX…`);
+  // Loud log so localhost-vs-Render mistakes can't fail silently. The popup
+  // shows this in the status bar too; the console line is for debugging.
+  console.log(`[ONYX] POSTing ${partners.length} partners to ${onyxBase}/api/ingest/erp`);
+  if (onyxBase.startsWith("http://localhost")) {
+    console.warn(`[ONYX] ⚠️ Posting to localhost — set the ONYX URL in the extension popup if you want this going to your Render deployment.`);
+  }
+  broadcast("refresh_progress", `Sending ${partners.length} partners to ${onyxBase.replace(/^https?:\/\//, "")}…`);
   const r = await fetch(`${onyxBase}/api/ingest/erp`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
