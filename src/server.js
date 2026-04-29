@@ -7,6 +7,7 @@ const { chatCompletion, partnerInsight } = require("./openaiClient");
 const snapshotStore = require("./snapshotStore");
 const settingsStore = require("./settingsStore");
 const erpDataAdapter = require("./erpDataAdapter");
+const salesRoutes = require("./salesRoutes");
 
 // In-memory notes store (local to this server instance)
 const notes = [];
@@ -452,6 +453,8 @@ app.post("/api/chat", chatLimiter, async (req, res) => {
     res.status(500).json({ error: msg });
   }
 });
+
+app.use(salesRoutes);
 
 // Serve the unified dashboard
 app.get("/", (_req, res) => {

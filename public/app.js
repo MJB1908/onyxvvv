@@ -86,6 +86,9 @@
       };
       return { view: "data", sub, title: titles[sub] || "Data" };
     }
+    if (parts[0] === "prm") {
+      return { view: "prm", title: "Reseller PRM" };
+    }
     return { view: "home", title: "Home" };
   }
 
@@ -94,6 +97,7 @@
     let match = "";
     if (r.view === "home") match = "home";
     else if (r.view === "chat") match = "chat";
+    else if (r.view === "prm") match = "prm";
     else if (r.view === "dashboard") match = `dashboard/${r.sub}`;
     else if (r.view === "data") match = `data/${r.sub}`;
 
@@ -124,6 +128,7 @@
       else if (route.view === "dashboard") await renderDashboard(route.sub, seller);
       else if (route.view === "data") await renderData(route.sub);
       else if (route.view === "chat") renderChatShell();
+      else if (route.view === "prm") await renderPrm(seller);
     } catch (err) {
       viewEl.innerHTML = `<p class="error">${escapeHtml(err.message || "Failed to load.")}</p>`;
     }
@@ -979,6 +984,33 @@
       location.hash = "#/home";
     }
     await render();
+  }
+
+  async function renderPrm(seller) {
+    if (!window.prmApp) {
+      viewEl.innerHTML = '<p class="empty">PRM module not loaded — check that prm-app.js is included.</p>';
+      return;
+    }
+    const list = await fetch("/api/snapshots").then((r) => r.json()).catch(() => ({ snapshots: [] }));
+    if (!list.snapshots?.length) {
+      viewEl.innerHTML = '<p class="empty">No snapshot loaded yet — run a refresh from the extension popup.</p>';
+      return;
+    }
+    list.snapshots.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
+    const target =
+      list.snapshots.find((s) => s.name === seller?.name) || list.snapshots[0];
+    const snapshot = await fetch(`/api/snapshots/${encodeURIComponent(target.slug)}`).then((r) => r.json());
+    viewEl.innerHTML = "";
+    await window.prmApp.mount(viewEl, { snapshot, seller });
+  }
+
+  const aiProviderSelect = document.getElementById("ai-provider-select");
+  if (aiProviderSelect) {
+    aiProviderSelect.value = localStorage.getItem("onyx-ai-provider") || "";
+    aiProviderSelect.addEventListener("change", (e) => {
+      if (e.target.value) localStorage.setItem("onyx-ai-provider", e.target.value);
+      else localStorage.removeItem("onyx-ai-provider");
+    });
   }
 
   init();
