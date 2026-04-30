@@ -138,18 +138,41 @@
       viewEl.innerHTML = '<div class="panel"><p class="empty">PRM module failed to load — check that prm-app.js is present.</p></div>';
       return;
     }
+
+    // Try bridge first (extension has data in chrome.storage.local)
+    if (window.onyxBridge) {
+      const bridgeOk = await window.onyxBridge.waitForBridge();
+      if (bridgeOk) {
+        viewEl.innerHTML = '<div class="panel"><p class="muted">Loading partners from extension…</p></div>';
+        const snapshot = await window.onyxBridge.buildSnapshot(me?.email);
+        if (snapshot.partners.length > 0) {
+          viewEl.innerHTML = "";
+          await window.prmApp.mount(viewEl, { snapshot, seller: currentSeller(), bridge: true });
+          return;
+        }
+        // Bridge available but no partners cached yet
+        viewEl.innerHTML = `
+          <div class="panel">
+            <h2 class="h2">No reseller data yet</h2>
+            <p>Click the <strong>ONYX extension icon</strong> in your toolbar to open the PRM dashboard. The extension scrapes staff.3cx.com directly — no server refresh needed.</p>
+            <p class="muted">Once the partner list has loaded in the extension, refresh this page to see them here too.</p>
+          </div>`;
+        return;
+      }
+    }
+
+    // Fallback: server snapshots (works without extension installed)
     const list = await fetch("/api/snapshots").then((r) => r.json()).catch(() => ({ snapshots: [] }));
     if (!list.snapshots?.length) {
       viewEl.innerHTML = `
         <div class="panel">
           <h2 class="h2">No reseller data yet</h2>
-          <p class="muted">Open the ONYX Chrome extension on staff.3cx.com and run a refresh to load your resellers.</p>
+          <p>Install the ONYX Chrome extension and open the PRM dashboard from the toolbar icon. The extension scrapes staff.3cx.com directly and caches data locally — no server configuration needed.</p>
         </div>`;
       return;
     }
     list.snapshots.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
-    // Prefer the snapshot tied to the authenticated user; else most-recent
-    const target = list.snapshots.find((s) => s.email === me.email) || list.snapshots[0];
+    const target = list.snapshots.find((s) => s.email === me?.email) || list.snapshots[0];
     const snapshot = await fetch(`/api/snapshots/${encodeURIComponent(target.slug)}`).then((r) => r.json());
     viewEl.innerHTML = "";
     await window.prmApp.mount(viewEl, { snapshot, seller: currentSeller() });
