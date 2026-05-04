@@ -73,7 +73,7 @@
     ov: {
       enriched: {}, enriching: false,
       search: "", levelFilter: "", countryFilter: "", agentFilter: "",
-      segmentFilter: "",
+      segmentFilter: "", editionFilter: "", sizeFilter: "",
       viewFilter: "all", sortField: "keys", sortDir: "desc",
     },
     onPartnerClick: null,
@@ -191,6 +191,8 @@
     if(ov.countryFilter) list=list.filter(p=>p.country===ov.countryFilter);
     if(ov.agentFilter) list=list.filter(p=>p.agent===ov.agentFilter);
     if(ov.segmentFilter) list=list.filter(p=>p.segment===ov.segmentFilter);
+    if(ov.editionFilter) list=list.filter(p=>(p.edMix[ov.editionFilter]||0)>0);
+    if(ov.sizeFilter) list=list.filter(p=>(p.szMix[ov.sizeFilter]||0)>0);
     if(ov.viewFilter==="active") list=list.filter(p=>(p.keys??0)>0);
     if(ov.viewFilter==="expiring") list=list.filter(p=>(p.expiringSoon??0)>0);
     if(ov.viewFilter==="overdue") list=list.filter(p=>(p.overdue??0)>0);
@@ -238,7 +240,7 @@
     if(!_container) return;
     const list=buildList(), agg=computeAgg(list), ov=_state.ov;
     const enrichedCount=Object.keys(ov.enriched).length, totalCount=_state.allPartners.length;
-    const hasFilters=ov.search||ov.levelFilter||ov.countryFilter||ov.agentFilter||ov.segmentFilter||ov.viewFilter!=="all";
+    const hasFilters=ov.search||ov.levelFilter||ov.countryFilter||ov.agentFilter||ov.segmentFilter||ov.editionFilter||ov.sizeFilter||ov.viewFilter!=="all";
     const showCount=Math.min(list.length,100);
     const sortArrow=f=>ov.sortField!==f?'<span style="opacity:.2;margin-left:3px">↕</span>':`<span style="color:var(--accent);margin-left:3px">${ov.sortDir==="asc"?"↑":"↓"}</span>`;
 
@@ -266,6 +268,8 @@
     if(ov.countryFilter) filterTags.push({label:ov.countryFilter,type:"country"});
     if(ov.agentFilter) filterTags.push({label:ov.agentFilter,type:"agent"});
     if(ov.segmentFilter) filterTags.push({label:SEGMENTS[ov.segmentFilter]?.label||ov.segmentFilter,type:"segment"});
+    if(ov.editionFilter) filterTags.push({label:ov.editionFilter,type:"edition"});
+    if(ov.sizeFilter) filterTags.push({label:"Size "+ov.sizeFilter,type:"size"});
     if(ov.viewFilter!=="all") filterTags.push({label:pills.find(p=>p.key===ov.viewFilter)?.label||ov.viewFilter,type:"view"});
 
     function segBadge(seg) {
@@ -303,8 +307,8 @@
       </div>` : ""}
 
       <div class="ov-charts">
-        ${chartPanel("Edition Mix",ED_ORDER.map(ed=>({key:ed,type:"edition",label:ed,count:agg.edDist[ed]||0,total:agg.tk||1,color:ED_COLORS[ed]?.bar||"var(--muted)",active:false,dimmed:false})))}
-        ${chartPanel("Key Sizes",SIZE_ORDER.map(b=>({key:b,type:"size",label:SIZE_LABELS[b],count:agg.szDist[b]||0,total:agg.tk||1,color:SIZE_COLORS[b],active:false,dimmed:false})))}
+        ${chartPanel("Edition Mix",ED_ORDER.map(ed=>({key:ed,type:"edition",label:ed,count:agg.edDist[ed]||0,total:agg.tk||1,color:ED_COLORS[ed]?.bar||"var(--muted)",active:ov.editionFilter===ed,dimmed:ov.editionFilter&&ov.editionFilter!==ed})))}
+        ${chartPanel("Key Sizes",SIZE_ORDER.map(b=>({key:b,type:"size",label:SIZE_LABELS[b],count:agg.szDist[b]||0,total:agg.tk||1,color:SIZE_COLORS[b],active:ov.sizeFilter===b,dimmed:ov.sizeFilter&&ov.sizeFilter!==b})))}
         ${chartPanel("Partner Levels",LEVEL_ORDER.map(lv=>{const c=getLevelColor(lv);return{key:lv,type:"level",label:lv,count:agg.lvDist[lv]||0,total:agg.tp||1,color:c.fg,active:ov.levelFilter===lv,dimmed:ov.levelFilter&&ov.levelFilter!==lv,badge:badge(lv,c.bg,c.fg)};}))}
         <div class="ov-chart-panel"><div class="ov-chart-title">Top Activators (30d)</div>
           ${(agg.topAct.slice(0,5)).map((p,i)=>`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:${i<4?"1px solid var(--border)":"none"};cursor:pointer" data-pid="${p.id}"><span style="font-size:10px;font-weight:700;color:var(--muted);width:20px;text-align:right">#${i+1}</span><span style="flex:1;font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.company)}</span>${p.level?badge(p.level,getLevelColor(p.level).bg,getLevelColor(p.level).fg):""}<span style="font-size:12px;font-weight:700;color:#2d9e5f">${p.newActivations}</span></div>`).join("")||'<div style="color:var(--muted);font-size:11px;padding:8px">No activations</div>'}
@@ -354,19 +358,20 @@
     const ov=_state.ov, q=s=>_container.querySelector(s), qa=s=>_container.querySelectorAll(s);
     qa(".ov-agent-btn").forEach(b=>b.addEventListener("click",()=>{ov.agentFilter=b.dataset.agent;render();}));
     qa(".ov-view-pill").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.vf;ov.viewFilter=ov.viewFilter===k?"all":k;render();}));
-    qa(".ov-bar-row").forEach(r=>r.addEventListener("click",()=>{const k=r.dataset.chartKey,t=r.dataset.chartType;if(t==="level") ov.levelFilter=ov.levelFilter===k?"":k;render();}));
+    qa(".ov-bar-row").forEach(r=>r.addEventListener("click",()=>{const k=r.dataset.chartKey,t=r.dataset.chartType;if(t==="level") ov.levelFilter=ov.levelFilter===k?"":k;else if(t==="edition") ov.editionFilter=ov.editionFilter===k?"":k;else if(t==="size") ov.sizeFilter=ov.sizeFilter===k?"":k;render();}));
     // Segment cards — click to filter
     qa(".ov-seg-card").forEach(c=>c.addEventListener("click",()=>{const seg=c.dataset.seg;ov.segmentFilter=ov.segmentFilter===seg?"":seg;render();}));
     qa(".ov-filter-tag").forEach(b=>b.addEventListener("click",()=>{
       const t=b.dataset.ftype;
       if(t==="level") ov.levelFilter=""; else if(t==="country") ov.countryFilter="";
       else if(t==="agent") ov.agentFilter=""; else if(t==="segment") ov.segmentFilter="";
+      else if(t==="edition") ov.editionFilter=""; else if(t==="size") ov.sizeFilter="";
       else if(t==="view") ov.viewFilter="all";
       render();
     }));
     q("#ovSearch")?.addEventListener("input",e=>{ov.search=e.target.value.trim().toLowerCase();render();});
     q("#ovCountry")?.addEventListener("change",e=>{ov.countryFilter=e.target.value;render();});
-    q("#ovClear")?.addEventListener("click",()=>{ov.search="";ov.levelFilter="";ov.countryFilter="";ov.agentFilter="";ov.segmentFilter="";ov.viewFilter="all";render();});
+    q("#ovClear")?.addEventListener("click",()=>{ov.search="";ov.levelFilter="";ov.countryFilter="";ov.agentFilter="";ov.segmentFilter="";ov.editionFilter="";ov.sizeFilter="";ov.viewFilter="all";render();});
     q("#ovEnrichBtn")?.addEventListener("click",startEnrichment);
     qa(".ov-row-refresh").forEach(btn=>btn.addEventListener("click",async e=>{
       e.stopPropagation();
