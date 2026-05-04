@@ -1,6 +1,7 @@
 /* ============================================================
-   ONYX Dashboard — SPA module (v5.3)
+   ONYX Dashboard — SPA module (v5.6)
    Reads from server snapshot. Enrichment triggered via bridge.
+   Includes License & Growth Quality segmentation.
    Exposes window.regionalOverview = { mount, unmount }
    ============================================================ */
 (function () {
@@ -24,11 +25,33 @@
     Affiliate:{ bg:"#f0f2f5", fg:"#5a6270" },
   };
 
+  // ── Segment definitions (License & Growth Quality 2x2) ────────────────────
+  const SEGMENTS = {
+    strategic:    { label:"Strategic",    icon:"🟢", color:"#2d9e5f", bg:"rgba(45,158,95,.12)",  desc:"High keys + growing — invest & expand" },
+    emerging:     { label:"Emerging",     icon:"🔵", color:"#0077b6", bg:"rgba(0,119,182,.12)",  desc:"Low keys but growing fast — nurture" },
+    mature:       { label:"Mature",       icon:"🟡", color:"#e67e00", bg:"rgba(230,126,0,.12)",  desc:"High keys, flat growth — maintain & upsell" },
+    at_risk:      { label:"At Risk",      icon:"🔴", color:"#dc3545", bg:"rgba(220,53,69,.12)",  desc:"Low keys, not growing — re-engage" },
+    intervention: { label:"Intervention", icon:"⚫", color:"#f87171", bg:"rgba(248,113,113,.12)", desc:"Declining licenses — call now" },
+  };
+
+  function classifyPartner(p, medianKeys) {
+    if (!p.enriched) return null;
+    const keys = p.keys ?? 0;
+    const growth = p.growthTrend;
+    if (growth !== null && growth < -0.05) return "intervention";
+    const highKeys = keys >= medianKeys;
+    const growing = growth !== null && growth > 0.05;
+    if (highKeys && growing) return "strategic";
+    if (highKeys && !growing) return "mature";
+    if (!highKeys && growing) return "emerging";
+    return "at_risk";
+  }
+
   function sizeBucket(sc) { const n=parseInt(sc)||0; if(n<=8) return "S"; if(n<=32) return "M"; if(n<=96) return "L"; if(n<=192) return "XL"; return "XXL"; }
   function getLevelColor(lv) { return LEVEL_COLORS[lv] || { bg:"var(--surface-2)", fg:"var(--muted)" }; }
   function badge(label, bg, fg) { return `<span style="background:${bg};color:${fg};font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;white-space:nowrap">${esc(label)}</span>`; }
 
-  // ── Minimal bridge helper (for enrichment only — data display reads from server) ──
+  // ── Minimal bridge helper (for enrichment + ↻ only) ──
   let _bridgeReady = false;
   window.addEventListener("onyx-bridge:ready", () => { _bridgeReady = true; });
   if (window.__onyxBridgeContent__) _bridgeReady = true;
@@ -44,14 +67,13 @@
     });
   }
 
-  let _container = null;
-  let _snapshotSlug = null;
+  let _container = null, _snapshotSlug = null;
   let _state = {
     allPartners: [],
     ov: {
-      enriched: {},
-      enriching: false,
+      enriched: {}, enriching: false,
       search: "", levelFilter: "", countryFilter: "", agentFilter: "",
+      segmentFilter: "",
       viewFilter: "all", sortField: "keys", sortDir: "desc",
     },
     onPartnerClick: null,
@@ -68,6 +90,15 @@
 .ov-kpi-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px;}
 .ov-kpi-value{font-size:22px;font-weight:700;line-height:1;}
 .ov-kpi-sub{font-size:10px;color:var(--muted);margin-top:3px;}
+.ov-seg-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px;}
+.ov-seg-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;transition:border-color .15s,opacity .15s;}
+.ov-seg-card:hover{border-color:var(--accent);}
+.ov-seg-card.active{border-width:2px;}
+.ov-seg-card.dimmed{opacity:.35;}
+.ov-seg-icon{font-size:14px;}
+.ov-seg-count{font-size:20px;font-weight:700;margin:2px 0;}
+.ov-seg-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.ov-seg-desc{font-size:9px;color:var(--muted);margin-top:2px;line-height:1.3;}
 .ov-charts{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:14px;}
 .ov-chart-panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;}
 .ov-chart-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px;}
@@ -96,7 +127,9 @@
 .ov-enrich-bar{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--surface-2);border:1px solid #4a3580;border-radius:8px;margin-bottom:14px;}
 .ov-enrich-btn{font-size:10px;padding:4px 12px;border-radius:5px;border:1px solid #4a3580;background:var(--surface);color:#a78bfa;cursor:pointer;font-weight:600;font-family:inherit;}
 .ov-enrich-btn:disabled{opacity:.5;cursor:not-allowed;}
-@media (max-width:1200px){.ov-kpi-grid{grid-template-columns:repeat(3,1fr);}.ov-charts{grid-template-columns:1fr 1fr;}}
+.ov-seg-badge{font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px;}
+@media (max-width:1200px){.ov-kpi-grid{grid-template-columns:repeat(3,1fr);}.ov-charts{grid-template-columns:1fr 1fr;}.ov-seg-grid{grid-template-columns:repeat(3,1fr);}}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 `;
     document.head.appendChild(s);
   }
@@ -106,14 +139,12 @@
     const r=(size-4)/2, circ=2*Math.PI*r, col=score>=70?"#2d9e5f":score>=45?"#e67e00":"#dc3545";
     return `<div class="ov-score-ring" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--border)" stroke-width="3"/><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${col}" stroke-width="3" stroke-dasharray="${(score/100)*circ} ${circ}" stroke-linecap="round"/></svg><div class="ov-score-num" style="font-size:${size<36?9:11}px;color:${col}">${score}</div></div>`;
   }
-
   function contactAge(d) {
     if(d===null) return '<span style="color:var(--muted)">—</span>';
     const col=d<=14?"#2d9e5f":d<=30?"#0077b6":d<=60?"#e67e00":"#dc3545";
     const lbl=d<=1?"Today":d<=7?d+"d":d<=30?Math.round(d/7)+"w":Math.round(d/30)+"mo";
     return `<span style="color:${col};font-weight:600;font-size:11px">${lbl}</span>`;
   }
-
   function chartPanel(title, items) {
     return `<div class="ov-chart-panel"><div class="ov-chart-title">${title}</div>${items.map(it=>{
       const pct=Math.round((it.count/(it.total||1))*100);
@@ -121,11 +152,23 @@
     }).join("")}</div>`;
   }
 
+  // ── Data processing ───────────────────────────────────────────────────────
+  function computeMedianKeys() {
+    const vals = _state.allPartners
+      .map(p => { const e = _state.ov.enriched[p.id]; return e ? (e.commercialKeys??e.keys??0) : null; })
+      .filter(v => v !== null)
+      .sort((a,b) => a - b);
+    if (!vals.length) return 0;
+    const mid = Math.floor(vals.length / 2);
+    return vals.length % 2 ? vals[mid] : Math.round((vals[mid-1] + vals[mid]) / 2);
+  }
+
   function buildList() {
     const ov = _state.ov;
+    const medianKeys = computeMedianKeys();
     let list = _state.allPartners.map(p => {
       const e = ov.enriched[p.id] || {};
-      return {
+      const item = {
         id: p.id, company: p.companyName||p.company||"—",
         level: e.level||p.distributorLevel||"",
         type: p.partnerCategory||p.category||"",
@@ -138,12 +181,16 @@
         score: e.score??null, growthTrend: e.growthTrend??null,
         lastContactDaysAgo: e.lastContactDaysAgo??null,
         enriched: !!e.keys||!!e.commercialKeys,
+        avgDealSize: (e.totalSC && (e.commercialKeys||e.keys)) ? Math.round((e.totalSC) / (e.commercialKeys||e.keys)) : null,
       };
+      item.segment = classifyPartner(item, medianKeys);
+      return item;
     });
     if(ov.search){const q=ov.search.toLowerCase();list=list.filter(p=>p.company.toLowerCase().includes(q)||String(p.id).includes(q));}
     if(ov.levelFilter) list=list.filter(p=>p.level===ov.levelFilter);
     if(ov.countryFilter) list=list.filter(p=>p.country===ov.countryFilter);
     if(ov.agentFilter) list=list.filter(p=>p.agent===ov.agentFilter);
+    if(ov.segmentFilter) list=list.filter(p=>p.segment===ov.segmentFilter);
     if(ov.viewFilter==="active") list=list.filter(p=>(p.keys??0)>0);
     if(ov.viewFilter==="expiring") list=list.filter(p=>(p.expiringSoon??0)>0);
     if(ov.viewFilter==="overdue") list=list.filter(p=>(p.overdue??0)>0);
@@ -153,30 +200,26 @@
 
   function computeAgg(list) {
     const el=list.filter(p=>p.enriched),tp=list.length,ep=el.length;
-    const tk=el.reduce((s,p)=>s+(p.keys||0),0),tsc=el.reduce((s,p)=>s+(p.totalSC||0),0);
+    const tk=el.reduce((s,p)=>s+(p.keys||0),0);
     const na=el.reduce((s,p)=>s+(p.newActivations||0),0),ex=el.reduce((s,p)=>s+(p.expiringSoon||0),0);
-    const od=el.reduce((s,p)=>s+(p.overdue||0),0),tr=el.reduce((s,p)=>s+(p.trials||0),0);
+    const od=el.reduce((s,p)=>s+(p.overdue||0),0);
     const rr=ep?Math.round(el.reduce((s,p)=>s+(p.renewalRate||0),0)/ep):0;
-    const nc=el.filter(p=>(p.lastContactDaysAgo??999)>30).length;
     const avgScore=ep?Math.round(el.reduce((s,p)=>s+(p.score||0),0)/ep):0;
-    const edDist={},szDist={},lvDist={};
+    const edDist={},szDist={},lvDist={},segDist={};
     el.forEach(p=>{Object.entries(p.edMix).forEach(([e,c])=>{edDist[e]=(edDist[e]||0)+c;});Object.entries(p.szMix).forEach(([b,c])=>{szDist[b]=(szDist[b]||0)+c;});});
     list.forEach(p=>{if(p.level) lvDist[p.level]=(lvDist[p.level]||0)+1;});
+    el.forEach(p=>{if(p.segment) segDist[p.segment]=(segDist[p.segment]||0)+1;});
     const topAct=[...el].filter(p=>(p.newActivations||0)>0).sort((a,b)=>b.newActivations-a.newActivations);
     const agents=[...new Set(list.map(p=>p.agent).filter(Boolean))].sort();
     const countries=[...new Set(list.map(p=>p.country).filter(Boolean))].sort();
-    return {tp,ep,tk,tsc,na,ex,od,rr,nc,tr,avgScore,edDist,szDist,lvDist,topAct,agents,countries};
+    return {tp,ep,tk,na,ex,od,rr,avgScore,edDist,szDist,lvDist,segDist,topAct,agents,countries};
   }
 
-  // ── Enrichment (via bridge → extension → staff.3cx.com → push to ONYX) ────
+  // ── Enrichment ────
   async function startEnrichment() {
     if (_state.ov.enriching) return;
-    if (!_bridgeReady) {
-      alert("ONYX Chrome extension not detected. Install the extension and reload this page to enable enrichment.");
-      return;
-    }
-    _state.ov.enriching = true;
-    render();
+    if (!_bridgeReady) { alert("ONYX Chrome extension not detected."); return; }
+    _state.ov.enriching = true; render();
     const ids = _state.allPartners.map(p=>p.id).filter(id=>!_state.ov.enriched[id]);
     for (let i=0; i<ids.length; i++) {
       try {
@@ -186,23 +229,16 @@
       } catch(e) { console.warn(`Enrich ${ids[i]} failed:`, e); }
     }
     _state.ov.enriching = false;
-    // Re-fetch snapshot from server (enrichment pushed data there)
-    if (_snapshotSlug) {
-      try {
-        const snap = await fetch(`/api/snapshots/${encodeURIComponent(_snapshotSlug)}`).then(r=>r.json());
-        if (snap?.details) {
-          for (const [pid,d] of Object.entries(snap.details)) _state.ov.enriched[pid] = d.keysSummary||d;
-        }
-      } catch {}
-    }
+    if (_snapshotSlug) { try { const snap = await fetch(`/api/snapshots/${encodeURIComponent(_snapshotSlug)}`).then(r=>r.json()); if (snap?.details) { for (const [pid,d] of Object.entries(snap.details)) _state.ov.enriched[pid] = d.keysSummary||d; } } catch {} }
     render();
   }
 
+  // ── Render ────────────────────────────────────────────────────────────────
   function render() {
     if(!_container) return;
     const list=buildList(), agg=computeAgg(list), ov=_state.ov;
     const enrichedCount=Object.keys(ov.enriched).length, totalCount=_state.allPartners.length;
-    const hasFilters=ov.search||ov.levelFilter||ov.countryFilter||ov.agentFilter||ov.viewFilter!=="all";
+    const hasFilters=ov.search||ov.levelFilter||ov.countryFilter||ov.agentFilter||ov.segmentFilter||ov.viewFilter!=="all";
     const showCount=Math.min(list.length,100);
     const sortArrow=f=>ov.sortField!==f?'<span style="opacity:.2;margin-left:3px">↕</span>':`<span style="color:var(--accent);margin-left:3px">${ov.sortDir==="asc"?"↑":"↓"}</span>`;
 
@@ -215,20 +251,28 @@
 
     const cols=[
       {k:"score",l:"Score",w:"52px"},{k:"company",l:"Partner",w:"auto",left:true},
-      {k:"level",l:"Level",w:"90px"},{k:"type",l:"Type",w:"120px"},
-      {k:"country",l:"",w:"32px"},{k:"keys",l:"Keys",w:"54px"},
-      {k:"newActivations",l:"New 30d",w:"62px"},
-      {k:"expiringSoon",l:"Expiring",w:"66px"},{k:"overdue",l:"Overdue",w:"66px"},
-      {k:"renewalRate",l:"Renewal",w:"66px"},{k:"lastContactDaysAgo",l:"Contact",w:"62px"},
-      {k:"agent",l:"Agent",w:"90px"},
+      {k:"segment",l:"Segment",w:"90px"},
+      {k:"level",l:"Level",w:"80px"},{k:"type",l:"Type",w:"100px"},
+      {k:"country",l:"",w:"32px"},{k:"keys",l:"Keys",w:"50px"},
+      {k:"newActivations",l:"New",w:"50px"},
+      {k:"expiringSoon",l:"Expiring",w:"60px"},{k:"overdue",l:"Overdue",w:"60px"},
+      {k:"renewalRate",l:"Renewal",w:"60px"},{k:"lastContactDaysAgo",l:"Contact",w:"58px"},
+      {k:"agent",l:"Agent",w:"80px"},{k:"_actions",l:"",w:"30px"},
     ];
 
-    // Active filters bar
+    // Active filters
     const filterTags = [];
-    if (ov.levelFilter) filterTags.push({label:ov.levelFilter, type:"level"});
-    if (ov.countryFilter) filterTags.push({label:ov.countryFilter, type:"country"});
-    if (ov.agentFilter) filterTags.push({label:ov.agentFilter, type:"agent"});
-    if (ov.viewFilter!=="all") filterTags.push({label:pills.find(p=>p.key===ov.viewFilter)?.label||ov.viewFilter, type:"view"});
+    if(ov.levelFilter) filterTags.push({label:ov.levelFilter,type:"level"});
+    if(ov.countryFilter) filterTags.push({label:ov.countryFilter,type:"country"});
+    if(ov.agentFilter) filterTags.push({label:ov.agentFilter,type:"agent"});
+    if(ov.segmentFilter) filterTags.push({label:SEGMENTS[ov.segmentFilter]?.label||ov.segmentFilter,type:"segment"});
+    if(ov.viewFilter!=="all") filterTags.push({label:pills.find(p=>p.key===ov.viewFilter)?.label||ov.viewFilter,type:"view"});
+
+    function segBadge(seg) {
+      if (!seg || !SEGMENTS[seg]) return '<span style="color:var(--muted);font-size:9px">—</span>';
+      const s = SEGMENTS[seg];
+      return `<span class="ov-seg-badge" style="background:${s.bg};color:${s.color};border:1px solid ${s.color}30">${s.icon} ${s.label}</span>`;
+    }
 
     _container.innerHTML=`<div class="ov-wrap" style="padding:14px 20px">
       ${agg.agents.length?`<div class="ov-agent-row"><span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Agent:</span><button class="ov-agent-btn${!ov.agentFilter?" active":""}" data-agent="">All</button>${agg.agents.map(a=>`<button class="ov-agent-btn${ov.agentFilter===a?" active":""}" data-agent="${esc(a)}">${esc(a.split(/\s+/)[0])}</button>`).join("")}</div>`:""}
@@ -244,6 +288,20 @@
         <div class="ov-kpi"><div class="ov-kpi-label">Renewal Rate</div><div class="ov-kpi-value" style="color:${agg.rr>=70?"#2d9e5f":agg.rr>=50?"#e67e00":"#dc3545"}">${agg.rr}%</div><div class="ov-kpi-sub">across portfolio</div></div>
       </div>
 
+      <!-- License & Growth Segmentation -->
+      ${enrichedCount > 0 ? `
+      <div class="ov-seg-grid">
+        ${["strategic","emerging","mature","at_risk","intervention"].map(key=>{
+          const s=SEGMENTS[key], count=agg.segDist[key]||0;
+          const active=ov.segmentFilter===key, dimmed=ov.segmentFilter&&ov.segmentFilter!==key;
+          return `<div class="ov-seg-card${active?" active":""}${dimmed?" dimmed":""}" data-seg="${key}" style="border-color:${active?s.color:"var(--border)"}">
+            <div style="display:flex;align-items:center;gap:6px"><span class="ov-seg-icon">${s.icon}</span><span class="ov-seg-label" style="color:${s.color}">${s.label}</span></div>
+            <div class="ov-seg-count" style="color:${s.color}">${count}</div>
+            <div class="ov-seg-desc">${s.desc}</div>
+          </div>`;
+        }).join("")}
+      </div>` : ""}
+
       <div class="ov-charts">
         ${chartPanel("Edition Mix",ED_ORDER.map(ed=>({key:ed,type:"edition",label:ed,count:agg.edDist[ed]||0,total:agg.tk||1,color:ED_COLORS[ed]?.bar||"var(--muted)",active:false,dimmed:false})))}
         ${chartPanel("Key Sizes",SIZE_ORDER.map(b=>({key:b,type:"size",label:SIZE_LABELS[b],count:agg.szDist[b]||0,total:agg.tk||1,color:SIZE_COLORS[b],active:false,dimmed:false})))}
@@ -253,25 +311,10 @@
         </div>
       </div>
 
-      <!-- Enrichment bar -->
-      ${enrichedCount<totalCount?`
-      <div class="ov-enrich-bar">
-        <span style="font-size:11px;color:#c4a8ff">✦ ${enrichedCount}/${totalCount} partners enriched with key data.</span>
-        <button class="ov-enrich-btn" id="ovEnrichBtn" ${_state.ov.enriching?"disabled":""}>${_state.ov.enriching?`↻ Enriching…`:"↻ Enrich All"}</button>
-        <div style="flex:1"></div>
-        <span style="font-size:10px;color:var(--muted)">${_bridgeReady?"Extension connected":"Extension not detected"}</span>
-      </div>`:""}
+      ${enrichedCount<totalCount?`<div class="ov-enrich-bar"><span style="font-size:11px;color:#c4a8ff">✦ ${enrichedCount}/${totalCount} partners enriched.</span><button class="ov-enrich-btn" id="ovEnrichBtn" ${_state.ov.enriching?"disabled":""}>${_state.ov.enriching?"↻ Enriching…":"↻ Enrich All"}</button><div style="flex:1"></div><span style="font-size:10px;color:var(--muted)">${_bridgeReady?"Extension connected":"Extension not detected"}</span></div>`:""}
 
-      <!-- Active filters -->
-      ${filterTags.length?`
-      <div class="ov-active-filters">
-        <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)">Filtered by:</span>
-        ${filterTags.map(f=>`<button class="ov-filter-tag" data-ftype="${f.type}">${esc(f.label)} ×</button>`).join("")}
-        <div style="flex:1"></div>
-        <span style="font-size:10px;color:var(--muted)">${list.length} of ${totalCount} partners</span>
-      </div>`:""}
+      ${filterTags.length?`<div class="ov-active-filters"><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)">Filtered by:</span>${filterTags.map(f=>`<button class="ov-filter-tag" data-ftype="${f.type}">${esc(f.label)} ×</button>`).join("")}<div style="flex:1"></div><span style="font-size:10px;color:var(--muted)">${list.length} of ${totalCount}</span></div>`:""}
 
-      <!-- Search + country -->
       <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px 10px 0 0;border-bottom:none">
         <div style="position:relative;flex:0 0 260px"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none">⌕</span><input id="ovSearch" value="${esc(ov.search)}" placeholder="Search partners…" style="width:100%;padding:6px 10px 6px 30px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;font-family:inherit;background:var(--surface-2);color:var(--text)"/></div>
         <select id="ovCountry" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:inherit;background:${ov.countryFilter?"var(--accent-dim)":"var(--surface-2)"};color:${ov.countryFilter?"var(--accent)":"var(--muted)"};cursor:pointer;outline:none"><option value="">All Countries</option>${agg.countries.map(c=>`<option value="${esc(c)}"${ov.countryFilter===c?" selected":""}>${esc(c)}</option>`).join("")}</select>
@@ -280,14 +323,14 @@
         <span style="font-size:10px;color:var(--muted)">${list.length} partners</span>
       </div>
 
-      <!-- Table -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:0 0 10px 10px;overflow:hidden"><div style="overflow-x:auto">
-        <table class="ov-tbl"><thead><tr>${cols.map(c=>`<th data-sort="${c.k}" style="width:${c.w};text-align:${c.left?"left":"right"}">${c.l}${sortArrow(c.k)}</th>`).join("")}</tr></thead>
+        <table class="ov-tbl"><thead><tr>${cols.map(c=>c.k==="_actions"?`<th style="width:${c.w}"></th>`:`<th data-sort="${c.k}" style="width:${c.w};text-align:${c.left?"left":"right"}">${c.l}${sortArrow(c.k)}</th>`).join("")}</tr></thead>
         <tbody id="ovTbody">${list.slice(0,showCount).map(p=>{
           const tc=getLevelColor(p.level),na=p.newActivations,ex=p.expiringSoon,od=p.overdue,rr=p.renewalRate;
           return`<tr data-pid="${p.id}">
             <td style="text-align:center">${scoreRing(p.score,30)}</td>
             <td style="text-align:left"><div style="font-size:12px;font-weight:500">${esc(p.company)}</div><div style="font-size:10px;color:var(--muted)">#${esc(String(p.id))}</div></td>
+            <td style="text-align:center">${segBadge(p.segment)}</td>
             <td style="text-align:right">${p.level?badge(p.level,tc.bg,tc.fg):'<span style="color:var(--muted)">—</span>'}</td>
             <td style="text-align:right;font-size:10px;color:var(--muted)">${esc(p.type||"—")}</td>
             <td style="text-align:center;font-size:10px;color:var(--muted)">${esc(p.country)}</td>
@@ -298,6 +341,7 @@
             <td style="text-align:right">${rr!==null?`<span style="font-size:11px;font-weight:700;color:${rr>=70?"#2d9e5f":rr>=50?"#e67e00":"#dc3545"}">${rr}%</span>`:'<span style="color:var(--muted)">—</span>'}</td>
             <td style="text-align:right">${contactAge(p.lastContactDaysAgo)}</td>
             <td style="text-align:right;font-size:11px;color:var(--muted);white-space:nowrap">${esc(p.agent)}</td>
+            <td style="text-align:center"><button class="ov-row-refresh" data-rid="${p.id}" title="Fetch full detail" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--muted);padding:2px;transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">↻</button></td>
           </tr>`;}).join("")}</tbody></table></div>
         ${list.length>showCount?`<div style="padding:10px;text-align:center;font-size:10px;color:var(--muted)">${showCount} of ${list.length}</div>`:""}
         ${!list.length?'<div style="padding:32px;text-align:center;color:var(--muted);font-size:12px">No partners match filters.</div>':""}
@@ -311,39 +355,41 @@
     qa(".ov-agent-btn").forEach(b=>b.addEventListener("click",()=>{ov.agentFilter=b.dataset.agent;render();}));
     qa(".ov-view-pill").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.vf;ov.viewFilter=ov.viewFilter===k?"all":k;render();}));
     qa(".ov-bar-row").forEach(r=>r.addEventListener("click",()=>{const k=r.dataset.chartKey,t=r.dataset.chartType;if(t==="level") ov.levelFilter=ov.levelFilter===k?"":k;render();}));
-    // Active filter tag removal
+    // Segment cards — click to filter
+    qa(".ov-seg-card").forEach(c=>c.addEventListener("click",()=>{const seg=c.dataset.seg;ov.segmentFilter=ov.segmentFilter===seg?"":seg;render();}));
     qa(".ov-filter-tag").forEach(b=>b.addEventListener("click",()=>{
       const t=b.dataset.ftype;
-      if(t==="level") ov.levelFilter="";
-      else if(t==="country") ov.countryFilter="";
-      else if(t==="agent") ov.agentFilter="";
+      if(t==="level") ov.levelFilter=""; else if(t==="country") ov.countryFilter="";
+      else if(t==="agent") ov.agentFilter=""; else if(t==="segment") ov.segmentFilter="";
       else if(t==="view") ov.viewFilter="all";
       render();
     }));
     q("#ovSearch")?.addEventListener("input",e=>{ov.search=e.target.value.trim().toLowerCase();render();});
     q("#ovCountry")?.addEventListener("change",e=>{ov.countryFilter=e.target.value;render();});
-    q("#ovClear")?.addEventListener("click",()=>{ov.search="";ov.levelFilter="";ov.countryFilter="";ov.agentFilter="";ov.viewFilter="all";render();});
+    q("#ovClear")?.addEventListener("click",()=>{ov.search="";ov.levelFilter="";ov.countryFilter="";ov.agentFilter="";ov.segmentFilter="";ov.viewFilter="all";render();});
     q("#ovEnrichBtn")?.addEventListener("click",startEnrichment);
+    qa(".ov-row-refresh").forEach(btn=>btn.addEventListener("click",async e=>{
+      e.stopPropagation();
+      if(!_bridgeReady){alert("Extension not detected.");return;}
+      const pid=btn.dataset.rid;
+      btn.textContent="⟳";btn.style.color="var(--accent)";btn.style.animation="spin .7s linear infinite";
+      try{const r=await bridgeCall("FETCH_PARTNER360",{partnerId:String(pid)});if(r?.ok&&r.result){_state.ov.enriched[pid]=r.result.keysSummary||_state.ov.enriched[pid]||{};render();}else{btn.textContent="↻";btn.style.color="";btn.style.animation="";}}
+      catch{btn.textContent="↻";btn.style.color="";btn.style.animation="";}
+    }));
     qa(".ov-tbl th[data-sort]").forEach(th=>th.addEventListener("click",()=>{const f=th.dataset.sort;if(ov.sortField===f) ov.sortDir=ov.sortDir==="asc"?"desc":"asc";else{ov.sortField=f;ov.sortDir="desc";}render();}));
     qa("#ovTbody tr[data-pid]").forEach(r=>r.addEventListener("click",()=>{if(_state.onPartnerClick) _state.onPartnerClick(r.dataset.pid);}));
     qa("[data-pid]").forEach(r=>{if(!r.closest("#ovTbody")) r.addEventListener("click",()=>{if(_state.onPartnerClick) _state.onPartnerClick(r.dataset.pid);});});
   }
 
   async function mount(container, opts={}) {
-    injectCSS();
-    _container=container;
+    injectCSS(); _container=container;
     _state.onPartnerClick=opts.onPartnerClick||null;
     const snapshot=opts.snapshot;
-    if(!snapshot?.partners?.length) {
-      _container.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted)">No partner data on the server yet. Open the ONYX extension and click "Get Data".</div>';
-      return;
-    }
+    if(!snapshot?.partners?.length) { _container.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted)">No partner data. Open the ONYX extension and click "Get Data".</div>'; return; }
     _state.allPartners=snapshot.partners;
     _snapshotSlug=snapshot.rep?.slug||null;
     _state.ov.enriched={};
-    if(snapshot.details) {
-      for(const[pid,d] of Object.entries(snapshot.details)) _state.ov.enriched[pid]=d.keysSummary||d;
-    }
+    if(snapshot.details) { for(const[pid,d] of Object.entries(snapshot.details)) _state.ov.enriched[pid]=d.keysSummary||d; }
     render();
   }
   function unmount(){_container=null;}
