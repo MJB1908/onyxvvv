@@ -298,6 +298,7 @@ a:hover {
 .h3 {
   font-size: 0.95rem;
   margin: 0 0 0.5rem;
+  color: var(--text);
 }
 
 .table-wrap {
@@ -720,19 +721,10 @@ a:hover {
 
 .partner-home {
   max-width: 1280px;
-  color: #1f2937;
-}
-
-.partner-home .card,
-.partner-home .table-wrap,
-.partner-home .data-table th {
-  background: #ffffff;
-  border-color: #e5e7eb;
-  color: #1f2937;
 }
 
 .partner-home .muted {
-  color: #6b7280;
+  color: var(--muted);
 }
 
 .home-account {
@@ -749,7 +741,7 @@ a:hover {
 
 .home-account-meta {
   margin: 0.35rem 0 0;
-  color: #6b7280;
+  color: var(--muted);
   font-size: 0.88rem;
 }
 
@@ -759,7 +751,7 @@ a:hover {
   align-items: center;
   justify-content: center;
   min-width: 72px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 0.6rem 0.9rem;
 }
@@ -771,7 +763,7 @@ a:hover {
 
 .home-health-label {
   font-size: 0.72rem;
-  color: #16a34a;
+  color: #4ed18a;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -787,8 +779,8 @@ a:hover {
 }
 
 .home-account-badges li {
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 0.2rem 0.6rem;
   font-size: 0.75rem;
@@ -827,19 +819,19 @@ a:hover {
 .home-progress {
   width: 100%;
   height: 8px;
-  background: #e5e7eb;
+  background: var(--border);
   border-radius: 999px;
   overflow: hidden;
 }
 
 .home-progress > div {
   height: 100%;
-  background: #2563eb;
+  background: var(--accent);
 }
 
 .home-kpi-stack {
   margin-top: 0.85rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border);
   padding-top: 0.6rem;
 }
 
@@ -851,12 +843,12 @@ a:hover {
 }
 
 .home-kpi-stack span {
-  color: #6b7280;
+  color: var(--muted);
 }
 
 .home-pill {
-  background: #e5edff;
-  color: #1d4ed8;
+  background: var(--accent-dim);
+  color: var(--accent);
   border-radius: 999px;
   padding: 0.12rem 0.5rem;
   font-size: 0.72rem;
@@ -867,30 +859,30 @@ a:hover {
   border-radius: 999px;
   padding: 0.14rem 0.5rem;
   font-size: 0.72rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border);
 }
 
 .home-status--paid {
-  background: #dcfce7;
-  color: #166534;
+  background: rgba(45,158,95,0.15);
+  color: #4ed18a;
 }
 
 .home-status--pending,
 .home-status--invoiced {
-  background: #fef3c7;
-  color: #92400e;
+  background: rgba(251,191,36,0.15);
+  color: #fbbf24;
 }
 
 .home-status--overdue {
-  background: #fee2e2;
-  color: #991b1b;
+  background: rgba(248,113,113,0.15);
+  color: #f87171;
 }
 
 .home-icon-btn {
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border);
   border-radius: 6px;
-  background: #f9fafb;
-  color: #6b7280;
+  background: var(--surface-2);
+  color: var(--muted);
   width: 1.8rem;
   height: 1.5rem;
 }
@@ -903,7 +895,7 @@ a:hover {
 .home-nba-list {
   margin: 0;
   padding-left: 1rem;
-  color: #4b5563;
+  color: var(--muted);
   font-size: 0.86rem;
 }
 
