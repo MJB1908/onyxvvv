@@ -130,7 +130,6 @@
       container: null,
       snapshot: opts.snapshot,
       seller: opts.seller,
-      bridge: !!opts.bridge, // true = data from extension via bridge
       partnerList: (opts.snapshot?.partners || []).map(viewPartner),
       partner: null,
       activeTab: "overview",
@@ -143,34 +142,31 @@
   async function composePartner(state, partnerId) {
     const view = state.partnerList.find((p) => p.id === partnerId);
     if (!view) return null;
+    const snap = state.snapshot;
 
-    // ── Bridge mode: fetch full partner360 from extension ─────────────────
-    if (state.bridge && window.onyxBridge) {
-      const p360 = await window.onyxBridge.fetchPartner360(partnerId);
-      if (p360) {
-        // Merge bridge data into the view object
-        view.company = p360.company || view.company;
-        view.contact = p360.contact || view.contact;
-        view.email = p360.email || view.email;
-        view.phone = p360.phone || view.phone;
-        view.type = p360.type || view.type;
-        view.category = p360.category || view.category;
-        view.country = p360.country || view.country;
-        view.enabled = p360.enabled ?? view.enabled;
-        view.revenue = p360.revenue || view.revenue;
-        // Bridge data already has the right field names for rendering
-        view.tabs = {
-          keys: Array.isArray(p360.tabs?.keys) ? p360.tabs.keys : [],
-          orders: Array.isArray(p360.tabs?.orders) ? p360.tabs.orders : [],
-          notesParsed: Array.isArray(p360.tabs?.notesParsed) ? p360.tabs.notesParsed : [],
-          users: Array.isArray(p360.tabs?.users) ? p360.tabs.users : [],
-        };
-        return view;
-      }
+    // ── Check snapshot.details (pushed by extension via /api/ingest/erp/partner-detail)
+    const detail = snap.details?.[partnerId];
+    if (detail) {
+      // Merge detail data into the view object
+      view.company = detail.company || view.company;
+      view.contact = detail.contact || view.contact;
+      view.email = detail.email || view.email;
+      view.phone = detail.phone || view.phone;
+      view.type = detail.type || view.type;
+      view.category = detail.category || view.category;
+      view.country = detail.country || view.country;
+      view.enabled = detail.enabled ?? view.enabled;
+      view.revenue = detail.revenue || view.revenue;
+      view.tabs = {
+        keys: Array.isArray(detail.tabs?.keys) ? detail.tabs.keys.map(viewKey) : [],
+        orders: Array.isArray(detail.tabs?.orders) ? detail.tabs.orders.map(viewOrder) : [],
+        notesParsed: Array.isArray(detail.tabs?.notesParsed) ? detail.tabs.notesParsed.map(viewNote) : [],
+        users: Array.isArray(detail.tabs?.users) ? detail.tabs.users : [],
+      };
+      return view;
     }
 
-    // ── Server mode: filter from snapshot flat arrays ─────────────────────
-    const snap = state.snapshot;
+    // ── Fallback: filter from snapshot flat arrays ────────────────────────
     const keys = (snap.licenseKeys || []).filter((k) => k.assignedResellerId === partnerId).map(viewKey);
     const orders = (snap.orders || []).filter((o) => o.resellerId === partnerId).map(viewOrder);
     let notes = [];
@@ -664,7 +660,6 @@
     const state = makeState({
       snapshot: opts.snapshot,
       seller: opts.seller,
-      bridge: opts.bridge,
     });
     state.container = container;
     container.classList.add("prm-app");
