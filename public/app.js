@@ -50,6 +50,7 @@
     }
 
     if (parts[0] === "prm") return { view: "prm", title: "Reseller dashboard" };
+    if (parts[0] === "overview") return { view: "overview", title: "Regional Overview" };
     if (parts[0] === "actions") return { view: "actions", title: "Actions" };
     if (parts[0] === "pre-call") return { view: "pre-call", title: "Pre-call brief" };
     if (parts[0] === "post-call") return { view: "post-call", title: "Post-call" };
@@ -103,7 +104,8 @@
     // live session, so running a refresh BOTH loads the data AND identifies
     // the user. Settings is the only route that works with no snapshot
     // (the user can configure API keys before scraping anything).
-    if ((!me || me.needsRefresh) && route.view !== "settings") {
+    // Overview and settings work without the needsRefresh check — overview loads its own snapshot, settings is config-only
+    if ((!me || me.needsRefresh) && route.view !== "settings" && route.view !== "overview") {
       viewEl.innerHTML = `
         <div class="panel">
           <h2 class="h2">No reseller data yet</h2>
@@ -115,6 +117,7 @@
 
     try {
       if (route.view === "prm") await renderPrm();
+      else if (route.view === "overview") await renderOverview();
       else if (route.view === "actions") await renderActions();
       else if (route.view === "pre-call") await renderPreCall();
       else if (route.view === "post-call") renderPostCall();
@@ -138,36 +141,13 @@
       viewEl.innerHTML = '<div class="panel"><p class="empty">PRM module failed to load — check that prm-app.js is present.</p></div>';
       return;
     }
-
-    // Try bridge first (extension has data in chrome.storage.local)
-    if (window.onyxBridge) {
-      const bridgeOk = await window.onyxBridge.waitForBridge();
-      if (bridgeOk) {
-        viewEl.innerHTML = '<div class="panel"><p class="muted">Loading partners from extension…</p></div>';
-        const snapshot = await window.onyxBridge.buildSnapshot(me?.email);
-        if (snapshot.partners.length > 0) {
-          viewEl.innerHTML = "";
-          await window.prmApp.mount(viewEl, { snapshot, seller: currentSeller(), bridge: true });
-          return;
-        }
-        // Bridge available but no partners cached yet
-        viewEl.innerHTML = `
-          <div class="panel">
-            <h2 class="h2">No reseller data yet</h2>
-            <p>Click the <strong>ONYX extension icon</strong> in your toolbar to open the PRM dashboard. The extension scrapes staff.3cx.com directly — no server refresh needed.</p>
-            <p class="muted">Once the partner list has loaded in the extension, refresh this page to see them here too.</p>
-          </div>`;
-        return;
-      }
-    }
-
-    // Fallback: server snapshots (works without extension installed)
     const list = await fetch("/api/snapshots").then((r) => r.json()).catch(() => ({ snapshots: [] }));
     if (!list.snapshots?.length) {
       viewEl.innerHTML = `
         <div class="panel">
           <h2 class="h2">No reseller data yet</h2>
-          <p>Install the ONYX Chrome extension and open the PRM dashboard from the toolbar icon. The extension scrapes staff.3cx.com directly and caches data locally — no server configuration needed.</p>
+          <p>Open the ONYX Chrome extension on <a href="https://staff.3cx.com" target="_blank" rel="noopener">staff.3cx.com</a> and load your partner list. The extension pushes data to this server automatically.</p>
+          <p class="muted small">If you've already loaded partners in the extension, wait a few seconds for the push to complete and refresh this page.</p>
         </div>`;
       return;
     }
@@ -176,6 +156,32 @@
     const snapshot = await fetch(`/api/snapshots/${encodeURIComponent(target.slug)}`).then((r) => r.json());
     viewEl.innerHTML = "";
     await window.prmApp.mount(viewEl, { snapshot, seller: currentSeller() });
+  }
+
+  // ── Regional Overview ─────────────────────────────────────────────────────
+  async function renderOverview() {
+    if (!window.regionalOverview) {
+      viewEl.innerHTML = '<div class="panel"><p class="empty">Regional Overview module failed to load — check that regional-overview.js is present.</p></div>';
+      return;
+    }
+    // Load snapshot from server
+    const list = await fetch("/api/snapshots").then((r) => r.json()).catch(() => ({ snapshots: [] }));
+    if (!list.snapshots?.length) {
+      viewEl.innerHTML = `
+        <div class="panel">
+          <h2 class="h2">No reseller data yet</h2>
+          <p>Open the ONYX Chrome extension on <a href="https://staff.3cx.com" target="_blank" rel="noopener">staff.3cx.com</a> and load your partner list. The extension pushes data to this server automatically.</p>
+        </div>`;
+      return;
+    }
+    list.snapshots.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
+    const target = list.snapshots.find((s) => s.email === me?.email) || list.snapshots[0];
+    const snapshot = await fetch(`/api/snapshots/${encodeURIComponent(target.slug)}`).then((r) => r.json());
+    viewEl.innerHTML = "";
+    await window.regionalOverview.mount(viewEl, {
+      snapshot,
+      onPartnerClick: (partnerId) => { location.hash = `#/prm?partner=${partnerId}`; },
+    });
   }
 
   // ── Actions — was Home; reseller-aware action queue ────────────────────────
