@@ -156,7 +156,10 @@
     const target = list.snapshots.find((s) => s.email === me?.email) || list.snapshots[0];
     const snapshot = await fetch(`/api/snapshots/${encodeURIComponent(target.slug)}`).then((r) => r.json());
     viewEl.innerHTML = "";
-    await window.prmApp.mount(viewEl, { snapshot, seller: currentSeller() });
+    // Read partnerId from URL if navigating from Dashboard
+    const q = new URLSearchParams(location.hash.includes("?") ? location.hash.split("?")[1] : "");
+    const autoPartnerId = q.get("partnerId") || null;
+    await window.prmApp.mount(viewEl, { snapshot, seller: currentSeller(), autoPartnerId });
   }
 
   // ── Dashboard ─────────────────────────────────────────────────────
@@ -181,7 +184,7 @@
     viewEl.innerHTML = "";
     await window.regionalOverview.mount(viewEl, {
       snapshot,
-      onPartnerClick: (partnerId) => { location.hash = `#/prm?partner=${partnerId}`; },
+      onPartnerClick: (partnerId) => { location.hash = `#/prm?partnerId=${partnerId}`; },
     });
   }
 
