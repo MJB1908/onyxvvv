@@ -185,20 +185,19 @@
     });
   }
 
-  // ── Actions — daily sales to-do list built from snapshot data ───────────────
+  // ── Actions — "What should I do today?" ─────────────────────────────────────
   async function renderActions() {
     const seller = currentSeller();
     if (!seller || !me.hasSnapshot) {
       viewEl.innerHTML = `
         <div class="panel">
           <h2 class="h2">Daily Actions</h2>
-          <p class="muted">Your prioritised sales to-do list. Shows expiring license keys, overdue renewals, stale accounts, and upcoming calls — pulled from the data the extension pushes to this server.</p>
-          <p class="muted">No data yet. Open the ONYX extension, connect to staff.3cx.com, and click "Get Data".</p>
+          <p class="muted">Your prioritised sales to-do list — new trial conversions and partners to re-engage. Data comes from the extension's enrichment.</p>
+          <p class="muted">No data yet. Open the ONYX extension, click "Get Data", then enrich from the Dashboard.</p>
         </div>`;
       return;
     }
 
-    // Pull the snapshot to compute action items
     const list = await fetch("/api/snapshots").then((r) => r.json()).catch(() => ({ snapshots: [] }));
     const target = list.snapshots?.find((s) => s.email === me.email) || list.snapshots?.[0];
     if (!target) {
@@ -208,128 +207,127 @@
     const snapshot = await fetch(`/api/snapshots/${encodeURIComponent(target.slug)}`).then((r) => r.json());
 
     const partners = snapshot.partners || [];
-    const keys = snapshot.licenseKeys || [];
-    const orders = snapshot.orders || [];
-    const calls = snapshot.calls || [];
-    const today = new Date();
+    const details = snapshot.details || {};
 
-    // Top of mind: keys expiring in next 30 days
-    const expiringSoon = keys
-      .filter((k) => k.licenseExpires && !k.flags?.licenseExpired)
-      .map((k) => {
-        const d = parseLicenseDate(k.licenseExpires);
-        return { ...k, daysLeft: d ? Math.round((d - today) / 86400000) : null };
-      })
-      .filter((k) => k.daysLeft !== null && k.daysLeft >= 0 && k.daysLeft <= 30)
-      .sort((a, b) => a.daysLeft - b.daysLeft);
-
-    // Already overdue
-    const overdue = keys
-      .filter((k) => k.licenseExpires && !k.flags?.licenseExpired)
-      .map((k) => {
-        const d = parseLicenseDate(k.licenseExpires);
-        return { ...k, daysLeft: d ? Math.round((d - today) / 86400000) : null };
-      })
-      .filter((k) => k.daysLeft !== null && k.daysLeft < 0)
-      .sort((a, b) => a.daysLeft - b.daysLeft);
-
-    // Stale partners — no calls and no recent notes
-    const partnerCallMap = new Map();
-    calls.forEach((c) => {
-      if (!c.partnerId) return;
-      const prev = partnerCallMap.get(c.partnerId);
-      if (!prev || (c.date || "") > (prev.date || "")) partnerCallMap.set(c.partnerId, c);
+    // Build enriched partner list from snapshot.details
+    const enriched = partners.map(p => {
+      const ks = details[p.id]?.keysSummary || details[p.id] || {};
+      return {
+        id: p.id,
+        company: p.companyName || p.company || "—",
+        country: p.country || "",
+        level: ks.level || p.distributorLevel || "",
+        agent: p.accountOwnerName || p.agent || "",
+        trials: ks.trials ?? 0,
+        keys: ks.keys ?? ks.commercialKeys ?? 0,
+        newActivations: ks.newActivations ?? 0,
+        expiringSoon: ks.expiringSoon ?? 0,
+        overdue: ks.overdue ?? 0,
+        renewalRate: ks.renewalRate ?? null,
+        lastContactDaysAgo: ks.lastContactDaysAgo ?? null,
+        score: ks.score ?? null,
+        enriched: ks.keys !== undefined || ks.commercialKeys !== undefined,
+      };
     });
-    const stalePartners = partners
-      .filter((p) => {
-        const last = partnerCallMap.get(p.id);
-        if (!last || !last.date) return true;
-        const d = parseLicenseDate(last.date);
-        return !d || (today - d) / 86400000 > 90;
-      })
-      .slice(0, 8);
 
-    // Upcoming calls
-    const upcomingCalls = calls
-      .filter((c) => c.status === "scheduled" || c.status === "planned")
-      .sort((a, b) => (a.date || "").localeCompare(b.date || ""))
-      .slice(0, 6);
+    const enrichedCount = enriched.filter(p => p.enriched).length;
+
+    // ── Trials: partners with open trial keys (new business) ──
+    const withTrials = enriched
+      .filter(p => p.trials > 0)
+      .sort((a, b) => b.trials - a.trials);
+
+    // ── Not contacted: partners with no contact > 30 days ──
+    const notContacted = enriched
+      .filter(p => p.enriched && (p.lastContactDaysAgo === null || p.lastContactDaysAgo > 30))
+      .sort((a, b) => (b.lastContactDaysAgo ?? 999) - (a.lastContactDaysAgo ?? 999));
+
+    // ── KPIs ──
+    const totalTrials = enriched.reduce((s, p) => s + p.trials, 0);
+    const partnersWithTrials = withTrials.length;
+    const notContacted30 = notContacted.length;
+    const notContacted60 = enriched.filter(p => p.enriched && (p.lastContactDaysAgo === null || p.lastContactDaysAgo > 60)).length;
+
+    function contactLabel(d) {
+      if (d === null) return '<span style="color:var(--error)">Never</span>';
+      if (d <= 7) return `<span style="color:#2d9e5f">${d}d ago</span>`;
+      if (d <= 30) return `<span style="color:#0077b6">${d}d ago</span>`;
+      if (d <= 60) return `<span style="color:#e67e00">${d}d ago</span>`;
+      return `<span style="color:var(--error)">${d}d ago</span>`;
+    }
 
     viewEl.innerHTML = `
-      <div class="actions-grid">
-        <div class="actions-summary">
+      <div class="actions-grid" style="display:flex;flex-direction:column;gap:1rem">
+
+        <!-- KPI cards -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
           <div class="metric metric--actions">
-            <span class="metric-label">Partners</span>
-            <span class="metric-value">${partners.length}</span>
-          </div>
-          <div class="metric metric--actions ${overdue.length ? "metric--alert" : ""}">
-            <span class="metric-label">Overdue renewals</span>
-            <span class="metric-value">${overdue.length}</span>
-          </div>
-          <div class="metric metric--actions ${expiringSoon.length ? "metric--warn" : ""}">
-            <span class="metric-label">Expiring (30d)</span>
-            <span class="metric-value">${expiringSoon.length}</span>
+            <span class="metric-label">Open Trials</span>
+            <span class="metric-value" style="color:#e67e00">${totalTrials}</span>
           </div>
           <div class="metric metric--actions">
-            <span class="metric-label">Upcoming calls</span>
-            <span class="metric-value">${upcomingCalls.length}</span>
+            <span class="metric-label">Partners with Trials</span>
+            <span class="metric-value">${partnersWithTrials}</span>
+          </div>
+          <div class="metric metric--actions ${notContacted30 > 0 ? "metric--warn" : ""}">
+            <span class="metric-label">Not contacted (>30d)</span>
+            <span class="metric-value">${notContacted30}</span>
+          </div>
+          <div class="metric metric--actions ${notContacted60 > 0 ? "metric--alert" : ""}">
+            <span class="metric-label">Not contacted (>60d)</span>
+            <span class="metric-value">${notContacted60}</span>
           </div>
         </div>
 
-        <section class="card actions-card">
-          <h3 class="h3">⚠ Renewal radar</h3>
-          ${overdue.length || expiringSoon.length ? `
-            <table class="data-table data-table--compact">
-              <thead><tr><th>Customer</th><th>Reseller</th><th>Edition</th><th>Expires</th></tr></thead>
-              <tbody>
-                ${overdue.slice(0, 5).map((k) => `
-                  <tr>
-                    <td>${escapeHtml(k.company || "—")}</td>
-                    <td>${escapeHtml(k.assignedResellerName || "—")}</td>
-                    <td>${escapeHtml(k.productEdition)}</td>
-                    <td class="cell-danger">${escapeHtml(k.licenseExpires)} <small>(${Math.abs(k.daysLeft)}d overdue)</small></td>
-                  </tr>`).join("")}
-                ${expiringSoon.slice(0, 5).map((k) => `
-                  <tr>
-                    <td>${escapeHtml(k.company || "—")}</td>
-                    <td>${escapeHtml(k.assignedResellerName || "—")}</td>
-                    <td>${escapeHtml(k.productEdition)}</td>
-                    <td class="cell-warn">${escapeHtml(k.licenseExpires)} <small>(${k.daysLeft}d)</small></td>
-                  </tr>`).join("")}
-              </tbody>
-            </table>` : '<p class="muted">No renewals due in the next 30 days.</p>'}
-        </section>
+        ${enrichedCount === 0 ? `
+        <div class="card" style="border-color:#4a3580">
+          <p style="color:#c4a8ff;font-size:13px">✦ No enrichment data yet. Open the <a href="#/dashboard">Dashboard</a> and click "Enrich All" to populate this page with real data.</p>
+        </div>` : ""}
 
+        <!-- New Trials — convert to paid -->
         <section class="card actions-card">
-          <h3 class="h3">📅 Upcoming calls</h3>
-          ${upcomingCalls.length ? `
+          <h3 class="h3" style="color:var(--text)">🆕 Open Trials — convert to new business</h3>
+          ${withTrials.length ? `
             <table class="data-table data-table--compact">
-              <thead><tr><th>Date</th><th>Partner</th><th>Notes</th></tr></thead>
+              <thead><tr><th>Partner</th><th>Country</th><th>Level</th><th>Trials</th><th>Existing Keys</th><th>Agent</th><th></th></tr></thead>
               <tbody>
-                ${upcomingCalls.map((c) => {
-                  const partner = partners.find((p) => p.id === c.partnerId);
-                  return `<tr>
-                    <td>${escapeHtml(c.date)}</td>
-                    <td>${escapeHtml(partner?.companyName || c.partnerId || "—")}</td>
-                    <td class="muted">${escapeHtml(c.notes || "—")}</td>
-                  </tr>`;
-                }).join("")}
+                ${withTrials.slice(0, 15).map(p => `
+                  <tr>
+                    <td><a href="#/prm?partnerId=${encodeURIComponent(p.id)}">${escapeHtml(p.company)}</a></td>
+                    <td style="color:var(--muted)">${escapeHtml(p.country)}</td>
+                    <td>${escapeHtml(p.level || "—")}</td>
+                    <td style="font-weight:700;color:#e67e00">${p.trials}</td>
+                    <td>${p.keys}</td>
+                    <td style="color:var(--muted);font-size:0.85rem">${escapeHtml(p.agent)}</td>
+                    <td><a href="#/pre-call?partnerId=${encodeURIComponent(p.id)}" style="font-size:0.8rem;white-space:nowrap">Pre-call →</a></td>
+                  </tr>`).join("")}
               </tbody>
             </table>
-            <p class="card-foot"><a href="#/pre-call">Open a pre-call brief →</a></p>
-            ` : '<p class="muted">No scheduled calls.</p>'}
+            ${withTrials.length > 15 ? `<p class="muted" style="margin-top:8px;font-size:12px">${withTrials.length - 15} more partners with trials</p>` : ""}
+          ` : '<p class="muted">No open trials detected. Run enrichment from the Dashboard to check.</p>'}
         </section>
 
+        <!-- Not contacted — re-engage -->
         <section class="card actions-card">
-          <h3 class="h3">💤 Stale partners (>90 days)</h3>
-          ${stalePartners.length ? `
-            <ul class="bare-list">
-              ${stalePartners.map((p) => `
-                <li>
-                  <a href="#/?partnerId=${encodeURIComponent(p.id)}">${escapeHtml(p.companyName)}</a>
-                  <span class="muted">· ${escapeHtml(p.distributorLevel || "—")} · ${escapeHtml(p.country || "—")}</span>
-                </li>`).join("")}
-            </ul>` : '<p class="muted">All partners contacted recently.</p>'}
+          <h3 class="h3" style="color:var(--text)">📞 Re-engage — no contact in 30+ days</h3>
+          ${notContacted.length ? `
+            <table class="data-table data-table--compact">
+              <thead><tr><th>Partner</th><th>Country</th><th>Keys</th><th>Score</th><th>Last Contact</th><th>Agent</th><th></th></tr></thead>
+              <tbody>
+                ${notContacted.slice(0, 15).map(p => `
+                  <tr>
+                    <td><a href="#/prm?partnerId=${encodeURIComponent(p.id)}">${escapeHtml(p.company)}</a></td>
+                    <td style="color:var(--muted)">${escapeHtml(p.country)}</td>
+                    <td>${p.keys}</td>
+                    <td>${p.score !== null ? `<span style="color:${p.score >= 70 ? "#2d9e5f" : p.score >= 40 ? "#e67e00" : "var(--error)"};font-weight:600">${p.score}</span>` : "—"}</td>
+                    <td>${contactLabel(p.lastContactDaysAgo)}</td>
+                    <td style="color:var(--muted);font-size:0.85rem">${escapeHtml(p.agent)}</td>
+                    <td><a href="#/pre-call?partnerId=${encodeURIComponent(p.id)}" style="font-size:0.8rem;white-space:nowrap">Pre-call →</a></td>
+                  </tr>`).join("")}
+              </tbody>
+            </table>
+            ${notContacted.length > 15 ? `<p class="muted" style="margin-top:8px;font-size:12px">${notContacted.length - 15} more partners not contacted</p>` : ""}
+          ` : '<p class="muted">All enriched partners have been contacted within 30 days.</p>'}
         </section>
       </div>`;
   }
