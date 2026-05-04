@@ -71,7 +71,7 @@
 .ov-tbl th:nth-child(2){text-align:left;}
 .ov-tbl td{padding:6px 8px;font-size:12px;border-bottom:1px solid var(--surface-2);vertical-align:middle;}
 .ov-tbl tr{cursor:pointer;transition:background .1s;}
-.ov-tbl tr:hover td{background:#f5f6f8;}
+.ov-tbl tr:hover td{background:var(--surface-2);}
 .ov-agent-row{display:flex;align-items:center;gap:4px;margin-bottom:10px;flex-wrap:wrap;}
 .ov-agent-btn{font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .1s;}
 .ov-agent-btn.active{border-color:#0077b6;background:#e3f2fd;color:#0077b6;font-weight:700;}
@@ -196,11 +196,11 @@
         ${chartPanel("Key Sizes",SIZE_ORDER.map(b=>({key:b,type:"size",label:SIZE_LABELS[b],count:agg.szDist[b]||0,total:agg.tk||1,color:SIZE_COLORS[b],active:false,dimmed:false})))}
         ${chartPanel("Partner Levels",LEVEL_ORDER.map(lv=>{const c=getLevelColor(lv);return{key:lv,type:"level",label:lv,count:agg.lvDist[lv]||0,total:agg.tp||1,color:c.fg,active:ov.levelFilter===lv,dimmed:ov.levelFilter&&ov.levelFilter!==lv,badge:badge(lv,c.bg,c.fg)};}))}
         <div class="ov-chart-panel"><div class="ov-chart-title">Top Activators (30d)</div>
-          ${(agg.topAct.slice(0,5)).map((p,i)=>{const lc=getLevelColor(p.level);return`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:${i<4?"1px solid #f5f6f8":"none"};cursor:pointer" data-pid="${p.id}"><span style="font-size:10px;font-weight:700;color:#cdd0d6;width:20px;text-align:right">#${i+1}</span><span style="flex:1;font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.company)}</span>${p.level?badge(p.level,lc.bg,lc.fg):""}<span style="font-size:12px;font-weight:700;color:#2d9e5f">${p.newActivations}</span></div>`;}).join("")||'<div style="color:var(--muted);font-size:11px;padding:8px">No activations</div>'}
+          ${(agg.topAct.slice(0,5)).map((p,i)=>{const lc=getLevelColor(p.level);return`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:${i<4?"1px solid var(--border)":"none"};cursor:pointer" data-pid="${p.id}"><span style="font-size:10px;font-weight:700;color:#cdd0d6;width:20px;text-align:right">#${i+1}</span><span style="flex:1;font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.company)}</span>${p.level?badge(p.level,lc.bg,lc.fg):""}<span style="font-size:12px;font-weight:700;color:#2d9e5f">${p.newActivations}</span></div>`;}).join("")||'<div style="color:var(--muted);font-size:11px;padding:8px">No activations</div>'}
         </div>
       </div>
 
-      ${enrichedCount<totalCount?`<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:#f0ebff;border:1px solid #d4b8ff;border-radius:8px;margin-bottom:14px"><span style="font-size:11px;color:#5a3d8a">✦ ${enrichedCount}/${totalCount} partners enriched. Open the extension and click "Enrich All" to populate KPIs.</span></div>`:""}
+      ${enrichedCount<totalCount?`<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--surface-2);border:1px solid #4a3580;border-radius:8px;margin-bottom:14px"><span style="font-size:11px;color:#c4a8ff">✦ ${enrichedCount}/${totalCount} partners enriched. Open the extension and click "Enrich All" to populate KPIs.</span></div>`:""}
 
       <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px 10px 0 0;border-bottom:none">
         <div style="position:relative;flex:0 0 260px"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none">⌕</span><input id="ovSearch" value="${esc(ov.search)}" placeholder="Search partners…" style="width:100%;padding:6px 10px 6px 30px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;font-family:inherit;background:var(--surface-2)"/></div>
