@@ -40,8 +40,8 @@
     const raw = rawFull.split("?")[0];
     const parts = raw.split("/").filter(Boolean);
 
-    // Empty hash → reseller dashboard (PRM)
-    if (parts.length === 0) return { view: "prm", title: "Reseller dashboard" };
+    // Empty hash → reseller overview (PRM)
+    if (parts.length === 0) return { view: "prm", title: "Reseller Overview" };
 
     // Legacy redirect: /home → /actions
     if (parts[0] === "home") {
@@ -49,8 +49,9 @@
       return { view: "actions", title: "Actions" };
     }
 
-    if (parts[0] === "prm") return { view: "prm", title: "Reseller dashboard" };
-    if (parts[0] === "overview") return { view: "overview", title: "Regional Overview" };
+    if (parts[0] === "prm") return { view: "prm", title: "Reseller Overview" };
+    if (parts[0] === "dashboard") return { view: "dashboard", title: "Dashboard" };
+    if (parts[0] === "overview") { location.hash = "#/dashboard"; return { view: "dashboard", title: "Dashboard" }; }
     if (parts[0] === "actions") return { view: "actions", title: "Actions" };
     if (parts[0] === "pre-call") return { view: "pre-call", title: "Pre-call brief" };
     if (parts[0] === "post-call") return { view: "post-call", title: "Post-call" };
@@ -59,10 +60,10 @@
     if (parts[0] === "data" && parts[1]) {
       const sub = parts[1];
       const titles = { partners: "Partners", orders: "Orders", keys: "License keys", emails: "Emails" };
-      if (!titles[sub]) return { view: "prm", title: "Reseller dashboard" }; // unknown data sub → home
+      if (!titles[sub]) return { view: "prm", title: "Reseller Overview" }; // unknown data sub → home
       return { view: "data", sub, title: titles[sub] };
     }
-    return { view: "prm", title: "Reseller dashboard" };
+    return { view: "prm", title: "Reseller Overview" };
   }
 
   function setNavActive() {
@@ -89,7 +90,7 @@
     const route = parseRoute();
     chatRouteActive = route.view === "chat";
 
-    // Hide topbar title on the root reseller dashboard — PRM owns its own header
+    // Hide topbar title on the root reseller overview — PRM owns its own header
     if (route.view === "prm") {
       pageTitleEl.style.visibility = "hidden";
     } else {
@@ -104,8 +105,8 @@
     // live session, so running a refresh BOTH loads the data AND identifies
     // the user. Settings is the only route that works with no snapshot
     // (the user can configure API keys before scraping anything).
-    // Overview and settings work without the needsRefresh check — overview loads its own snapshot, settings is config-only
-    if ((!me || me.needsRefresh) && route.view !== "settings" && route.view !== "overview") {
+    // Dashboard and settings work without the needsRefresh check
+    if ((!me || me.needsRefresh) && route.view !== "settings" && route.view !== "dashboard") {
       viewEl.innerHTML = `
         <div class="panel">
           <h2 class="h2">No reseller data yet</h2>
@@ -117,7 +118,7 @@
 
     try {
       if (route.view === "prm") await renderPrm();
-      else if (route.view === "overview") await renderOverview();
+      else if (route.view === "dashboard") await renderOverview();
       else if (route.view === "actions") await renderActions();
       else if (route.view === "pre-call") await renderPreCall();
       else if (route.view === "post-call") renderPostCall();
@@ -135,7 +136,7 @@
     }
   }
 
-  // ── Reseller dashboard (PRM) — root ────────────────────────────────────────
+  // ── Reseller Overview (PRM) — root ────────────────────────────────────────
   async function renderPrm() {
     if (!window.prmApp) {
       viewEl.innerHTML = '<div class="panel"><p class="empty">PRM module failed to load — check that prm-app.js is present.</p></div>';
@@ -158,10 +159,10 @@
     await window.prmApp.mount(viewEl, { snapshot, seller: currentSeller() });
   }
 
-  // ── Regional Overview ─────────────────────────────────────────────────────
+  // ── Dashboard ─────────────────────────────────────────────────────
   async function renderOverview() {
     if (!window.regionalOverview) {
-      viewEl.innerHTML = '<div class="panel"><p class="empty">Regional Overview module failed to load — check that regional-overview.js is present.</p></div>';
+      viewEl.innerHTML = '<div class="panel"><p class="empty">Dashboard module failed to load — check that regional-overview.js is present.</p></div>';
       return;
     }
     // Load snapshot from server
@@ -184,14 +185,15 @@
     });
   }
 
-  // ── Actions — was Home; reseller-aware action queue ────────────────────────
+  // ── Actions — daily sales to-do list built from snapshot data ───────────────
   async function renderActions() {
     const seller = currentSeller();
     if (!seller || !me.hasSnapshot) {
       viewEl.innerHTML = `
         <div class="panel">
-          <h2 class="h2">Welcome${me ? `, ${escapeHtml(me.name)}` : ""}</h2>
-          <p class="muted">No snapshot loaded yet. Run a refresh from the ONYX Chrome extension on staff.3cx.com to populate your action queue.</p>
+          <h2 class="h2">Daily Actions</h2>
+          <p class="muted">Your prioritised sales to-do list. Shows expiring license keys, overdue renewals, stale accounts, and upcoming calls — pulled from the data the extension pushes to this server.</p>
+          <p class="muted">No data yet. Open the ONYX extension, connect to staff.3cx.com, and click "Get Data".</p>
         </div>`;
       return;
     }
@@ -351,12 +353,12 @@
       viewEl.innerHTML = `
         <div class="panel">
           <h2 class="h2">Pre-call brief</h2>
-          <p class="muted">Open this from a partner row in the Reseller dashboard, or paste a partner ID:</p>
+          <p class="muted">Open this from a partner row in the Reseller Overview, or paste a partner ID:</p>
           <form id="precall-form" class="inline-form">
             <input type="text" id="precall-id" placeholder="partner ID (e.g. prt-024)" />
             <button type="submit" class="btn-primary">Generate brief</button>
           </form>
-          <p class="muted small"><a href="#/">← Reseller dashboard</a></p>
+          <p class="muted small"><a href="#/">← Reseller Overview</a></p>
         </div>`;
       document.getElementById("precall-form").addEventListener("submit", (e) => {
         e.preventDefault();
@@ -564,8 +566,6 @@
           ${me?.email ? `
           <div class="kv-grid">
             <div><span class="kv-label">Email</span><span class="kv-value">${escapeHtml(me.email)}</span></div>
-            <div><span class="kv-label">Name</span><span class="kv-value">${escapeHtml(me.name || "—")}</span></div>
-            <div><span class="kv-label">Region</span><span class="kv-value">${escapeHtml(me.region || "—")}</span></div>
             <div><span class="kv-label">Snapshot</span><span class="kv-value">${me.hasSnapshot ? `${me.partnerCount} partners · ${escapeHtml(me.snapshotUpdatedAt || "")}` : "<em>none</em>"}</span></div>
           </div>` : `
           <p class="muted">No account detected yet. Run an ERP refresh from the Chrome extension to populate this — your reseller email becomes your ONYX identity automatically.</p>`}
@@ -607,7 +607,7 @@
         </section>
 
         <section class="card">
-          <h3 class="h3">Reseller dashboard defaults</h3>
+          <h3 class="h3">Reseller overview defaults</h3>
           <div class="form-row">
             <label class="form-label">Default tier filter</label>
             <select id="prm-default-tier">
