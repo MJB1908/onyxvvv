@@ -147,23 +147,33 @@
     // ── Check snapshot.details (pushed by extension via /api/ingest/erp/partner-detail)
     const detail = snap.details?.[partnerId];
     if (detail) {
-      // Merge detail data into the view object
-      view.company = detail.company || view.company;
-      view.contact = detail.contact || view.contact;
-      view.email = detail.email || view.email;
-      view.phone = detail.phone || view.phone;
-      view.type = detail.type || view.type;
-      view.category = detail.category || view.category;
-      view.country = detail.country || view.country;
-      view.enabled = detail.enabled ?? view.enabled;
-      view.revenue = detail.revenue || view.revenue;
-      view.tabs = {
-        keys: Array.isArray(detail.tabs?.keys) ? detail.tabs.keys.map(viewKey) : [],
-        orders: Array.isArray(detail.tabs?.orders) ? detail.tabs.orders.map(viewOrder) : [],
-        notesParsed: Array.isArray(detail.tabs?.notesParsed) ? detail.tabs.notesParsed.map(viewNote) : [],
-        users: Array.isArray(detail.tabs?.users) ? detail.tabs.users : [],
-      };
-      return view;
+      // Full partner360 data (has tabs with key/order/note arrays)
+      if (detail.tabs) {
+        view.company = detail.company || view.company;
+        view.contact = detail.contact || view.contact;
+        view.email = detail.email || view.email;
+        view.phone = detail.phone || view.phone;
+        view.type = detail.type || view.type;
+        view.category = detail.category || view.category;
+        view.country = detail.country || view.country;
+        view.enabled = detail.enabled ?? view.enabled;
+        view.revenue = detail.revenue || view.revenue;
+        view.tabs = {
+          keys: Array.isArray(detail.tabs.keys) ? detail.tabs.keys.map(viewKey) : [],
+          orders: Array.isArray(detail.tabs.orders) ? detail.tabs.orders.map(viewOrder) : [],
+          notesParsed: Array.isArray(detail.tabs.notesParsed) ? detail.tabs.notesParsed.map(viewNote) : [],
+          users: Array.isArray(detail.tabs.users) ? detail.tabs.users : [],
+        };
+        return view;
+      }
+
+      // Enrichment-only data (keysSummary — aggregate stats, no individual rows)
+      const ks = detail.keysSummary || detail;
+      if (ks && (ks.keys !== undefined || ks.commercialKeys !== undefined)) {
+        view.enrichmentSummary = ks;
+        view.tabs = { keys: [], orders: [], notesParsed: [], users: [] };
+        return view;
+      }
     }
 
     // ── Fallback: filter from snapshot flat arrays ────────────────────────
@@ -181,13 +191,18 @@
 
   // ── Health score (simplified vs original) ─────────────────────────────────
   function computeHealth(p) {
+    const ks = p.enrichmentSummary;
+    // If we have enrichment summary, use its score directly
+    if (ks?.score) {
+      const score = Math.max(0, Math.min(100, ks.score));
+      const color = score >= 70 ? "#2d9e5f" : score >= 40 ? "#e67e00" : "#dc3545";
+      return { score, color };
+    }
     const notes = p.tabs?.notesParsed || [];
     const keys = p.tabs?.keys || [];
     let score = 50;
-    if (notes.length > 5) score += 10;
-    if (notes.length > 15) score += 5;
-    if (keys.length > 0) score += 10;
-    if (keys.length > 5) score += 5;
+    if (keys.length > 5) score += 10;
+    if (keys.length > 15) score += 5;
     if (p.enabled) score += 5;
     const last = notes[0] && parseDate(notes[0].modified);
     if (last) {
@@ -391,44 +406,72 @@
     const keys = p.tabs?.keys || [];
     const orders = p.tabs?.orders || [];
     const notes = p.tabs?.notesParsed || [];
+    const ks = p.enrichmentSummary; // from enrichment (aggregate stats only)
     const today = new Date();
-    const liveKeys = keys.filter((k) => !k.disabled);
-    const customers = [...new Set(liveKeys.map((k) => k.registration).filter(Boolean))];
-    const editions = {};
-    liveKeys.forEach((k) => {
-      const ed = editionOf(k.product);
-      if (!editions[ed.full]) editions[ed.full] = { ...ed, count: 0 };
-      editions[ed.full].count++;
-    });
-    const totalEd = Object.values(editions).reduce((a, b) => a + b.count, 0) || 1;
 
-    const expiringSoon = liveKeys
-      .map((k) => ({ ...k, days: parseDate(k.expiry) ? Math.round((parseDate(k.expiry) - today) / 86400000) : null }))
-      .filter((k) => k.days !== null && k.days <= 90)
-      .sort((a, b) => a.days - b.days);
+    // Use enrichment summary if individual key rows aren't available
+    let installBase, liveCount, customerCount, renewalRate, edMix, expiringSoon;
 
-    const renewalRate = liveKeys.length
-      ? Math.round((liveKeys.filter((k) => { const d = parseDate(k.expiry); return d && d > today; }).length / liveKeys.length) * 100)
-      : 0;
+    if (keys.length > 0) {
+      // Full data — compute from individual keys
+      const liveKeys = keys.filter((k) => !k.disabled);
+      liveCount = liveKeys.length;
+      installBase = keys.length;
+      customerCount = [...new Set(liveKeys.map((k) => k.registration).filter(Boolean))].length;
+      const editions = {};
+      liveKeys.forEach((k) => {
+        const ed = editionOf(k.product);
+        if (!editions[ed.full]) editions[ed.full] = { ...ed, count: 0 };
+        editions[ed.full].count++;
+      });
+      edMix = editions;
+      expiringSoon = liveKeys
+        .map((k) => ({ ...k, days: parseDate(k.expiry) ? Math.round((parseDate(k.expiry) - today) / 86400000) : null }))
+        .filter((k) => k.days !== null && k.days <= 90)
+        .sort((a, b) => a.days - b.days);
+      renewalRate = liveKeys.length
+        ? Math.round((liveKeys.filter((k) => { const d = parseDate(k.expiry); return d && d > today; }).length / liveKeys.length) * 100)
+        : 0;
+    } else if (ks) {
+      // Enrichment summary — show aggregate stats
+      installBase = ks.keys || ks.commercialKeys || 0;
+      liveCount = installBase;
+      customerCount = null; // not available from summary
+      renewalRate = ks.renewalRate || 0;
+      edMix = {};
+      if (ks.edMix) {
+        Object.entries(ks.edMix).forEach(([name, count]) => {
+          edMix[name] = { full: name, short: name.substring(0,3).toUpperCase(), color: "#0077b6", bg: "#e3f2fd", count };
+        });
+      }
+      expiringSoon = [];
+    } else {
+      installBase = 0; liveCount = 0; customerCount = 0; renewalRate = 0; edMix = {}; expiringSoon = [];
+    }
+
+    const totalEd = Object.values(edMix).reduce((a, b) => a + b.count, 0) || 1;
+    const fromEnrichment = keys.length === 0 && ks;
 
     el.innerHTML = `
+      ${fromEnrichment ? '<div style="padding:8px 12px;margin-bottom:10px;background:var(--surface-2);border:1px solid #4a3580;border-radius:6px;font-size:11px;color:#c4a8ff">✦ Showing enrichment summary. For full detail (individual keys, orders, notes), open the Dashboard and click ↻ on this partner row.</div>' : ""}
+
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
         <div class="prm-section" style="padding:10px 12px;margin:0">
           <div style="font-size:10px;color:var(--prm-dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Install Base</div>
-          <div style="font-size:22px;font-weight:600">${keys.length}</div>
-          <div style="font-size:10px;color:var(--prm-dim)">${liveKeys.length} live</div>
+          <div style="font-size:22px;font-weight:600">${installBase}</div>
+          <div style="font-size:10px;color:var(--prm-dim)">${liveCount} live</div>
         </div>
         <div class="prm-section" style="padding:10px 12px;margin:0">
-          <div style="font-size:10px;color:var(--prm-dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Customers</div>
-          <div style="font-size:22px;font-weight:600">${customers.length}</div>
+          <div style="font-size:10px;color:var(--prm-dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">${customerCount !== null ? "Customers" : "New (30d)"}</div>
+          <div style="font-size:22px;font-weight:600">${customerCount !== null ? customerCount : (ks?.newActivations || 0)}</div>
         </div>
         <div class="prm-section" style="padding:10px 12px;margin:0">
           <div style="font-size:10px;color:var(--prm-dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Renewal Rate</div>
           <div style="font-size:22px;font-weight:600;color:${renewalRate >= 80 ? "var(--prm-green)" : renewalRate >= 60 ? "var(--prm-amber)" : "var(--prm-red)"}">${renewalRate}%</div>
         </div>
         <div class="prm-section" style="padding:10px 12px;margin:0">
-          <div style="font-size:10px;color:var(--prm-dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Orders</div>
-          <div style="font-size:22px;font-weight:600">${orders.length}</div>
+          <div style="font-size:10px;color:var(--prm-dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">${fromEnrichment ? "Expiring" : "Orders"}</div>
+          <div style="font-size:22px;font-weight:600">${fromEnrichment ? (ks?.expiringSoon || 0) : orders.length}</div>
         </div>
       </div>
 
@@ -436,14 +479,14 @@
         <div class="prm-section">
           <div class="prm-section-head"><span class="prm-section-title">Install mix</span></div>
           <div style="padding:10px 14px">
-            ${Object.entries(editions).map(([name, ed]) => {
+            ${Object.entries(edMix).map(([name, ed]) => {
               const pct = Math.round((ed.count / totalEd) * 100);
               return `<div style="margin-bottom:8px">
                 <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
                   <span style="color:var(--prm-m)">${esc(name)}</span><span style="font-weight:600">${pct}%</span>
                 </div>
                 <div style="height:5px;background:var(--prm-s2);border-radius:3px;overflow:hidden">
-                  <div style="height:100%;width:${pct}%;background:${ed.color};border-radius:3px"></div>
+                  <div style="height:100%;width:${pct}%;background:${ed.color || "#0077b6"};border-radius:3px"></div>
                 </div></div>`;
             }).join("") || '<div class="prm-empty">No keys</div>'}
           </div>
