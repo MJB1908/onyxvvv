@@ -47,33 +47,33 @@
     if (_cssInjected) return; _cssInjected = true;
     const s = document.createElement("style");
     s.textContent = `
-.ov-wrap{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#1a1d23;}
+.ov-wrap{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:var(--text);}
 .ov-kpi-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:14px;}
-.ov-kpi{background:#fff;border:1px solid #e1e4e8;border-radius:10px;padding:12px 14px;}
-.ov-kpi-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ba3ae;margin-bottom:5px;}
+.ov-kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+.ov-kpi-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px;}
 .ov-kpi-value{font-size:22px;font-weight:700;line-height:1;}
-.ov-kpi-sub{font-size:10px;color:#9ba3ae;margin-top:3px;}
+.ov-kpi-sub{font-size:10px;color:var(--muted);margin-top:3px;}
 .ov-charts{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:14px;}
-.ov-chart-panel{background:#fff;border:1px solid #e1e4e8;border-radius:10px;padding:14px;display:flex;flex-direction:column;}
-.ov-chart-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#5a6270;margin-bottom:10px;}
+.ov-chart-panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;}
+.ov-chart-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px;}
 .ov-bar-row{margin-bottom:7px;cursor:pointer;transition:opacity .15s;}
 .ov-bar-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px;}
-.ov-bar-track{height:4px;background:#f0f2f5;border-radius:3px;overflow:hidden;}
+.ov-bar-track{height:4px;background:var(--surface-2);border-radius:3px;overflow:hidden;}
 .ov-bar-fill{height:100%;border-radius:3px;transition:width .3s;}
 .ov-view-pills{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
-.ov-view-pill{display:flex;align-items:center;gap:5px;font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid #e1e4e8;background:#fff;color:#5a6270;cursor:pointer;font-family:inherit;font-weight:500;transition:all .15s;}
+.ov-view-pill{display:flex;align-items:center;gap:5px;font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:500;transition:all .15s;}
 .ov-view-pill.active{font-weight:700;}
 .ov-score-ring{position:relative;flex-shrink:0;}
 .ov-score-ring svg{transform:rotate(-90deg);}
 .ov-score-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;}
 .ov-tbl{width:100%;border-collapse:collapse;}
-.ov-tbl th{padding:8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#9ba3ae;text-align:right;cursor:pointer;user-select:none;white-space:nowrap;border-bottom:1px solid #e1e4e8;}
+.ov-tbl th{padding:8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);text-align:right;cursor:pointer;user-select:none;white-space:nowrap;border-bottom:1px solid var(--border);}
 .ov-tbl th:nth-child(2){text-align:left;}
-.ov-tbl td{padding:6px 8px;font-size:12px;border-bottom:1px solid #f0f2f5;vertical-align:middle;}
+.ov-tbl td{padding:6px 8px;font-size:12px;border-bottom:1px solid var(--surface-2);vertical-align:middle;}
 .ov-tbl tr{cursor:pointer;transition:background .1s;}
 .ov-tbl tr:hover td{background:#f5f6f8;}
 .ov-agent-row{display:flex;align-items:center;gap:4px;margin-bottom:10px;flex-wrap:wrap;}
-.ov-agent-btn{font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid transparent;background:transparent;color:#5a6270;cursor:pointer;font-family:inherit;transition:all .1s;}
+.ov-agent-btn{font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .1s;}
 .ov-agent-btn.active{border-color:#0077b6;background:#e3f2fd;color:#0077b6;font-weight:700;}
 @media (max-width:1200px){.ov-kpi-grid{grid-template-columns:repeat(4,1fr);}.ov-charts{grid-template-columns:1fr 1fr;}}
 `;
@@ -81,13 +81,13 @@
   }
 
   function scoreRing(score, size) {
-    if (score===null) return '<span style="color:#9ba3ae;font-size:10px">—</span>';
+    if (score===null) return '<span style="color:var(--muted);font-size:10px">—</span>';
     const r=(size-4)/2, circ=2*Math.PI*r, col=score>=70?"#2d9e5f":score>=45?"#e67e00":"#dc3545";
-    return `<div class="ov-score-ring" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#f0f2f5" stroke-width="3"/><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${col}" stroke-width="3" stroke-dasharray="${(score/100)*circ} ${circ}" stroke-linecap="round"/></svg><div class="ov-score-num" style="font-size:${size<36?9:11}px;color:${col}">${score}</div></div>`;
+    return `<div class="ov-score-ring" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--border)" stroke-width="3"/><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${col}" stroke-width="3" stroke-dasharray="${(score/100)*circ} ${circ}" stroke-linecap="round"/></svg><div class="ov-score-num" style="font-size:${size<36?9:11}px;color:${col}">${score}</div></div>`;
   }
 
   function contactAge(d) {
-    if(d===null) return '<span style="color:#9ba3ae">—</span>';
+    if(d===null) return '<span style="color:var(--muted)">—</span>';
     const col=d<=14?"#2d9e5f":d<=30?"#0077b6":d<=60?"#e67e00":"#dc3545";
     const lbl=d<=1?"Today":d<=7?d+"d":d<=30?Math.round(d/7)+"w":Math.round(d/30)+"mo";
     return `<span style="color:${col};font-weight:600;font-size:11px">${lbl}</span>`;
@@ -96,7 +96,7 @@
   function chartPanel(title, items) {
     return `<div class="ov-chart-panel"><div class="ov-chart-title">${title}</div>${items.map(it=>{
       const pct=Math.round((it.count/(it.total||1))*100);
-      return `<div class="ov-bar-row" data-chart-key="${esc(it.key)}" data-chart-type="${esc(it.type)}" style="opacity:${it.dimmed?".4":"1"}"><div class="ov-bar-label"><span style="color:#5a6270;font-weight:${it.active?700:400}">${it.badge||esc(it.label)}</span><span style="font-weight:600">${it.count} <span style="color:#9ba3ae;font-weight:400;font-size:10px">(${pct}%)</span></span></div><div class="ov-bar-track"><div class="ov-bar-fill" style="width:${pct}%;background:${it.color}"></div></div></div>`;
+      return `<div class="ov-bar-row" data-chart-key="${esc(it.key)}" data-chart-type="${esc(it.type)}" style="opacity:${it.dimmed?".4":"1"}"><div class="ov-bar-label"><span style="color:var(--muted);font-weight:${it.active?700:400}">${it.badge||esc(it.label)}</span><span style="font-weight:600">${it.count} <span style="color:var(--muted);font-weight:400;font-size:10px">(${pct}%)</span></span></div><div class="ov-bar-track"><div class="ov-bar-fill" style="width:${pct}%;background:${it.color}"></div></div></div>`;
     }).join("")}</div>`;
   }
 
@@ -163,7 +163,7 @@
       {key:"active",label:"Active",count:list.filter(p=>(p.keys||0)>0).length,color:"#0077b6"},
       {key:"expiring",label:"Expiring ≤90d",count:agg.ex,color:"#e67e00"},
       {key:"overdue",label:"Overdue",count:agg.od,color:"#dc3545"},
-      {key:"dormant",label:"Dormant (0 keys)",count:list.filter(p=>p.enriched&&(p.keys||0)===0).length,color:"#9ba3ae"},
+      {key:"dormant",label:"Dormant (0 keys)",count:list.filter(p=>p.enriched&&(p.keys||0)===0).length,color:"var(--muted)"},
     ];
 
     const cols=[
@@ -177,9 +177,9 @@
     ];
 
     _container.innerHTML=`<div class="ov-wrap" style="padding:14px 20px">
-      ${agg.agents.length?`<div class="ov-agent-row">${'<span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ba3ae">Agent:</span><button class="ov-agent-btn'+(!ov.agentFilter?' active':'')+'" data-agent="">All</button>'+agg.agents.map(a=>'<button class="ov-agent-btn'+(ov.agentFilter===a?' active':'')+'" data-agent="'+esc(a)+'">'+esc(a.split(/\s+/)[0])+'</button>').join("")}</div>`:""}
+      ${agg.agents.length?`<div class="ov-agent-row">${'<span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Agent:</span><button class="ov-agent-btn'+(!ov.agentFilter?' active':'')+'" data-agent="">All</button>'+agg.agents.map(a=>'<button class="ov-agent-btn'+(ov.agentFilter===a?' active':'')+'" data-agent="'+esc(a)+'">'+esc(a.split(/\s+/)[0])+'</button>').join("")}</div>`:""}
 
-      <div class="ov-view-pills">${pills.map(vp=>{const active=ov.viewFilter===vp.key,bc=vp.color||"#0077b6";return`<button class="ov-view-pill${active?" active":""}" data-vf="${vp.key}" style="border-color:${active?bc:"#e1e4e8"};background:${active?bc+"10":"#fff"};color:${active?bc:"#5a6270"}">${vp.label} <span style="font-size:10px;font-weight:700;opacity:${active?1:.6}">${vp.count}</span></button>`;}).join("")}</div>
+      <div class="ov-view-pills">${pills.map(vp=>{const active=ov.viewFilter===vp.key,bc=vp.color||"#0077b6";return`<button class="ov-view-pill${active?" active":""}" data-vf="${vp.key}" style="border-color:${active?bc:"var(--border)"};background:${active?bc+"10":"var(--surface)"};color:${active?bc:"var(--muted)"}">${vp.label} <span style="font-size:10px;font-weight:700;opacity:${active?1:.6}">${vp.count}</span></button>`;}).join("")}</div>
 
       <div class="ov-kpi-grid">
         <div class="ov-kpi"><div class="ov-kpi-label">Partners</div><div class="ov-kpi-value">${agg.tp}</div><div class="ov-kpi-sub">avg score ${agg.avgScore}</div></div>
@@ -192,46 +192,46 @@
       </div>
 
       <div class="ov-charts">
-        ${chartPanel("Edition Mix",ED_ORDER.map(ed=>({key:ed,type:"edition",label:ed,count:agg.edDist[ed]||0,total:agg.tk||1,color:ED_COLORS[ed]?.bar||"#9ba3ae",active:false,dimmed:false})))}
+        ${chartPanel("Edition Mix",ED_ORDER.map(ed=>({key:ed,type:"edition",label:ed,count:agg.edDist[ed]||0,total:agg.tk||1,color:ED_COLORS[ed]?.bar||"var(--muted)",active:false,dimmed:false})))}
         ${chartPanel("Key Sizes",SIZE_ORDER.map(b=>({key:b,type:"size",label:SIZE_LABELS[b],count:agg.szDist[b]||0,total:agg.tk||1,color:SIZE_COLORS[b],active:false,dimmed:false})))}
         ${chartPanel("Partner Levels",LEVEL_ORDER.map(lv=>{const c=getLevelColor(lv);return{key:lv,type:"level",label:lv,count:agg.lvDist[lv]||0,total:agg.tp||1,color:c.fg,active:ov.levelFilter===lv,dimmed:ov.levelFilter&&ov.levelFilter!==lv,badge:badge(lv,c.bg,c.fg)};}))}
         <div class="ov-chart-panel"><div class="ov-chart-title">Top Activators (30d)</div>
-          ${(agg.topAct.slice(0,5)).map((p,i)=>{const lc=getLevelColor(p.level);return`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:${i<4?"1px solid #f5f6f8":"none"};cursor:pointer" data-pid="${p.id}"><span style="font-size:10px;font-weight:700;color:#cdd0d6;width:20px;text-align:right">#${i+1}</span><span style="flex:1;font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.company)}</span>${p.level?badge(p.level,lc.bg,lc.fg):""}<span style="font-size:12px;font-weight:700;color:#2d9e5f">${p.newActivations}</span></div>`;}).join("")||'<div style="color:#9ba3ae;font-size:11px;padding:8px">No activations</div>'}
+          ${(agg.topAct.slice(0,5)).map((p,i)=>{const lc=getLevelColor(p.level);return`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:${i<4?"1px solid #f5f6f8":"none"};cursor:pointer" data-pid="${p.id}"><span style="font-size:10px;font-weight:700;color:#cdd0d6;width:20px;text-align:right">#${i+1}</span><span style="flex:1;font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.company)}</span>${p.level?badge(p.level,lc.bg,lc.fg):""}<span style="font-size:12px;font-weight:700;color:#2d9e5f">${p.newActivations}</span></div>`;}).join("")||'<div style="color:var(--muted);font-size:11px;padding:8px">No activations</div>'}
         </div>
       </div>
 
       ${enrichedCount<totalCount?`<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:#f0ebff;border:1px solid #d4b8ff;border-radius:8px;margin-bottom:14px"><span style="font-size:11px;color:#5a3d8a">✦ ${enrichedCount}/${totalCount} partners enriched. Open the extension and click "Enrich All" to populate KPIs.</span></div>`:""}
 
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;border:1px solid #e1e4e8;border-radius:10px 10px 0 0;border-bottom:none">
-        <div style="position:relative;flex:0 0 260px"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ba3ae;font-size:13px;pointer-events:none">⌕</span><input id="ovSearch" value="${esc(ov.search)}" placeholder="Search partners…" style="width:100%;padding:6px 10px 6px 30px;border:1px solid #e1e4e8;border-radius:6px;font-size:12px;outline:none;font-family:inherit;background:#f0f2f5"/></div>
-        <select id="ovCountry" style="padding:6px 8px;border:1px solid #e1e4e8;border-radius:6px;font-size:11px;font-family:inherit;background:${ov.countryFilter?"#e3f2fd":"#f0f2f5"};color:${ov.countryFilter?"#0077b6":"#5a6270"};cursor:pointer;outline:none"><option value="">All Countries</option>${agg.countries.map(c=>`<option value="${esc(c)}"${ov.countryFilter===c?" selected":""}>${esc(c)}</option>`).join("")}</select>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px 10px 0 0;border-bottom:none">
+        <div style="position:relative;flex:0 0 260px"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none">⌕</span><input id="ovSearch" value="${esc(ov.search)}" placeholder="Search partners…" style="width:100%;padding:6px 10px 6px 30px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;font-family:inherit;background:var(--surface-2)"/></div>
+        <select id="ovCountry" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:inherit;background:${ov.countryFilter?"var(--accent-dim)":"var(--surface-2)"};color:${ov.countryFilter?"var(--accent)":"var(--muted)"};cursor:pointer;outline:none"><option value="">All Countries</option>${agg.countries.map(c=>`<option value="${esc(c)}"${ov.countryFilter===c?" selected":""}>${esc(c)}</option>`).join("")}</select>
         <div style="flex:1"></div>
-        ${hasFilters?'<button id="ovClear" style="font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid #e1e4e8;background:#fff;color:#5a6270;cursor:pointer;font-weight:600;font-family:inherit">✕ Clear</button>':""}
-        <span style="font-size:10px;color:#9ba3ae">${list.length} partners</span>
+        ${hasFilters?'<button id="ovClear" style="font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-weight:600;font-family:inherit">✕ Clear</button>':""}
+        <span style="font-size:10px;color:var(--muted)">${list.length} partners</span>
       </div>
 
-      <div style="background:#fff;border:1px solid #e1e4e8;border-radius:0 0 10px 10px;overflow:hidden"><div style="overflow-x:auto">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:0 0 10px 10px;overflow:hidden"><div style="overflow-x:auto">
         <table class="ov-tbl"><thead><tr>${cols.map(c=>`<th data-sort="${c.k}" style="width:${c.w};text-align:${c.left?"left":"right"}">${c.l}${sortArrow(c.k)}</th>`).join("")}</tr></thead>
         <tbody id="ovTbody">${list.slice(0,showCount).map(p=>{
           const tc=getLevelColor(p.level),na=p.newActivations,ex=p.expiringSoon,od=p.overdue,rr=p.renewalRate;
           const isDormant=p.enriched&&(p.keys||0)===0;
           return`<tr data-pid="${p.id}" style="${isDormant?"opacity:.45":""}">
             <td style="text-align:center">${scoreRing(p.score,30)}</td>
-            <td style="text-align:left"><div style="font-size:12px;font-weight:500">${esc(p.company)}</div><div style="font-size:10px;color:#9ba3ae">#${esc(String(p.id))}</div></td>
-            <td style="text-align:right">${p.level?badge(p.level,tc.bg,tc.fg):'<span style="color:#9ba3ae">—</span>'}</td>
-            <td style="text-align:right;font-size:10px;color:#5a6270">${esc(p.type||"—")}</td>
-            <td style="text-align:center;font-size:10px;color:#5a6270">${esc(p.country)}</td>
-            <td style="text-align:right;font-weight:600">${p.keys!==null?p.keys:'<span style="color:#9ba3ae">—</span>'}</td>
-            <td style="text-align:right;font-weight:600;color:#6f42c1">${p.totalSC!==null?p.totalSC.toLocaleString("de-DE"):'<span style="color:#9ba3ae">—</span>'}</td>
-            <td style="text-align:right;font-weight:700;color:${na>0?"#2d9e5f":"#cdd0d6"}">${na!==null?(na||"—"):'<span style="color:#9ba3ae">—</span>'}</td>
-            <td style="text-align:right;color:${ex>0?"#e67e00":"#cdd0d6"}">${ex!==null?(ex||"—"):'<span style="color:#9ba3ae">—</span>'}</td>
-            <td style="text-align:right;color:${od>0?"#dc3545":"#cdd0d6"}">${od!==null?(od||"—"):'<span style="color:#9ba3ae">—</span>'}</td>
-            <td style="text-align:right">${rr!==null?`<span style="font-size:11px;font-weight:700;color:${rr>=70?"#2d9e5f":rr>=50?"#e67e00":"#dc3545"}">${rr}%</span>`:'<span style="color:#9ba3ae">—</span>'}</td>
+            <td style="text-align:left"><div style="font-size:12px;font-weight:500">${esc(p.company)}</div><div style="font-size:10px;color:var(--muted)">#${esc(String(p.id))}</div></td>
+            <td style="text-align:right">${p.level?badge(p.level,tc.bg,tc.fg):'<span style="color:var(--muted)">—</span>'}</td>
+            <td style="text-align:right;font-size:10px;color:var(--muted)">${esc(p.type||"—")}</td>
+            <td style="text-align:center;font-size:10px;color:var(--muted)">${esc(p.country)}</td>
+            <td style="text-align:right;font-weight:600">${p.keys!==null?p.keys:'<span style="color:var(--muted)">—</span>'}</td>
+            <td style="text-align:right;font-weight:600;color:#6f42c1">${p.totalSC!==null?p.totalSC.toLocaleString("de-DE"):'<span style="color:var(--muted)">—</span>'}</td>
+            <td style="text-align:right;font-weight:700;color:${na>0?"#2d9e5f":"#cdd0d6"}">${na!==null?(na||"—"):'<span style="color:var(--muted)">—</span>'}</td>
+            <td style="text-align:right;color:${ex>0?"#e67e00":"#cdd0d6"}">${ex!==null?(ex||"—"):'<span style="color:var(--muted)">—</span>'}</td>
+            <td style="text-align:right;color:${od>0?"#dc3545":"#cdd0d6"}">${od!==null?(od||"—"):'<span style="color:var(--muted)">—</span>'}</td>
+            <td style="text-align:right">${rr!==null?`<span style="font-size:11px;font-weight:700;color:${rr>=70?"#2d9e5f":rr>=50?"#e67e00":"#dc3545"}">${rr}%</span>`:'<span style="color:var(--muted)">—</span>'}</td>
             <td style="text-align:right">${contactAge(p.lastContactDaysAgo)}</td>
-            <td style="text-align:right;font-size:11px;color:#5a6270;white-space:nowrap">${esc(p.agent)}</td>
+            <td style="text-align:right;font-size:11px;color:var(--muted);white-space:nowrap">${esc(p.agent)}</td>
           </tr>`;}).join("")}</tbody></table></div>
-        ${list.length>showCount?`<div style="padding:10px;text-align:center;font-size:10px;color:#9ba3ae">${showCount} of ${list.length}</div>`:""}
-        ${!list.length?'<div style="padding:32px;text-align:center;color:#9ba3ae;font-size:12px">No partners match filters.</div>':""}
+        ${list.length>showCount?`<div style="padding:10px;text-align:center;font-size:10px;color:var(--muted)">${showCount} of ${list.length}</div>`:""}
+        ${!list.length?'<div style="padding:32px;text-align:center;color:var(--muted);font-size:12px">No partners match filters.</div>':""}
       </div>
     </div>`;
     wireEvents();
@@ -257,7 +257,7 @@
     _state.onPartnerClick=opts.onPartnerClick||null;
     const snapshot=opts.snapshot;
     if(!snapshot?.partners?.length) {
-      _container.innerHTML='<div style="padding:40px;text-align:center;color:#9ba3ae">No partner data on the server yet. Load partners in the ONYX extension — it pushes data here automatically.</div>';
+      _container.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted)">No partner data on the server yet. Load partners in the ONYX extension — it pushes data here automatically.</div>';
       return;
     }
     _state.allPartners=snapshot.partners;
