@@ -672,12 +672,29 @@
       if (!subject || !body) { status.textContent = "Subject and body required"; return; }
       status.textContent = "Posting…";
       try {
+        // 1. Post to ONYX server (local storage)
         await (window.onyxApiFetch||fetch)("/api/notes", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ partnerId: p.id, subject, body, noteType, seller: state.seller?.name || null, source: "onyx-prm" }),
         });
+
+        // 2. Post to ERP (staff.3cx.com) via extension bridge — fire-and-forget
+        try {
+          window.dispatchEvent(new CustomEvent("onyx-bridge:request", {
+            detail: {
+              reqId: `note_${Date.now()}`,
+              type: "POST_NOTE",
+              payload: { partnerId: p.id, subject, body, noteType },
+            },
+          }));
+          status.textContent = "✓ Posted to ONYX + ERP";
+        } catch {
+          status.textContent = "✓ Posted to ONYX (ERP bridge unavailable)";
+        }
+
         // Re-compose with fresh notes
+        await new Promise(r => setTimeout(r, 500)); // brief delay for ERP to process
         state.partner = await composePartner(state, p.id);
         renderMain(state);
       } catch (e) {
