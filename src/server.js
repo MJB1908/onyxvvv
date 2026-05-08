@@ -10,6 +10,7 @@ const secretsStore = require("./secretsStore");
 const erpDataAdapter = require("./erpDataAdapter");
 const salesRoutes = require("./salesRoutes");
 const aiProvider = require("./aiProvider");
+const aiWorkspaceApi = require("./aiWorkspaceApi");
 
 // In-memory notes store (local to this server instance)
 const notes = [];
@@ -361,6 +362,69 @@ app.post("/api/notes", (req, res) => {
     res.status(400).json({ ok: false, error: err.message });
   }
 });
+
+// ── AI Workspace (call simulation, runbook, coaching) ────────────────────────
+// Build the data source from live ERP + snapshot stores for the workspace API
+function buildWorkspaceDataSource(userEmail) {
+  const snapshot = snapshotStore.loadUserData(userEmail);
+  return {
+    partners: snapshot?.partners || [],
+    orders: snapshot?.orders || [],
+    licenseKeys: snapshot?.licenseKeys || [],
+    calls: snapshot?.calls || [],
+    erpPartners: erpDataAdapter.getPartners(userEmail),
+    notes: notes.filter(n => !userEmail || n.user === userEmail),
+  };
+}
+
+async function aiJsonRoute(req, res, handler, mapOk) {
+  try {
+    const userEmail = req.headers["x-onyx-user"] || req.query.onyxUser || "";
+    const dataSource = buildWorkspaceDataSource(userEmail);
+    const result = await handler(req.body, dataSource);
+    if (!result.ok) {
+      return res.status(result.status || 500).json({ error: result.error });
+    }
+    res.json(mapOk(result));
+  } catch (err) {
+    console.error("[ONYX] AI workspace error:", err.message);
+    res.status(500).json({ error: err.message || "AI workspace failed." });
+  }
+}
+
+app.post("/api/ai/call-setup-summary", chatLimiter, (req, res) =>
+  aiJsonRoute(req, res, (b, ds) => aiWorkspaceApi.handleCallSetupSummary(b, ds), (r) => ({ summary: r.reply }))
+);
+
+app.post("/api/ai/call-setup-runbook", chatLimiter, (req, res) =>
+  aiJsonRoute(req, res, (b, ds) => aiWorkspaceApi.handleCallSetupRunbook(b, ds), (r) => ({ runbookLines: r.runbookLines }))
+);
+
+app.post("/api/ai/runbook-coach", chatLimiter, (req, res) =>
+  aiJsonRoute(req, res, (b) => aiWorkspaceApi.handleRunbookCoach(b), (r) => ({ runbookLines: r.runbookLines }))
+);
+
+app.post("/api/ai/sim-call-turn", chatLimiter, (req, res) =>
+  aiJsonRoute(req, res, (b, ds) => aiWorkspaceApi.handleSimCallTurn(b, ds), (r) => ({ line: r.line }))
+);
+
+app.post("/api/ai/during-call-eval", chatLimiter, (req, res) =>
+  aiJsonRoute(req, res, (b) => aiWorkspaceApi.handleDuringCallEval(b), (r) => ({
+    achieved: r.achieved, momentSummary: r.momentSummary, sentiment: r.sentiment,
+    topicGuidance: r.topicGuidance, evaluation: r.evaluation, runbookBullets: r.runbookBullets,
+  }))
+);
+
+app.post("/api/ai/post-call-drafts", chatLimiter, (req, res) =>
+  aiJsonRoute(req, res, (b, ds) => aiWorkspaceApi.handlePostCallDrafts(b, ds), (r) => ({
+    meetingNotes: r.meetingNotes, followUpSubject: r.followUpSubject, followUpBody: r.followUpBody,
+    actionPlanBullets: r.actionPlanBullets, clientEmail: r.clientEmail, clientName: r.clientName, companyName: r.companyName,
+  }))
+);
+
+app.post("/api/ai/during-call-whisper", chatLimiter, (req, res) =>
+  aiJsonRoute(req, res, (b) => aiWorkspaceApi.handleDuringCallWhisper(b), (r) => ({ reply: r.reply }))
+);
 
 // ── During-call chat ─────────────────────────────────────────────────────────
 app.post("/api/chat", chatLimiter, async (req, res) => {
