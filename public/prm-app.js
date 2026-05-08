@@ -591,16 +591,16 @@
     el.innerHTML = `
       <div class="prm-section">
         <div class="prm-section-head"><span class="prm-section-title">All license keys</span><span class="prm-section-count">${keys.length}</span></div>
-        <div style="overflow-x:auto"><table class="prm-dtable">
+        <div style="overflow-x:auto"><table class="prm-dtable" id="prm-keys-table">
           <thead><tr><th>Key</th><th>Product</th><th>SC</th><th>Expiry</th><th>Customer</th><th>Version</th></tr></thead>
           <tbody>${keys.map((k) => {
             const d = parseDate(k.expiry);
             const days = d ? Math.round((d - today) / 86400000) : null;
             const col = days === null ? "" : days < 0 ? "color:var(--prm-red);font-weight:600" : days <= 30 ? "color:var(--prm-amber);font-weight:600" : "color:var(--prm-green)";
-            return `<tr${k.disabled ? ' class="prm-key-row-disabled"' : ""}>
-              <td style="font-family:monospace;font-size:11px"><a class="prm-key-link" href="https://staff.3cx.com/key/edit.aspx?i=${encodeURIComponent(k.keyId)}" target="_blank" rel="noopener">${esc(k.key)}</a></td>
+            return `<tr class="prm-key-row" data-key-id="${esc(k.keyId)}" style="cursor:pointer"${k.disabled ? ' class="prm-key-row-disabled"' : ""}>
+              <td style="font-family:monospace;font-size:11px"><a class="prm-key-link" href="https://staff.3cx.com/key/edit.aspx?i=${encodeURIComponent(k.keyId)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(k.key)}</a></td>
               <td>${esc(k.product)}</td>
-              <td><span style="background:#e8f5ee;color:#2d9e5f;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700">${esc(k.sc)}SC</span></td>
+              <td><span style="background:rgba(45,158,95,.15);color:#2d9e5f;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700">${esc(k.sc)}SC</span></td>
               <td style="${col};font-size:11px">${esc(k.expiry)}${days !== null ? ` <span style="color:var(--prm-dim)">(${days < 0 ? `${Math.abs(days)}d late` : `${days}d`})</span>` : ""}</td>
               <td style="font-size:11px;color:var(--prm-m)">${esc(k.registration || "—")}</td>
               <td style="font-size:11px;color:var(--prm-dim)">${esc(k.version)}</td>
@@ -608,6 +608,81 @@
           }).join("")}</tbody>
         </table></div>
       </div>`;
+
+    // Wire key row click → expandable detail
+    el.querySelectorAll(".prm-key-row").forEach(row => {
+      row.addEventListener("click", async () => {
+        const keyId = row.dataset.keyId;
+        if (!keyId) return;
+        // Toggle: if detail row already exists, remove it
+        const existing = row.nextElementSibling;
+        if (existing?.classList?.contains("prm-key-detail-row")) { existing.remove(); return; }
+        // Remove any other open detail rows
+        el.querySelectorAll(".prm-key-detail-row").forEach(r => r.remove());
+        // Insert loading row
+        const detailRow = document.createElement("tr");
+        detailRow.className = "prm-key-detail-row";
+        detailRow.innerHTML = '<td colspan="6" style="padding:12px 16px;background:var(--prm-s2);border-bottom:2px solid #4a3580"><span style="color:var(--prm-dim);font-size:11px">↻ Loading key detail…</span></td>';
+        row.after(detailRow);
+        try {
+          // Fetch via bridge
+          const result = await new Promise((resolve) => {
+            const reqId = `kd_${Date.now()}`;
+            const handler = (e) => { if (e.detail?.reqId !== reqId) return; window.removeEventListener("onyx-bridge:response", handler); resolve(e.detail); };
+            window.addEventListener("onyx-bridge:response", handler);
+            window.dispatchEvent(new CustomEvent("onyx-bridge:request", { detail: { reqId, type: "FETCH_KEY_DETAIL", keyId } }));
+            setTimeout(() => { window.removeEventListener("onyx-bridge:response", handler); resolve(null); }, 30000);
+          });
+          if (result?.ok && result.result) {
+            const kd = result.result;
+            detailRow.innerHTML = `<td colspan="6" style="padding:14px 20px;background:var(--prm-s2);border-bottom:2px solid #4a3580;border-left:3px solid #6f42c1">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:11px">
+                <div>
+                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">FQDN</div>
+                  <div style="font-weight:600;color:var(--prm-a)">${esc(kd.fqdn || "—")}</div>
+                </div>
+                <div>
+                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">IP Address</div>
+                  <div style="font-weight:600;font-family:monospace">${esc(kd.ip || "—")}</div>
+                </div>
+                <div>
+                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Deployed As</div>
+                  <div style="font-weight:600">${esc(kd.deployedAs || "—")}</div>
+                </div>
+                <div>
+                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Extensions</div>
+                  <div style="font-weight:700;color:#0077b6">${esc(kd.extensions || "—")}</div>
+                </div>
+                <div>
+                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Purchase Date</div>
+                  <div style="font-weight:600">${esc(kd.purchaseDate || "—")}</div>
+                </div>
+                <div>
+                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Activations</div>
+                  <div style="font-weight:600">${esc(kd.activations || "—")}</div>
+                </div>
+                <div>
+                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Facility ID</div>
+                  <div style="font-family:monospace;font-size:10px;color:var(--prm-dim)">${esc(kd.facilityId || "—")}</div>
+                </div>
+                <div>
+                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Ports</div>
+                  <div style="font-family:monospace;font-size:10px">${esc(kd.httpsPort || "—")} / ${esc(kd.httpPort || "—")}</div>
+                </div>
+                <div>
+                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">WebMeeting</div>
+                  <div style="font-size:10px;color:var(--prm-a)">${esc(kd.webMeetingFqdn || "—")}</div>
+                </div>
+              </div>
+            </td>`;
+          } else {
+            detailRow.innerHTML = '<td colspan="6" style="padding:12px 16px;background:var(--prm-s2)"><span style="color:var(--prm-red);font-size:11px">Failed to load key detail. Extension not connected?</span></td>';
+          }
+        } catch (e) {
+          detailRow.innerHTML = `<td colspan="6" style="padding:12px 16px;background:var(--prm-s2)"><span style="color:var(--prm-red);font-size:11px">Error: ${esc(e.message)}</span></td>`;
+        }
+      });
+    });
   }
 
   function renderOrders(el, p) {
