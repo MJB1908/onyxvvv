@@ -150,7 +150,7 @@
     // Always fetch server-side notes (posted via SPA note form)
     let serverNotes = [];
     try {
-      const r = await fetch(`/api/notes?partnerId=${encodeURIComponent(partnerId)}`);
+      const r = await (window.onyxApiFetch||fetch)(`/api/notes?partnerId=${encodeURIComponent(partnerId)}`);
       const d = await r.json();
       serverNotes = (d.notes || []).map(viewNote);
     } catch { /* offline-tolerant */ }
@@ -646,7 +646,7 @@
       const ai = c.querySelector('[data-role="ai-text"]');
       ai.innerHTML = '<span class="prm-spinner"></span>Generating pre-call brief…';
       try {
-        const r = await fetch("/api/sales/call-prep", {
+        const r = await (window.onyxApiFetch||fetch)("/api/sales/call-prep", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -672,7 +672,7 @@
       if (!subject || !body) { status.textContent = "Subject and body required"; return; }
       status.textContent = "Posting…";
       try {
-        await fetch("/api/notes", {
+        await (window.onyxApiFetch||fetch)("/api/notes", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ partnerId: p.id, subject, body, noteType, seller: state.seller?.name || null, source: "onyx-prm" }),
@@ -692,7 +692,7 @@
       if (!body.value.trim()) { status.textContent = "Paste raw notes/transcript first"; return; }
       status.textContent = "Summarising…";
       try {
-        const r = await fetch("/api/sales/call-summary", {
+        const r = await (window.onyxApiFetch||fetch)("/api/sales/call-summary", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -853,7 +853,7 @@
           role: m.role === "ai" ? "assistant" : m.role,
           content: m.role === "user" ? `[Context: ${context}]\n\n${m.text}` : m.text,
         }));
-        const r = await fetch("/api/chat", {
+        const r = await (window.onyxApiFetch||fetch)("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ messages }),
