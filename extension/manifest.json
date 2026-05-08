@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "ONYX — AI Sales Force Assistant",
+  "version": "3.1.0",
+  "description": "Regional Overview, Partner 360, Gmail intelligence, AI summaries. Data in chrome.storage.local; Express server for AI workflows only.",
+  "permissions": ["activeTab", "storage", "tabs", "scripting", "cookies", "notifications", "alarms"],
+  "host_permissions": [
+    "https://staff.3cx.com/*",
+    "https://mail.google.com/*",
+    "https://docs.google.com/*",
+    "https://api.openai.com/*",
+    "https://team.3cx.com/*",
+    "https://*.onrender.com/*",
+    "http://localhost/*"
+  ],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://mail.google.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://team.3cx.com/*"],
+      "js": ["webclient.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    },
+    {
+      "matches": ["http://localhost/*", "https://*.onrender.com/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "dashboard.html",
+    "default_title": "ONYX"
+  },
+  "web_accessible_resources": [{
+    "resources": ["dashboard.html", "webclient_inject.js"],
+    "matches": ["https://team.3cx.com/*"]
+  }]
+}
