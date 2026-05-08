@@ -747,7 +747,7 @@
 
     if (action === "fetch-full-detail") {
       const status = c.querySelector('[data-action="fetch-full-detail"]');
-      if (status) { status.textContent = "↻ Loading…"; status.disabled = true; status.style.animation = "prm-spin .7s linear infinite"; }
+      if (status) { status.innerHTML = '<span style="display:inline-block;animation:prm-spin .7s linear infinite">↻</span> Loading…'; status.disabled = true; }
       try {
         // Call extension via bridge to fetch full partner360
         const result = await new Promise((resolve) => {
@@ -777,10 +777,10 @@
           state.partner = await composePartner(state, p.id);
           renderMain(state);
         } else {
-          if (status) { status.textContent = "↻ Failed — extension not connected?"; status.disabled = false; status.style.animation = ""; }
+          if (status) { status.textContent = "↻ Failed — extension not connected?"; status.disabled = false; }
         }
       } catch (e) {
-        if (status) { status.textContent = `↻ ${e.message}`; status.disabled = false; status.style.animation = ""; }
+        if (status) { status.textContent = `↻ ${e.message}`; status.disabled = false; }
       }
       return;
     }
