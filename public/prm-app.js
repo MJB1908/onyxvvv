@@ -147,6 +147,14 @@
     if (!view) return null;
     const snap = state.snapshot;
 
+    // Always fetch server-side notes (posted via SPA note form)
+    let serverNotes = [];
+    try {
+      const r = await fetch(`/api/notes?partnerId=${encodeURIComponent(partnerId)}`);
+      const d = await r.json();
+      serverNotes = (d.notes || []).map(viewNote);
+    } catch { /* offline-tolerant */ }
+
     // ── Check snapshot.details (pushed by extension via /api/ingest/erp/partner-detail)
     const detail = snap.details?.[partnerId];
     if (detail) {
@@ -161,10 +169,11 @@
         view.country = detail.country || view.country;
         view.enabled = detail.enabled ?? view.enabled;
         view.revenue = detail.revenue || view.revenue;
+        const scraperNotes = Array.isArray(detail.tabs.notesParsed) ? detail.tabs.notesParsed.map(viewNote) : [];
         view.tabs = {
           keys: Array.isArray(detail.tabs.keys) ? detail.tabs.keys.map(viewKey) : [],
           orders: Array.isArray(detail.tabs.orders) ? detail.tabs.orders.map(viewOrder) : [],
-          notesParsed: Array.isArray(detail.tabs.notesParsed) ? detail.tabs.notesParsed.map(viewNote) : [],
+          notesParsed: [...serverNotes, ...scraperNotes],
           users: Array.isArray(detail.tabs.users) ? detail.tabs.users : [],
         };
         return view;
@@ -174,7 +183,7 @@
       const ks = detail.keysSummary || detail;
       if (ks && (ks.keys !== undefined || ks.commercialKeys !== undefined)) {
         view.enrichmentSummary = ks;
-        view.tabs = { keys: [], orders: [], notesParsed: [], users: [] };
+        view.tabs = { keys: [], orders: [], notesParsed: serverNotes, users: [] };
         return view;
       }
     }
@@ -182,13 +191,7 @@
     // ── Fallback: filter from snapshot flat arrays ────────────────────────
     const keys = (snap.licenseKeys || []).filter((k) => k.assignedResellerId === partnerId).map(viewKey);
     const orders = (snap.orders || []).filter((o) => o.resellerId === partnerId).map(viewOrder);
-    let notes = [];
-    try {
-      const r = await fetch(`/api/notes?partnerId=${encodeURIComponent(partnerId)}`);
-      const d = await r.json();
-      notes = (d.notes || []).map(viewNote);
-    } catch { /* offline-tolerant */ }
-    view.tabs = { keys, orders, notesParsed: notes, users: [] };
+    view.tabs = { keys, orders, notesParsed: serverNotes, users: [] };
     return view;
   }
 
@@ -385,11 +388,15 @@
       state.activeTab = t.dataset.tab;
       renderMain(state);
     });
-    main.addEventListener("click", (e) => {
-      const a = e.target.closest("[data-action]");
-      if (!a) return;
-      handleAction(state, a.dataset.action);
-    });
+    // Action handler: set up ONCE on main (not every renderMain call)
+    if (!main._actionHandlerAttached) {
+      main._actionHandlerAttached = true;
+      main.addEventListener("click", (e) => {
+        const a = e.target.closest("[data-action]");
+        if (!a) return;
+        handleAction(state, a.dataset.action);
+      });
+    }
 
     renderTab(state);
     // Show floating AI chat when partner is selected
