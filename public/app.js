@@ -185,6 +185,7 @@
     await window.regionalOverview.mount(viewEl, {
       snapshot,
       onPartnerClick: (partnerId) => { location.hash = `#/prm?partnerId=${partnerId}`; },
+      onRefresh: () => renderOverview(),
     });
   }
 
