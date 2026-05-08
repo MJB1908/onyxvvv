@@ -367,16 +367,16 @@
         ${p.highPotential ? '<div class="prm-spill green">High Potential</div>' : ""}
         ${p.revenue ? `<div class="prm-spill">Revenue <strong>$${Number(p.revenue).toLocaleString("en-US")}</strong></div>` : ""}
         ${p.tabs?.keys?.length ? `<div class="prm-spill">${p.tabs.keys.length} keys</div>` : ""}
-        ${p.tabs?.orders?.length ? `<div class="prm-spill">${p.tabs.orders.length} orders</div>` : ""}
+        ${p.tabs?.users?.length ? `<div class="prm-spill">${p.tabs.users.length} users</div>` : ""}
         ${p.creditLimit ? `<div class="prm-spill">Credit <strong>${esc(p.creditLimit)}</strong></div>` : ""}
         ${p.sellModel ? `<div class="prm-spill" title="How they sell 3CX">${esc(p.sellModel)}</div>` : ""}
         ${p.sipTrunkProvider ? `<div class="prm-spill" title="SIP Trunk Provider">SIP: <strong>${esc(p.sipTrunkProvider)}</strong></div>` : ""}
       </div>
 
       <nav class="prm-tabs" data-role="tabs">
-        ${["overview", "notes", "keys", "orders", "users"]
+        ${["overview", "notes", "keys", "revenue", "users"]
           .map((t) => `<div class="prm-tab ${t === state.activeTab ? "active" : ""}" data-tab="${t}">${
-            { overview: "Overview", notes: `Notes (${p.tabs?.notesParsed?.length || 0})`, keys: "License keys", orders: "Orders", users: "Users" }[t]
+            { overview: "Overview", notes: `Notes (${p.tabs?.notesParsed?.length || 0})`, keys: "License keys", revenue: "Revenue", users: "Users" }[t]
           }</div>`)
           .join("")}
       </nav>
@@ -414,7 +414,8 @@
       case "overview": renderOverview(el, p); break;
       case "notes":    renderNotes(el, p, state); break;
       case "keys":     renderKeys(el, p); break;
-      case "orders":   renderOrders(el, p); break;
+      case "orders":   renderRevenue(el, p); break;  // legacy fallback
+      case "revenue":  renderRevenue(el, p); break;
       case "users":    renderUsers(el, p); break;
     }
   }
@@ -687,28 +688,61 @@
     });
   }
 
-  function renderOrders(el, p) {
-    const orders = p.tabs?.orders || [];
-    if (!orders.length) { el.innerHTML = '<div class="prm-section"><div class="prm-empty">No orders.</div></div>'; return; }
-    const totals = orders.filter((o) => /paid|complete/i.test(o.status)).reduce((s, o) => s + Number(o.amount || 0), 0);
+  function renderRevenue(el, p) {
+    const rev = p.tabs?.revenue;
+    if (!rev || (!rev.revenueBalance && !rev.attributed?.length)) {
+      el.innerHTML = `<div class="prm-section"><div class="prm-empty">No revenue data loaded. ${p.enrichmentSummary ? 'Click "↻ Load full detail" to fetch revenue data from the ERP.' : ""}</div></div>`;
+      return;
+    }
+    const bal = rev.revenueBalance || "—";
+    const prev = rev.previousAnnual || "—";
+    const rows = rev.attributed || [];
+    // Calculate YoY growth if we have at least 2 years
+    let yoyHtml = "";
+    if (rows.length >= 2) {
+      const cur = parseFloat(rows[0].total?.replace(/[^\d.-]/g, "")) || 0;
+      const prv = parseFloat(rows[1].total?.replace(/[^\d.-]/g, "")) || 0;
+      if (prv > 0) {
+        const pct = ((cur - prv) / prv * 100).toFixed(1);
+        const arrow = cur >= prv ? "↑" : "↓";
+        const color = cur >= prv ? "var(--prm-green, #2d9e5f)" : "#e74c3c";
+        yoyHtml = `<span style="color:${color};font-weight:700;font-size:13px;margin-left:12px">${arrow} ${pct}% YoY</span>`;
+      }
+    }
     el.innerHTML = `
       <div class="prm-section">
-        <div class="prm-section-head"><span class="prm-section-title">Orders</span><span class="prm-section-count">${orders.length} · Σ $${totals.toLocaleString("en-US")}</span></div>
+        <div class="prm-section-head"><span class="prm-section-title">Revenue Summary</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:12px 0 20px">
+          <div style="background:var(--prm-s2);border-radius:8px;padding:16px;border-left:3px solid #6f42c1">
+            <div style="color:var(--prm-dim);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Current Year Revenue</div>
+            <div style="font-size:22px;font-weight:700;color:var(--prm-t)">€${esc(bal)}${yoyHtml}</div>
+          </div>
+          <div style="background:var(--prm-s2);border-radius:8px;padding:16px;border-left:3px solid var(--prm-dim)">
+            <div style="color:var(--prm-dim);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Previous Annual Revenue</div>
+            <div style="font-size:22px;font-weight:700;color:var(--prm-m)">€${esc(prev)}</div>
+          </div>
+        </div>
+      </div>
+      ${rows.length ? `
+      <div class="prm-section">
+        <div class="prm-section-head"><span class="prm-section-title">Attributed Revenue (3-Year Trend)</span></div>
         <div style="overflow-x:auto"><table class="prm-dtable">
-          <thead><tr><th>Order #</th><th>Date</th><th>Status</th><th>Type</th><th style="text-align:right">Amount</th><th>Payment</th></tr></thead>
-          <tbody>${orders.map((o) => {
-            const cls = /paid/i.test(o.status) ? "green" : /pending/i.test(o.status) ? "amber" : /cancel|reject/i.test(o.status) ? "red" : "blue";
-            return `<tr>
-              <td style="font-family:monospace;font-size:11px">${esc(o.orderNo)}</td>
-              <td style="font-size:11px">${esc(o.created)}</td>
-              <td><span class="prm-order-status ${cls}">${esc(o.status)}</span></td>
-              <td style="font-size:11px;color:var(--prm-m)">${esc(o.type || "")}</td>
-              <td style="font-size:11px;text-align:right;font-weight:600">$${Number(o.amount || 0).toLocaleString("en-US")}</td>
-              <td style="font-size:11px;color:var(--prm-m)">${esc(o.payment || "")}</td>
+          <thead><tr><th>Year</th><th style="text-align:right">Direct €</th><th style="text-align:right">Indirect €</th><th style="text-align:right">Total €</th><th style="text-align:right">Share</th></tr></thead>
+          <tbody>${rows.map((r, i) => {
+            const total = parseFloat(r.total?.replace(/[^\d.-]/g, "")) || 0;
+            const maxTotal = Math.max(...rows.map(x => parseFloat(x.total?.replace(/[^\d.-]/g, "")) || 0));
+            const barPct = maxTotal > 0 ? (total / maxTotal * 100).toFixed(0) : 0;
+            const isCurrentYear = i === 0;
+            return `<tr style="${isCurrentYear ? "font-weight:700" : ""}">
+              <td>${esc(r.year)}${isCurrentYear ? " <span style='color:var(--prm-a);font-size:9px'>YTD</span>" : ""}</td>
+              <td style="text-align:right;font-family:monospace;font-size:12px">${esc(r.direct)}</td>
+              <td style="text-align:right;font-family:monospace;font-size:12px;color:var(--prm-dim)">${esc(r.indirect)}</td>
+              <td style="text-align:right;font-family:monospace;font-size:12px;font-weight:700">${esc(r.total)}</td>
+              <td style="width:120px"><div style="background:rgba(111,66,193,0.15);border-radius:3px;height:16px;overflow:hidden"><div style="background:#6f42c1;height:100%;width:${barPct}%;border-radius:3px;transition:width .3s"></div></div></td>
             </tr>`;
           }).join("")}</tbody>
         </table></div>
-      </div>`;
+      </div>` : ""}`;
   }
 
   function renderUsers(el, p) {
