@@ -89,10 +89,11 @@
       sc: k.primaryLicenseSc || k.sc || "",
       maxExt: k.primaryLicenseSc || k.maxExt || k.sc || "",
       expiry: k.licenseExpires || k.expiry || "",
-      registration: k.company || k.issuedTo || k.registration || "",
+      registration: k.registration || k.company || k.issuedTo || "",
       version: k.version || "",
-      activatedOn: k.hostingExpires || k.activatedOn || null,
+      activatedOn: k.activatedOn || k.hostingExpires || null,
       purchased: k.purchased || null,
+      activations: k.activations || "",
       disabled: !!(k.disabled || (k.flags && k.flags.licenseExpired)),
     };
   }
@@ -631,7 +632,7 @@
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:11px">
             <div>
               <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Company</div>
-              <div style="font-weight:700;color:var(--prm-t)">${esc(kd.issuedTo || kd.registration || "—")}</div>
+              <div style="font-weight:700;color:var(--prm-t)">${esc(kd.registration || "—")}</div>
             </div>
             <div>
               <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">FQDN</div>
@@ -647,7 +648,11 @@
             </div>
             <div>
               <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Purchase Date</div>
-              <div style="font-weight:600">${esc(kd.purchaseDate || kd.purchased || "—")}</div>
+              <div style="font-weight:600">${esc(kd.purchaseDate || "—")}</div>
+            </div>
+            <div>
+              <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Last Activation</div>
+              <div style="font-weight:600">${esc(kd.activatedOn || "—")}</div>
             </div>
             <div>
               <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Activations</div>
@@ -660,8 +665,9 @@
         const detailRow = document.createElement("tr");
         detailRow.className = "prm-key-detail-row";
         detailRow.innerHTML = renderDetail({
-          issuedTo: baseKey.registration, purchased: baseKey.purchased, activations: baseKey.activations,
-          fqdn: "", deployedAs: "", extensions: ""
+          registration: baseKey.registration, purchased: baseKey.purchased,
+          activatedOn: baseKey.activatedOn, activations: baseKey.activations,
+          fqdn: "", deployedAs: "", extensions: "", purchaseDate: baseKey.purchased
         });
         row.after(detailRow);
 
@@ -679,11 +685,12 @@
               const kd = result.result;
               // Merge: detail page data wins, key list data as fallback
               detailRow.innerHTML = renderDetail({
-                issuedTo:     kd.issuedTo || baseKey.registration,
+                registration: kd.issuedTo || baseKey.registration,
                 fqdn:         kd.fqdn || "",
                 deployedAs:   kd.deployedAs || "",
                 extensions:   kd.extensions || "",
                 purchaseDate: kd.purchaseDate || baseKey.purchased,
+                activatedOn:  baseKey.activatedOn,
                 activations:  kd.activations || baseKey.activations,
               });
             }
