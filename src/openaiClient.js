@@ -111,7 +111,7 @@ async function partnerInsight(partner) {
     "Be specific, no fluff, no hedging. If data is missing, say so briefly.";
   const user = `Partner data:\n\n\`\`\`json\n${JSON.stringify(partner, null, 2).slice(0, 8000)}\n\`\`\``;
   const completion = await client.chat.completions.create({
-    model: MODEL,
+    model: getModel(),
     messages: [
       { role: "system", content: sys },
       { role: "user", content: user },
@@ -124,4 +124,56 @@ async function partnerInsight(partner) {
   return text;
 }
 
-module.exports = { chatCompletion, buildSystemPrompt, partnerInsight, getModel };
+/**
+ * Truncate transcript lines to fit within a character budget (keeps most recent).
+ * @param {Array<{ speaker: string, text: string }>} lines
+ * @param {number} maxChars
+ * @returns {string}
+ */
+function truncateTranscriptLines(lines, maxChars) {
+  if (!Array.isArray(lines) || lines.length === 0) return "";
+  const parts = [];
+  let total = 0;
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i];
+    const s = `${line.speaker}: ${line.text}\n`;
+    if (total + s.length > maxChars) break;
+    parts.push(s);
+    total += s.length;
+  }
+  return parts.reverse().join("").trim();
+}
+
+/**
+ * Flexible chat completion with custom system prompt, temperature, maxTokens, jsonMode.
+ * @param {Array<{ role: string, content: string }>} userFacingMessages
+ * @param {{ id?: string, name?: string, region?: string } | null} seller
+ * @param {{ systemPrompt?: string, temperature?: number, maxTokens?: number, jsonMode?: boolean, snapshot?: object }} options
+ * @returns {Promise<string>}
+ */
+async function chatCompletionWithOptions(userFacingMessages, seller, options = {}) {
+  const { systemPrompt, temperature = 0.6, maxTokens = 1024, jsonMode = false, snapshot } = options;
+  const systemContent = systemPrompt || buildSystemPrompt(seller, snapshot);
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const apiMessages = [
+    { role: "system", content: systemContent },
+    ...userFacingMessages.map((m) => ({ role: m.role, content: m.content })),
+  ];
+
+  const params = {
+    model: getModel(),
+    messages: apiMessages,
+    temperature,
+    max_tokens: maxTokens,
+  };
+  if (jsonMode) {
+    params.response_format = { type: "json_object" };
+  }
+
+  const completion = await client.chat.completions.create(params);
+  const text = completion.choices[0]?.message?.content?.trim();
+  if (!text) throw new Error("Empty response from model.");
+  return text;
+}
+
+module.exports = { chatCompletion, chatCompletionWithOptions, buildSystemPrompt, partnerInsight, truncateTranscriptLines, getModel };
