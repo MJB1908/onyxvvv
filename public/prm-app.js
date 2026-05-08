@@ -345,7 +345,7 @@
         <div class="prm-p-avatar">${esc(initials)}</div>
         <div class="prm-p-info">
           <div class="prm-p-name">${esc(p.company)}</div>
-          <div class="prm-p-sub">#${esc(p.id)} · ${esc(p.country || "—")} · Owner: ${esc(p.agent || "—")}</div>
+          <div class="prm-p-sub">#${esc(p.id)} · ${esc(p.country || "—")} · ${p.contact ? `Contact: ${esc(p.contact)}` : `Owner: ${esc(p.agent || "—")}`}${p.salesRep ? ` · Rep: ${esc(p.salesRep)}` : ""}${p.startDate ? ` · Since ${esc(p.startDate)}` : ""}</div>
         </div>
         <span class="prm-tier-badge prm-tier-${tier.class}">${esc(tier.label)}</span>
         <div class="prm-health-ring" title="Health score">
@@ -358,17 +358,19 @@
         </div>
         <div class="prm-p-actions">
           <button class="prm-p-btn" data-action="copy-email">✉ Email</button>
-          <button class="prm-p-btn primary" data-action="run-call-prep">✦ Pre-call brief</button>
         </div>
       </header>
 
       <div class="prm-pills-row">
         <div class="prm-spill ${p.enabled ? "green" : "red"}">${p.enabled ? "Active" : "Inactive"}</div>
-        ${p.region ? `<div class="prm-spill blue">Region <strong>${esc(p.region)}</strong></div>` : ""}
-        ${p.publicId ? `<div class="prm-spill">Code <strong>${esc(p.publicId)}</strong></div>` : ""}
+        ${p.solutionProvider ? '<div class="prm-spill blue">Solution Provider</div>' : ""}
+        ${p.highPotential ? '<div class="prm-spill green">High Potential</div>' : ""}
         ${p.revenue ? `<div class="prm-spill">Revenue <strong>$${Number(p.revenue).toLocaleString("en-US")}</strong></div>` : ""}
         ${p.tabs?.keys?.length ? `<div class="prm-spill">${p.tabs.keys.length} keys</div>` : ""}
         ${p.tabs?.orders?.length ? `<div class="prm-spill">${p.tabs.orders.length} orders</div>` : ""}
+        ${p.creditLimit ? `<div class="prm-spill">Credit <strong>${esc(p.creditLimit)}</strong></div>` : ""}
+        ${p.sellModel ? `<div class="prm-spill" title="How they sell 3CX">${esc(p.sellModel)}</div>` : ""}
+        ${p.sipTrunkProvider ? `<div class="prm-spill" title="SIP Trunk Provider">SIP: <strong>${esc(p.sipTrunkProvider)}</strong></div>` : ""}
       </div>
 
       <nav class="prm-tabs" data-role="tabs">
@@ -413,7 +415,7 @@
       case "notes":    renderNotes(el, p, state); break;
       case "keys":     renderKeys(el, p); break;
       case "orders":   renderOrders(el, p); break;
-      case "users":    el.innerHTML = '<div class="prm-empty">User data not in current snapshot.</div>'; break;
+      case "users":    renderUsers(el, p); break;
     }
   }
 
@@ -703,6 +705,34 @@
               <td style="font-size:11px;color:var(--prm-m)">${esc(o.type || "")}</td>
               <td style="font-size:11px;text-align:right;font-weight:600">$${Number(o.amount || 0).toLocaleString("en-US")}</td>
               <td style="font-size:11px;color:var(--prm-m)">${esc(o.payment || "")}</td>
+            </tr>`;
+          }).join("")}</tbody>
+        </table></div>
+      </div>`;
+  }
+
+  function renderUsers(el, p) {
+    const users = p.tabs?.users || [];
+    if (!users.length) {
+      el.innerHTML = `<div class="prm-section"><div class="prm-empty">No users loaded. ${p.enrichmentSummary ? 'Click "↻ Load full detail" to fetch user data from the ERP.' : ""}</div></div>`;
+      return;
+    }
+    el.innerHTML = `
+      <div class="prm-section">
+        <div class="prm-section-head"><span class="prm-section-title">Users</span><span class="prm-section-count">${users.length}</span></div>
+        <div style="overflow-x:auto"><table class="prm-dtable">
+          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Roles</th><th>Cert</th><th>Status</th><th>Last Login</th></tr></thead>
+          <tbody>${users.map((u) => {
+            const name = [u.firstName, u.lastName].filter(Boolean).join(" ") || u.name || "—";
+            const isOwner = (u.roles || "").includes("Owner");
+            return `<tr>
+              <td style="font-weight:${isOwner ? 700 : 500};white-space:nowrap">${esc(name)}${isOwner ? ' <span style="color:var(--prm-a);font-size:9px;font-weight:700">OWNER</span>' : ""}</td>
+              <td style="font-size:11px"><a href="mailto:${esc(u.email || "")}" style="color:var(--prm-a);text-decoration:none">${esc(u.email || "—")}</a></td>
+              <td style="font-size:11px;white-space:nowrap;color:var(--prm-m)">${esc(u.phone || "—")}</td>
+              <td style="font-size:10px;color:var(--prm-dim);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(u.roles || "")}">${esc(u.roles || "—")}</td>
+              <td style="font-size:11px">${u.certLevel ? `<span style="background:${u.certLevel === "Advanced" ? "rgba(0,119,182,.15);color:#5c9dff" : "rgba(45,158,95,.12);color:#2d9e5f"};padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700">${esc(u.certLevel)}</span>` : '<span style="color:var(--prm-dim)">—</span>'}</td>
+              <td style="font-size:11px;color:${u.status === "enrolled" ? "var(--prm-green)" : "var(--prm-dim)"}">${esc(u.status || "—")}</td>
+              <td style="font-size:11px;color:var(--prm-dim)">${esc(u.lastLogin || "—")}</td>
             </tr>`;
           }).join("")}</tbody>
         </table></div>
