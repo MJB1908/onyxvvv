@@ -468,7 +468,10 @@
     const fromEnrichment = keys.length === 0 && ks;
 
     el.innerHTML = `
-      ${fromEnrichment ? '<div style="padding:8px 12px;margin-bottom:10px;background:var(--surface-2);border:1px solid #4a3580;border-radius:6px;font-size:11px;color:#c4a8ff">✦ Showing enrichment summary. For full detail (individual keys, orders, notes), open the Dashboard and click ↻ on this partner row.</div>' : ""}
+      ${fromEnrichment ? `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;margin-bottom:10px;background:var(--surface-2);border:1px solid #4a3580;border-radius:6px">
+        <span style="font-size:11px;color:#c4a8ff;flex:1">✦ Enrichment summary — click to load full detail</span>
+        <button data-action="fetch-full-detail" style="font-size:12px;padding:4px 12px;border-radius:5px;border:1px solid #4a3580;background:var(--prm-s);color:#a78bfa;cursor:pointer;font-weight:600;font-family:inherit;transition:all .15s">↻ Load full detail</button>
+      </div>` : ""}
 
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
         <div class="prm-section" style="padding:10px 12px;margin:0">
@@ -636,6 +639,46 @@
     const p = state.partner;
     if (!p) return;
     const c = state.container;
+
+    if (action === "fetch-full-detail") {
+      const status = c.querySelector('[data-action="fetch-full-detail"]');
+      if (status) { status.textContent = "↻ Loading…"; status.disabled = true; status.style.animation = "prm-spin .7s linear infinite"; }
+      try {
+        // Call extension via bridge to fetch full partner360
+        const result = await new Promise((resolve) => {
+          const reqId = `p360_${Date.now()}`;
+          const handler = (e) => {
+            if (e.detail?.reqId !== reqId) return;
+            window.removeEventListener("onyx-bridge:response", handler);
+            resolve(e.detail);
+          };
+          window.addEventListener("onyx-bridge:response", handler);
+          window.dispatchEvent(new CustomEvent("onyx-bridge:request", {
+            detail: { reqId, type: "FETCH_PARTNER360", partnerId: p.id },
+          }));
+          setTimeout(() => { window.removeEventListener("onyx-bridge:response", handler); resolve(null); }, 60000);
+        });
+        if (result?.ok) {
+          // Re-compose partner with fresh full data (pushed to server by extension)
+          await new Promise(r => setTimeout(r, 1000)); // wait for server to process the push
+          // Reload snapshot to get the freshly pushed detail
+          const snapList = await (window.onyxApiFetch||fetch)("/api/snapshots").then(r => r.json());
+          if (snapList.snapshots?.length) {
+            snapList.snapshots.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
+            const target = snapList.snapshots.find(s => s.email === state.seller?.id) || snapList.snapshots[0];
+            const freshSnap = await (window.onyxApiFetch||fetch)(`/api/snapshots/${encodeURIComponent(target.slug)}`).then(r => r.json());
+            state.snapshot = freshSnap;
+          }
+          state.partner = await composePartner(state, p.id);
+          renderMain(state);
+        } else {
+          if (status) { status.textContent = "↻ Failed — extension not connected?"; status.disabled = false; status.style.animation = ""; }
+        }
+      } catch (e) {
+        if (status) { status.textContent = `↻ ${e.message}`; status.disabled = false; status.style.animation = ""; }
+      }
+      return;
+    }
 
     if (action === "copy-email" && p.email) {
       navigator.clipboard?.writeText(p.email);
