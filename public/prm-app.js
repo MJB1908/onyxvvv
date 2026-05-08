@@ -83,8 +83,8 @@
     // AND scraper format (key, product, sc, expiry, issuedTo)
     const keyStr = k.licenseKey || k.key || "";
     return {
-      keyId: keyStr,
-      key: keyStr.split("-")[0] || keyStr,
+      keyId: k.keyId || "",                   // Numeric ID from scraper (for edit.aspx URLs)
+      key: keyStr,                            // Full license key string
       product: k.productEdition || k.product || "",
       sc: k.primaryLicenseSc || k.sc || "",
       maxExt: k.primaryLicenseSc || k.maxExt || k.sc || "",
@@ -597,8 +597,8 @@
             const d = parseDate(k.expiry);
             const days = d ? Math.round((d - today) / 86400000) : null;
             const col = days === null ? "" : days < 0 ? "color:var(--prm-red);font-weight:600" : days <= 30 ? "color:var(--prm-amber);font-weight:600" : "color:var(--prm-green)";
-            return `<tr class="prm-key-row" data-key-id="${esc(k.keyId)}" style="cursor:pointer"${k.disabled ? ' class="prm-key-row-disabled"' : ""}>
-              <td style="font-family:monospace;font-size:11px"><a class="prm-key-link" href="https://staff.3cx.com/key/edit.aspx?i=${encodeURIComponent(k.keyId)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(k.key)}</a></td>
+            return `<tr class="prm-key-row${k.disabled ? " prm-key-row-disabled" : ""}" data-key-id="${esc(k.keyId)}" style="cursor:pointer">
+              <td style="font-family:monospace;font-size:11px">${k.keyId ? `<a class="prm-key-link" href="https://staff.3cx.com/key/edit.aspx?i=${encodeURIComponent(k.keyId)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(k.key)}</a>` : esc(k.key)}</td>
               <td>${esc(k.product)}</td>
               <td><span style="background:rgba(45,158,95,.15);color:#2d9e5f;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700">${esc(k.sc)}SC</span></td>
               <td style="${col};font-size:11px">${esc(k.expiry)}${days !== null ? ` <span style="color:var(--prm-dim)">(${days < 0 ? `${Math.abs(days)}d late` : `${days}d`})</span>` : ""}</td>
@@ -638,6 +638,10 @@
             detailRow.innerHTML = `<td colspan="6" style="padding:14px 20px;background:var(--prm-s2);border-bottom:2px solid #4a3580;border-left:3px solid #6f42c1">
               <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:11px">
                 <div>
+                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Company</div>
+                  <div style="font-weight:700;color:var(--prm-t)">${esc(kd.issuedTo || "—")}</div>
+                </div>
+                <div>
                   <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">FQDN</div>
                   <div style="font-weight:600;color:var(--prm-a)">${esc(kd.fqdn || "—")}</div>
                 </div>
@@ -666,12 +670,8 @@
                   <div style="font-family:monospace;font-size:10px;color:var(--prm-dim)">${esc(kd.facilityId || "—")}</div>
                 </div>
                 <div>
-                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Ports</div>
-                  <div style="font-family:monospace;font-size:10px">${esc(kd.httpsPort || "—")} / ${esc(kd.httpPort || "—")}</div>
-                </div>
-                <div>
-                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">WebMeeting</div>
-                  <div style="font-size:10px;color:var(--prm-a)">${esc(kd.webMeetingFqdn || "—")}</div>
+                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Ports / WebMeeting</div>
+                  <div style="font-size:10px">${esc(kd.httpsPort || "—")}/${esc(kd.httpPort || "—")} · <span style="color:var(--prm-a)">${esc(kd.webMeetingFqdn || "—")}</span></div>
                 </div>
               </div>
             </td>`;
