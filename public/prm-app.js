@@ -79,35 +79,38 @@
   }
 
   function viewKey(k) {
+    // Handles both server snapshot format (licenseKey, productEdition, primaryLicenseSc)
+    // AND scraper format (key, product, sc, expiry, issuedTo)
+    const keyStr = k.licenseKey || k.key || "";
     return {
-      keyId: k.licenseKey,
-      key: (k.licenseKey || "").split("-")[0] || k.licenseKey,
-      product: k.productEdition || "",
-      sc: k.primaryLicenseSc || "",
-      maxExt: k.primaryLicenseSc || "",
-      expiry: k.licenseExpires || "",
-      registration: k.company || "",
+      keyId: keyStr,
+      key: keyStr.split("-")[0] || keyStr,
+      product: k.productEdition || k.product || "",
+      sc: k.primaryLicenseSc || k.sc || "",
+      maxExt: k.primaryLicenseSc || k.maxExt || k.sc || "",
+      expiry: k.licenseExpires || k.expiry || "",
+      registration: k.company || k.issuedTo || k.registration || "",
       version: k.version || "",
-      activatedOn: k.hostingExpires || null,
-      purchased: null,
-      disabled: !!(k.flags && k.flags.licenseExpired),
+      activatedOn: k.hostingExpires || k.activatedOn || null,
+      purchased: k.purchased || null,
+      disabled: !!(k.disabled || (k.flags && k.flags.licenseExpired)),
     };
   }
 
   function viewOrder(o) {
     return {
-      orderNo: o.orderId,
-      orderUrl: "",
-      created: o.date,
-      status: o.status,
-      currency: "USD",
-      amount: o.totalUsd,
-      tax: "",
-      payment: o.paymentMethod,
-      proformaNo: "",
+      orderNo: o.orderId || o.orderNo || "",
+      orderUrl: o.orderUrl || "",
+      created: o.date || o.created || "",
+      status: o.status || "",
+      currency: o.currency || "USD",
+      amount: o.totalUsd || o.amount || "",
+      tax: o.tax || "",
+      payment: o.paymentMethod || o.payment || o.txnId || "",
+      proformaNo: o.proformaNo || "",
       country: o.country || "",
-      type: o.type,
-      description: o.description,
+      type: o.type || "",
+      description: o.description || "",
     };
   }
 
