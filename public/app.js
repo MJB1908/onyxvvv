@@ -1,6 +1,31 @@
 (function () {
   "use strict";
 
+  // ── Session isolation: each user sees their own data ─────────────────────
+  // The extension's "Open ONYX" button adds ?onyxUser=email@domain.com
+  // We store it in sessionStorage and send as X-Onyx-User header on all API calls.
+  (function initSession() {
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get("onyxUser");
+    if (fromUrl) {
+      sessionStorage.setItem("onyxUser", fromUrl);
+      // Clean the URL (remove ?onyxUser=... but keep hash)
+      const clean = window.location.pathname + window.location.hash;
+      history.replaceState(null, "", clean);
+    }
+  })();
+
+  /** Scoped fetch that injects X-Onyx-User header for session isolation */
+  function apiFetch(url, opts = {}) {
+    const user = sessionStorage.getItem("onyxUser");
+    if (user && url.startsWith("/api")) {
+      opts.headers = { ...opts.headers, "X-Onyx-User": user };
+    }
+    return fetch(url, opts);
+  }
+  // Make available to other modules (prm-app.js, regional-overview.js)
+  window.onyxApiFetch = apiFetch;
+
   const CHAT_PREFILL_KEY = "onyx-chat-prefill";
   const viewEl = document.getElementById("view");
   const pageTitleEl = document.getElementById("page-title");
@@ -142,7 +167,7 @@
       viewEl.innerHTML = '<div class="panel"><p class="empty">PRM module failed to load — check that prm-app.js is present.</p></div>';
       return;
     }
-    const list = await fetch("/api/snapshots").then((r) => r.json()).catch(() => ({ snapshots: [] }));
+    const list = await apiFetch("/api/snapshots").then((r) => r.json()).catch(() => ({ snapshots: [] }));
     if (!list.snapshots?.length) {
       viewEl.innerHTML = `
         <div class="panel">
@@ -154,7 +179,7 @@
     }
     list.snapshots.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
     const target = list.snapshots.find((s) => s.email === me?.email) || list.snapshots[0];
-    const snapshot = await fetch(`/api/snapshots/${encodeURIComponent(target.slug)}`).then((r) => r.json());
+    const snapshot = await apiFetch(`/api/snapshots/${encodeURIComponent(target.slug)}`).then((r) => r.json());
     viewEl.innerHTML = "";
     // Read partnerId from URL if navigating from Dashboard
     const q = new URLSearchParams(location.hash.includes("?") ? location.hash.split("?")[1] : "");
@@ -169,7 +194,7 @@
       return;
     }
     // Load snapshot from server
-    const list = await fetch("/api/snapshots").then((r) => r.json()).catch(() => ({ snapshots: [] }));
+    const list = await apiFetch("/api/snapshots").then((r) => r.json()).catch(() => ({ snapshots: [] }));
     if (!list.snapshots?.length) {
       viewEl.innerHTML = `
         <div class="panel">
@@ -180,7 +205,7 @@
     }
     list.snapshots.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
     const target = list.snapshots.find((s) => s.email === me?.email) || list.snapshots[0];
-    const snapshot = await fetch(`/api/snapshots/${encodeURIComponent(target.slug)}`).then((r) => r.json());
+    const snapshot = await apiFetch(`/api/snapshots/${encodeURIComponent(target.slug)}`).then((r) => r.json());
     viewEl.innerHTML = "";
     await window.regionalOverview.mount(viewEl, {
       snapshot,
@@ -202,13 +227,13 @@
       return;
     }
 
-    const list = await fetch("/api/snapshots").then((r) => r.json()).catch(() => ({ snapshots: [] }));
+    const list = await apiFetch("/api/snapshots").then((r) => r.json()).catch(() => ({ snapshots: [] }));
     const target = list.snapshots?.find((s) => s.email === me.email) || list.snapshots?.[0];
     if (!target) {
       viewEl.innerHTML = '<div class="panel"><p class="empty">No snapshot available.</p></div>';
       return;
     }
-    const snapshot = await fetch(`/api/snapshots/${encodeURIComponent(target.slug)}`).then((r) => r.json());
+    const snapshot = await apiFetch(`/api/snapshots/${encodeURIComponent(target.slug)}`).then((r) => r.json());
 
     const partners = snapshot.partners || [];
     const details = snapshot.details || {};
@@ -378,7 +403,7 @@
       </div>`;
 
     try {
-      const r = await fetch("/api/sales/call-prep", {
+      const r = await apiFetch("/api/sales/call-prep", {
         method: "POST",
         headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ partnerId, seller: me.name }),
@@ -496,7 +521,7 @@
 
     sendBtn.disabled = true;
     try {
-      const res = await fetch("/api/chat", {
+      const res = await apiFetch("/api/chat", {
         method: "POST",
         headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ messages: chatMessages }),
@@ -518,7 +543,7 @@
 
   // ── Settings ────────────────────────────────────────────────────────────────
   async function renderSettings() {
-    const s = await fetch("/api/settings").then((r) => r.json());
+    const s = await apiFetch("/api/settings").then((r) => r.json());
     const settings = s.settings;
     const secrets = s.secrets;
     const masterReady = s.masterKeyAvailable;
@@ -630,7 +655,7 @@
     // Wire AI preference
     document.getElementById("ai-pref-group").addEventListener("change", async (e) => {
       const v = e.target.value;
-      const r = await fetch("/api/settings", {
+      const r = await apiFetch("/api/settings", {
         method: "POST",
         headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ aiProviderPreference: v }),
@@ -644,7 +669,7 @@
     ["anthropic-model", "openai-model"].forEach((id) => {
       const provider = id.split("-")[0];
       document.getElementById(id).addEventListener("change", async (e) => {
-        const r = await fetch("/api/settings", {
+        const r = await apiFetch("/api/settings", {
           method: "POST",
           headers: authHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ [`${provider}Model`]: e.target.value }),
@@ -656,7 +681,7 @@
 
     // Wire PRM tier
     document.getElementById("prm-default-tier").addEventListener("change", async (e) => {
-      const r = await fetch("/api/settings", {
+      const r = await apiFetch("/api/settings", {
         method: "POST",
         headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ prmDefaultTier: e.target.value }),
@@ -689,7 +714,7 @@
         if (!inp.value) { msg.textContent = "Empty"; return; }
         msg.innerHTML = '<span class="spinner-inline"></span>Validating…';
         try {
-          const r = await fetch(`/api/secrets/${p}`, {
+          const r = await apiFetch(`/api/secrets/${p}`, {
             method: "PUT",
             headers: authHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({ apiKey: inp.value }),
@@ -707,7 +732,7 @@
       btn.addEventListener("click", async () => {
         const p = btn.getAttribute("data-secret-remove");
         if (!confirm(`Remove ${p} key from ONYX? (Env var, if set, will still apply.)`)) return;
-        await fetch(`/api/secrets/${p}`, { method: "DELETE", headers: authHeaders() });
+        await apiFetch(`/api/secrets/${p}`, { method: "DELETE", headers: authHeaders() });
         renderSettings();
       });
     });
@@ -774,7 +799,7 @@
   // ── Init ───────────────────────────────────────────────────────────────────
   async function init() {
     try {
-      const r = await fetch("/api/me");
+      const r = await apiFetch("/api/me");
       // /api/me always returns 200 in the snapshot-aware model — even with no
       // snapshot it returns { needsRefresh: true } so we can render a sensible
       // empty state.
