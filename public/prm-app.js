@@ -685,12 +685,12 @@
               const kd = result.result;
               // Merge: detail page data wins, key list data as fallback
               detailRow.innerHTML = renderDetail({
-                registration: kd.issuedTo || baseKey.registration,
+                registration: kd.registration || baseKey.registration,
                 fqdn:         kd.fqdn || "",
                 deployedAs:   kd.deployedAs || "",
                 extensions:   kd.extensions || "",
                 purchaseDate: kd.purchaseDate || baseKey.purchased,
-                activatedOn:  baseKey.activatedOn,
+                activatedOn:  kd.lastActivation || baseKey.activatedOn,
                 activations:  kd.activations || baseKey.activations,
               });
             }
