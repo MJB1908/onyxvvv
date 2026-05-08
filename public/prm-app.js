@@ -613,76 +613,84 @@
       </div>`;
 
     // Wire key row click → expandable detail
-    el.querySelectorAll(".prm-key-row").forEach(row => {
+    const allKeys = keys; // reference to the viewKey'd array
+    el.querySelectorAll(".prm-key-row").forEach((row, rowIdx) => {
       row.addEventListener("click", async () => {
         const keyId = row.dataset.keyId;
-        if (!keyId) return;
         // Toggle: if detail row already exists, remove it
         const existing = row.nextElementSibling;
         if (existing?.classList?.contains("prm-key-detail-row")) { existing.remove(); return; }
         // Remove any other open detail rows
         el.querySelectorAll(".prm-key-detail-row").forEach(r => r.remove());
-        // Insert loading row
+
+        // Get existing data from the key list (always available)
+        const baseKey = allKeys[rowIdx] || {};
+
+        // Helper to render the 6-field detail grid
+        const renderDetail = (kd) => `<td colspan="6" style="padding:14px 20px;background:var(--prm-s2);border-bottom:2px solid #4a3580;border-left:3px solid #6f42c1">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:11px">
+            <div>
+              <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Company</div>
+              <div style="font-weight:700;color:var(--prm-t)">${esc(kd.issuedTo || kd.registration || "—")}</div>
+            </div>
+            <div>
+              <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">FQDN</div>
+              <div style="font-weight:600;color:var(--prm-a)">${esc(kd.fqdn || "—")}</div>
+            </div>
+            <div>
+              <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Deployed As</div>
+              <div style="font-weight:600">${esc(kd.deployedAs || "—")}</div>
+            </div>
+            <div>
+              <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Extensions</div>
+              <div style="font-weight:700;color:#0077b6">${esc(kd.extensions || "—")}</div>
+            </div>
+            <div>
+              <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Purchase Date</div>
+              <div style="font-weight:600">${esc(kd.purchaseDate || kd.purchased || "—")}</div>
+            </div>
+            <div>
+              <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Activations</div>
+              <div style="font-weight:600">${esc(kd.activations || "—")}</div>
+            </div>
+          </div>
+        </td>`;
+
+        // Insert detail row — immediately show what we have from the key list
         const detailRow = document.createElement("tr");
         detailRow.className = "prm-key-detail-row";
-        detailRow.innerHTML = '<td colspan="6" style="padding:12px 16px;background:var(--prm-s2);border-bottom:2px solid #4a3580"><span style="color:var(--prm-dim);font-size:11px">↻ Loading key detail…</span></td>';
+        detailRow.innerHTML = renderDetail({
+          issuedTo: baseKey.registration, purchased: baseKey.purchased, activations: baseKey.activations,
+          fqdn: "", deployedAs: "", extensions: ""
+        });
         row.after(detailRow);
-        try {
-          // Fetch via bridge
-          const result = await new Promise((resolve) => {
-            const reqId = `kd_${Date.now()}`;
-            const handler = (e) => { if (e.detail?.reqId !== reqId) return; window.removeEventListener("onyx-bridge:response", handler); resolve(e.detail); };
-            window.addEventListener("onyx-bridge:response", handler);
-            window.dispatchEvent(new CustomEvent("onyx-bridge:request", { detail: { reqId, type: "FETCH_KEY_DETAIL", keyId } }));
-            setTimeout(() => { window.removeEventListener("onyx-bridge:response", handler); resolve(null); }, 30000);
-          });
-          if (result?.ok && result.result) {
-            const kd = result.result;
-            detailRow.innerHTML = `<td colspan="6" style="padding:14px 20px;background:var(--prm-s2);border-bottom:2px solid #4a3580;border-left:3px solid #6f42c1">
-              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:11px">
-                <div>
-                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Company</div>
-                  <div style="font-weight:700;color:var(--prm-t)">${esc(kd.issuedTo || "—")}</div>
-                </div>
-                <div>
-                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">FQDN</div>
-                  <div style="font-weight:600;color:var(--prm-a)">${esc(kd.fqdn || "—")}</div>
-                </div>
-                <div>
-                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">IP Address</div>
-                  <div style="font-weight:600;font-family:monospace">${esc(kd.ip || "—")}</div>
-                </div>
-                <div>
-                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Deployed As</div>
-                  <div style="font-weight:600">${esc(kd.deployedAs || "—")}</div>
-                </div>
-                <div>
-                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Extensions</div>
-                  <div style="font-weight:700;color:#0077b6">${esc(kd.extensions || "—")}</div>
-                </div>
-                <div>
-                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Purchase Date</div>
-                  <div style="font-weight:600">${esc(kd.purchaseDate || "—")}</div>
-                </div>
-                <div>
-                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Activations</div>
-                  <div style="font-weight:600">${esc(kd.activations || "—")}</div>
-                </div>
-                <div>
-                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Facility ID</div>
-                  <div style="font-family:monospace;font-size:10px;color:var(--prm-dim)">${esc(kd.facilityId || "—")}</div>
-                </div>
-                <div>
-                  <div style="color:var(--prm-dim);font-size:9px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Ports / WebMeeting</div>
-                  <div style="font-size:10px">${esc(kd.httpsPort || "—")}/${esc(kd.httpPort || "—")} · <span style="color:var(--prm-a)">${esc(kd.webMeetingFqdn || "—")}</span></div>
-                </div>
-              </div>
-            </td>`;
-          } else {
-            detailRow.innerHTML = '<td colspan="6" style="padding:12px 16px;background:var(--prm-s2)"><span style="color:var(--prm-red);font-size:11px">Failed to load key detail. Extension not connected?</span></td>';
+
+        // If we have a numeric keyId, fetch the full detail page to fill FQDN/DeployedAs/Extensions
+        if (keyId) {
+          try {
+            const result = await new Promise((resolve) => {
+              const reqId = `kd_${Date.now()}`;
+              const handler = (e) => { if (e.detail?.reqId !== reqId) return; window.removeEventListener("onyx-bridge:response", handler); resolve(e.detail); };
+              window.addEventListener("onyx-bridge:response", handler);
+              window.dispatchEvent(new CustomEvent("onyx-bridge:request", { detail: { reqId, type: "FETCH_KEY_DETAIL", keyId } }));
+              setTimeout(() => { window.removeEventListener("onyx-bridge:response", handler); resolve(null); }, 30000);
+            });
+            if (result?.ok && result.result) {
+              const kd = result.result;
+              // Merge: detail page data wins, key list data as fallback
+              detailRow.innerHTML = renderDetail({
+                issuedTo:     kd.issuedTo || baseKey.registration,
+                fqdn:         kd.fqdn || "",
+                deployedAs:   kd.deployedAs || "",
+                extensions:   kd.extensions || "",
+                purchaseDate: kd.purchaseDate || baseKey.purchased,
+                activations:  kd.activations || baseKey.activations,
+              });
+            }
+            // If fetch failed, the fallback data is already shown — no need to update
+          } catch (e) {
+            console.warn("[ONYX] Key detail fetch failed:", e.message);
           }
-        } catch (e) {
-          detailRow.innerHTML = `<td colspan="6" style="padding:12px 16px;background:var(--prm-s2)"><span style="color:var(--prm-red);font-size:11px">Error: ${esc(e.message)}</span></td>`;
         }
       });
     });
