@@ -758,13 +758,15 @@
           <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Roles</th><th>Cert</th><th>Status</th><th>Last Login</th></tr></thead>
           <tbody>${users.map((u) => {
             const name = [u.firstName, u.lastName].filter(Boolean).join(" ") || u.name || "—";
-            const isOwner = (u.roles || "").includes("Owner");
+            const isOwner = (Array.isArray(u.roles) ? u.roles : [u.roles || ""]).some(r => /Owner/i.test(r));
+            const rolesStr = Array.isArray(u.roles) ? u.roles.join(", ") : (u.roles || "");
+            const cert = u.cert || u.certLevel || "";
             return `<tr>
               <td style="font-weight:${isOwner ? 700 : 500};white-space:nowrap">${esc(name)}${isOwner ? ' <span style="color:var(--prm-a);font-size:9px;font-weight:700">OWNER</span>' : ""}</td>
               <td style="font-size:11px"><a href="mailto:${esc(u.email || "")}" style="color:var(--prm-a);text-decoration:none">${esc(u.email || "—")}</a></td>
               <td style="font-size:11px;white-space:nowrap;color:var(--prm-m)">${esc(u.phone || "—")}</td>
-              <td style="font-size:10px;color:var(--prm-dim);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(u.roles || "")}">${esc(u.roles || "—")}</td>
-              <td style="font-size:11px">${u.certLevel ? `<span style="background:${u.certLevel === "Advanced" ? "rgba(0,119,182,.15);color:#5c9dff" : "rgba(45,158,95,.12);color:#2d9e5f"};padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700">${esc(u.certLevel)}</span>` : '<span style="color:var(--prm-dim)">—</span>'}</td>
+              <td style="font-size:10px;color:var(--prm-dim);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(rolesStr)}">${esc(rolesStr || "—")}</td>
+              <td style="font-size:11px">${cert ? `<span style="background:${cert === "Advanced" ? "rgba(0,119,182,.15);color:#5c9dff" : "rgba(45,158,95,.12);color:#2d9e5f"};padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700">${esc(cert)}</span>` : '<span style="color:var(--prm-dim)">—</span>'}</td>
               <td style="font-size:11px;color:${u.status === "enrolled" ? "var(--prm-green)" : "var(--prm-dim)"}">${esc(u.status || "—")}</td>
               <td style="font-size:11px;color:var(--prm-dim)">${esc(u.lastLogin || "—")}</td>
             </tr>`;
