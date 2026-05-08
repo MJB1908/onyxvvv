@@ -144,9 +144,6 @@ onyx/
 │   ├── skillLoader.js              # AI skill prompt templates for different sales scenarios
 │   └── snapshotStore.js            # Per-user data snapshot persistence (partners, orders, keys)
 │
-├── scripts/
-│   └── generate-pbx-mocks.js       # Mock data generator (legacy, from original PoC phase)
-│
 ├── design/                         # Design system reference files (HTML previews, CSS tokens)
 ├── package.json                    # Dependencies: express, openai, @anthropic-ai/sdk
 ├── render.yaml                     # Render.com deployment configuration
