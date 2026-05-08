@@ -77,6 +77,7 @@
       viewFilter: "all", sortField: "keys", sortDir: "desc",
     },
     onPartnerClick: null,
+    onRefresh: null,
   };
 
   let _cssInjected = false;
@@ -324,6 +325,7 @@
         <select id="ovCountry" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:inherit;background:${ov.countryFilter?"var(--accent-dim)":"var(--surface-2)"};color:${ov.countryFilter?"var(--accent)":"var(--muted)"};cursor:pointer;outline:none"><option value="">All Countries</option>${agg.countries.map(c=>`<option value="${esc(c)}"${ov.countryFilter===c?" selected":""}>${esc(c)}</option>`).join("")}</select>
         <div style="flex:1"></div>
         ${hasFilters?'<button id="ovClear" style="font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-weight:600;font-family:inherit">✕ Clear all</button>':""}
+        <button id="ovRefresh" title="Refresh data from server" style="font-size:12px;padding:4px 8px;border-radius:5px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-family:inherit;transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">↻</button>
         <span style="font-size:10px;color:var(--muted)">${list.length} partners</span>
       </div>
 
@@ -372,6 +374,7 @@
     q("#ovSearch")?.addEventListener("input",e=>{ov.search=e.target.value.trim().toLowerCase();render();});
     q("#ovCountry")?.addEventListener("change",e=>{ov.countryFilter=e.target.value;render();});
     q("#ovClear")?.addEventListener("click",()=>{ov.search="";ov.levelFilter="";ov.countryFilter="";ov.agentFilter="";ov.segmentFilter="";ov.editionFilter="";ov.sizeFilter="";ov.viewFilter="all";render();});
+    q("#ovRefresh")?.addEventListener("click",()=>{ if(_state.onRefresh) _state.onRefresh(); });
     q("#ovEnrichBtn")?.addEventListener("click",startEnrichment);
     qa(".ov-row-refresh").forEach(btn=>btn.addEventListener("click",async e=>{
       e.stopPropagation();
@@ -389,6 +392,7 @@
   async function mount(container, opts={}) {
     injectCSS(); _container=container;
     _state.onPartnerClick=opts.onPartnerClick||null;
+    _state.onRefresh=opts.onRefresh||null;
     const snapshot=opts.snapshot;
     if(!snapshot?.partners?.length) { _container.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted)">No partner data. Open the ONYX extension and click "Get Data".</div>'; return; }
     _state.allPartners=snapshot.partners;
