@@ -257,6 +257,7 @@
       {k:"segment",l:"Segment",w:"90px"},
       {k:"level",l:"Level",w:"80px"},{k:"type",l:"Type",w:"100px"},
       {k:"country",l:"",w:"32px"},{k:"keys",l:"Keys",w:"50px"},
+      {k:"trials",l:"Trials",w:"48px"},
       {k:"newActivations",l:"New",w:"50px"},
       {k:"expiringSoon",l:"Expiring",w:"60px"},{k:"overdue",l:"Overdue",w:"60px"},
       {k:"renewalRate",l:"Renewal",w:"60px"},{k:"lastContactDaysAgo",l:"Contact",w:"58px"},
@@ -341,6 +342,7 @@
             <td style="text-align:right;font-size:10px;color:var(--muted)">${esc(p.type||"—")}</td>
             <td style="text-align:center;font-size:10px;color:var(--muted)">${esc(p.country)}</td>
             <td style="text-align:right;font-weight:600">${p.keys!==null?p.keys:'<span style="color:var(--muted)">—</span>'}</td>
+            <td style="text-align:right;color:${p.trials>0?"#e67e00":"var(--border)"}">${p.trials!==null?(p.trials||"—"):'<span style="color:var(--muted)">—</span>'}</td>
             <td style="text-align:right;font-weight:700;color:${na>0?"#2d9e5f":"var(--border)"}">${na!==null?(na||"—"):'<span style="color:var(--muted)">—</span>'}</td>
             <td style="text-align:right;color:${ex>0?"#e67e00":"var(--border)"}">${ex!==null?(ex||"—"):'<span style="color:var(--muted)">—</span>'}</td>
             <td style="text-align:right;color:${od>0?"#dc3545":"var(--border)"}">${od!==null?(od||"—"):'<span style="color:var(--muted)">—</span>'}</td>
